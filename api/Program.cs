@@ -12,7 +12,7 @@ public class Program
     {
         Console.WriteLine("Transaction garbage collector started");
         Console.WriteLine("Sleep set to: " + sleep);
-        for (;;) {
+        while(true) {
             Console.WriteLine("Checking for expired transactions to free...");
             lock(transactionListLock) {
                 if(transactionList.Count()>0) {

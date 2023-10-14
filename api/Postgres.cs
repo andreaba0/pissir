@@ -2,7 +2,6 @@ using Microsoft.VisualBasic;
 using Npgsql;
 
 public class Postgres {
-    private object connection;
     public Postgres() {
 
     }

@@ -3,7 +3,32 @@
 @{
     Layout = null;
 }
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Signin</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="~/css/app.min.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/frontend.styles.css" asp-append-version="true" />
+        </head>
 
-<div>
-    Signin
-</div>
+        <body class="bg-slate-100">
+            <div class="w-screen flex flex-col items-center justify-center">
+                <div class="w-full flex items-center justify-center py-9 max-w-xl font-thin text-3xl text-gray-800">
+                    Accedi come gestore
+                </div>
+                <form class="flex w-full max-w-3xl items-center justify-center bg-white py-6">
+                    <label class="flex flex-col items-center justify-center">
+                        <span class="text-gray-700 font-bold text-sm">Email</span>
+                        <input type="email" class="form-input mt-1 block w-full border-gray-800 border-solid border-b-2"
+                            placeholder="email" />
+                    </label>
+                </form>
+            </div>
+        </body>
+
+        </html>
+
+
+  

@@ -14,7 +14,6 @@ public class IndexModel : PageModel
         _logger = logger;
     }
 
-    [HttpGet]
     public void getMethod()
     {
         Name = "Andrea";

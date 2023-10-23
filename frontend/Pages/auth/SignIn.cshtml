@@ -1,4 +1,5 @@
 @page
+@model SignInModel
 
 @{
     Layout = null;
@@ -6,7 +7,8 @@
     string[,] providers = new string[,] {
 {"Google", "fa-google", "https://accounts.google.com/o/oauth2/auth"},
 {"Facebook", "fa-facebook", "https://www.facebook.com/v12.0/dialog/oauth"},
-{"Github", "fa-github", "https://github.com/login/oauth/authorize"}
+{"Github", "fa-github", "https://github.com/login/oauth/authorize"},
+{"DigitalOcean", "fa-digital-ocean", "https://cloud.digitalocean.com/v1/oauth/authorize"}
 };
 }
 <!DOCTYPE html>
@@ -33,11 +35,11 @@
 <body class="bg-slate-100">
     <div class="w-screen flex flex-col items-center justify-center">
         <div class="w-full flex items-center justify-center py-9 max-w-xl font-thin text-3xl text-gray-800">
-            Gestione servizio idrico
+            Servizio idrico integrato @Model.ClientId
         </div>
         <div class="flex w-full flex-col max-w-3xl items-center justify-center bg-white py-6 space-y-8">
             <div class="font-medium text-4xl text-gray-800">
-                Scegli un provider per accedere
+                Scegli un provider
             </div>
             @for (var i = 0; i < providers.GetLength(0); i++)
             {
@@ -54,9 +56,10 @@
                 </a>
             }
             <div class="w-full max-w-sm text-sm font-medium text-gray-800 text-center">
-                I provider non sono intercambiabili<br />
-                Accedere con un provider diverso comporter&agrave; la creazione di un nuovo account<br />
-                Se si &egrave; gi&agrave; registrati, accedere con lo stesso provider
+                Pagina di accesso per amministratori ed utenti semplici.<br />
+                I provider non sono intercambiabili.<br />
+                Accedere con un provider diverso comporter&agrave; la creazione di un nuovo account.<br />
+                Se si &egrave; gi&agrave; registrati, accedere con lo stesso provider.
             </div>
         </div>
     </div>

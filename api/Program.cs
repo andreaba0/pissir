@@ -1,70 +1,42 @@
-using System;
-using System.Threading;
+var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
+var app = builder.Build();
 
-public class Program
+PostgresPool postgresPool = new PostgresPool(
+    configuration["database:api:host"],
+    configuration["database:api:port"],
+    configuration["database:api:database"],
+    configuration["database:api:user"],
+    configuration["database:api:password"]
+);
+
+app.Use(async (context, next) =>
 {
+    await next();
+});
 
-    private static readonly object transactionListLock = new object();
-    private static List<Transaction> transactionList = new List<Transaction>();
+app.MapGet("/api/test", async () => {
+    await Task.Run(() => postgresPool.queryPooled("SELECT NOW()", null));
+    return "Hello World";
+});
 
+app.MapPost("/water/buy", async () => {
+    return "Hello World!";
+});
 
-    static void transactionGarbageCollector(int sleep)
-    {
-        Console.WriteLine("Transaction garbage collector started");
-        Console.WriteLine("Sleep set to: " + sleep);
-        while(true) {
-            Console.WriteLine("Checking for expired transactions to free...");
-            lock(transactionListLock) {
-                if(transactionList.Count()>0) {
+app.MapPost("/api/water/sell", () => {
+    int transactionId = postgresPool.beginTransaction();
+    postgresPool.queryTransaction("INSERT INTO test(qty, id) values(10, 'prova')", null, transactionId);
+    postgresPool.commitTransaction(transactionId);
+    return "Hello World!";
+});
 
-                }
-            }
-            Console.WriteLine("Check completed");
-            Thread.Sleep(sleep);
-        }
-    }
+app.MapPost("/user/create", () => {
+    return "Hello World!";
+});
 
-    static void webServer(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
+app.MapPost("/user/delete", () => {
+    return "Hello World!";
+});
 
-        // Add services to the container.
-
-        builder.Services.AddControllers();
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-
-        var app = builder.Build();
-
-        // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
-
-        app.UseHttpsRedirection();
-
-        app.UseAuthorization();
-
-        app.MapControllers();
-
-        app.Run();
-    }
-    static void Main(string[] args)
-    {
-        Thread transactionThread = new Thread(() => {
-            transactionGarbageCollector(30000);
-        });
-        Thread webserverThread = new Thread(() => {
-            webServer(args);
-        });
-        webserverThread.Start();
-        transactionThread.Start();
-        webserverThread.Join();
-        transactionThread.Join();
-    }
-}
-
-
+app.Run();

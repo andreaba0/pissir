@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "api", "api\api.csproj", "{D7A972F0-97AC-4C5A-B053-AC177391089D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "frontend", "frontend\frontend.csproj", "{7FADE80A-C6DB-405A-81FB-596160A653E4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "auth_server", "auth_server\auth_server.csproj", "{002B9F0E-A002-456E-8503-C15D671F12EA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D7A972F0-97AC-4C5A-B053-AC177391089D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7A972F0-97AC-4C5A-B053-AC177391089D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7A972F0-97AC-4C5A-B053-AC177391089D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7A972F0-97AC-4C5A-B053-AC177391089D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FADE80A-C6DB-405A-81FB-596160A653E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FADE80A-C6DB-405A-81FB-596160A653E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FADE80A-C6DB-405A-81FB-596160A653E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FADE80A-C6DB-405A-81FB-596160A653E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{002B9F0E-A002-456E-8503-C15D671F12EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{002B9F0E-A002-456E-8503-C15D671F12EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{002B9F0E-A002-456E-8503-C15D671F12EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{002B9F0E-A002-456E-8503-C15D671F12EA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B7DB8851-E5FF-4757-B529-B06FF2AE1BF5}
+	EndGlobalSection
+EndGlobal

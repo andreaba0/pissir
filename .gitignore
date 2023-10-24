@@ -6,3 +6,5 @@ obj/
 appsettings.Development.json
 appsettings.json
 frontend/wwwroot/css/
+*.pem
+target/

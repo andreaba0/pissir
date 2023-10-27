@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 var app = builder.Build();
@@ -12,7 +14,33 @@ PostgresPool postgresPool = new PostgresPool(
 
 app.Use(async (context, next) =>
 {
-await next();
+    //get jwt bearer from header and check if it's valid
+    string? jwtBearer = context.Request.Headers["Authorization"];
+    if (jwtBearer == null)
+    {
+        context.Response.StatusCode = 401;
+        await context.Response.WriteAsync("Missing Authorization header");
+        return;
+    }
+    if (!jwtBearer.StartsWith("Bearer "))
+    {
+        context.Response.StatusCode = 401;
+        await context.Response.WriteAsync("Invalid Authorization header");
+        return;
+    }
+    string jwt = jwtBearer.Substring(7);
+    TokenOut instance = JwtTokenManager.jwtVerified(jwt);
+    if(instance.success==false) {
+        context.Response.StatusCode=401;
+        await context.Response.WriteAsync(instance.error);
+        return;
+    }
+    if(!instance.claims.TryGetValue("role", out _)) {
+        context.Response.StatusCode=401;
+        await context.Response.WriteAsync("Missing role claim");
+        return;
+    }
+    await next();
 });
 
 app.MapGet("/api/test", () =>
@@ -30,7 +58,7 @@ app.MapPost("/api/water/sell", async context =>
 {
     Task<DatabaseResponse> taskTransaction = postgresPool.beginTransaction();
     DatabaseResponse transaction = await taskTransaction;
-    if(!transaction.success)
+    if (!transaction.success)
     {
         context.Response.StatusCode = 500;
         await context.Response.WriteAsync(transaction.error ?? "Generic error");
@@ -39,7 +67,7 @@ app.MapPost("/api/water/sell", async context =>
     int transactionId = (int)(transaction.data ?? -1);
     Task<DatabaseResponse> insertQuery = postgresPool.queryTransaction("INSERT INTO test(qty, id) values(10, 'prova')", null, transactionId);
     DatabaseResponse insert = await insertQuery;
-    if(!insert.success)
+    if (!insert.success)
     {
         await postgresPool.rollbackTransaction(transactionId);
         context.Response.StatusCode = 500;
@@ -48,7 +76,7 @@ app.MapPost("/api/water/sell", async context =>
     }
     Task<DatabaseResponse> commitQuery = postgresPool.commitTransaction(transactionId);
     DatabaseResponse commit = await commitQuery;
-    if(!commit.success)
+    if (!commit.success)
     {
         await postgresPool.rollbackTransaction(transactionId);
         context.Response.StatusCode = 500;

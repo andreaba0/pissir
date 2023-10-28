@@ -10,6 +10,7 @@
     <PackageReference Include="IdentityModel" Version="6.2.0" />
     <PackageReference Include="JWT" Version="10.1.1" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.0.3" />
+    <PackageReference Include="MQTTnet" Version="4.3.1.873" />
     <PackageReference Include="Npgsql" Version="7.0.6" />
     <Compile Include="..\Shared\*.cs" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.3" />

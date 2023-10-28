@@ -17,7 +17,7 @@ using System.Xml;
 
 public class JwtTokenManager
 {
-    private static readonly Token[] tokens = JwtTokenManager.loadTokens();
+    private static readonly ValidationKey[] tokens = JwtTokenManager.loadTokens();
     private IConfiguration configuration;
     public JwtTokenManager()
     {
@@ -27,25 +27,25 @@ public class JwtTokenManager
         configuration = builder.Build();
     }
 
-    public static Token[] loadTokens()
+    public static ValidationKey[] loadTokens()
     {
 
         var builder = new ConfigurationBuilder()
                     .SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("appsettings.Development.json");
         IConfiguration config = builder.Build();
-        Token[] tks = new Token[3] {
-            new Token {
+        ValidationKey[] tks = new ValidationKey[3] {
+            new ValidationKey {
                 KeyId = "key1",
                 Key = File.ReadAllText(config["token:key1"], Encoding.ASCII),
                 Expiration = new DateTime(2021, 12, 31)
             },
-            new Token {
+            new ValidationKey {
                 KeyId = "key2",
                 Key = File.ReadAllText(config["token:key2"], Encoding.ASCII),
                 Expiration = new DateTime(2021, 12, 31)
             },
-            new Token {
+            new ValidationKey {
                 KeyId = "key3",
                 Key = File.ReadAllText(config["token:key3"], Encoding.ASCII),
                 Expiration = new DateTime(2021, 12, 31)
@@ -119,17 +119,11 @@ public class JwtTokenManager
     }
 }
 
-public class Token
+public class ValidationKey
 {
     public string KeyId { get; set; }
     public string Key { get; set; }
     public DateTime? Expiration { get; set; }
-}
-
-class JwtHeader
-{
-    public string alg { get; set; }
-    public string kid { get; set; }
 }
 
 public class TokenOut

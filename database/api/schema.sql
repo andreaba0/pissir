@@ -12,7 +12,7 @@ create table utente(
     unique (codice_fiscale, role)
 );
 create table utente_idrico(
-    codice_fiscale varchar(16) primary key
+    codice_fiscale varchar(16) primary key,
     role varchar(3) not null check(role = 'GAA')
 );
 create table utente_agricolo(
@@ -66,32 +66,28 @@ create table tipo_irrigazione(
     tipo text primary key
 );
 create table sensor_type(
-    type text primary key
-);
-create table gestore(
-
+    id text primary key
 );
 create table object_logger(
     id varchar(26) primary key,
-    type text not null,
+    sensor_type text not null,
     campo_id varchar(26) not null,
-    unique (id, type)
+    unique (id, sensor_type)
 );
 create table umdty_sensor_log(
     object_id varchar(26),
     sensor_type text,
-    log_time timestamptz,
+    log_time timestamptz not null,
     umdty float not null
-)
+);
 create table tmp_sensor_log(
     object_id varchar(26),
     sensor_type text,
-    log_time timestamptz,
+    log_time timestamptz not null,
     tmp float not null
 );
 create table actuator_log(
     object_id varchar(26),
-    actuator_type text,
-    log_time timestamptz,
+    log_time timestamptz not null,
     is_active boolean not null
 );

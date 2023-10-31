@@ -64,17 +64,6 @@ public class Webserver
             await next();
         });
 
-        app.MapGet("/api/test", () =>
-        {
-            postgresPool.queryPooled("SELECT NOW()", null);
-            return "Hello World";
-        });
-
-        app.MapPost("/water/buy", () =>
-        {
-            return "Hello World!";
-        });
-
         app.MapPost("/api/water/sell", async context =>
         {
             Task<DatabaseResponse> taskTransaction = postgresPool.beginTransaction();
@@ -108,14 +97,30 @@ public class Webserver
             await context.Response.WriteAsync("Hello World!");
         });
 
-        app.MapPost("/user/create", () =>
+        app.MapPost("/api/water/buy", async context =>
         {
-            return "Hello World!";
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("Hello World!");
         });
-
-        app.MapPost("/user/delete", () =>
+        app.MapPost("/api/water/offer", async context =>
         {
-            return "Hello World!";
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("Hello World!");
+        });
+        app.MapPost("/api/company/field", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("Hello World!");
+        });
+        app.MapDelete("/api/company/field", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("Hello World!");
+        });
+        app.MapGet("/api/analytics/field", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("Hello World!");
         });
 
         app.Run();

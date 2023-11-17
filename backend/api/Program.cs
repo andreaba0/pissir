@@ -21,25 +21,22 @@ WebserverThread = new Thread(new ThreadStart(() => {
 }));
 
 AuditingThread = new Thread(new ThreadStart(async () => {
-    Audit auditing = new Audit(
+    /*Audit auditing = new Audit(
         configuration["database:api:host"],
         configuration["database:api:port"],
         configuration["database:api:database"],
         configuration["database:api:user"],
         configuration["database:api:password"]
     );
-    await auditing.runServer();
+    await auditing.runServer();*/
 }));
 
-AccountingThread = new Thread(new ThreadStart(() => {
+AccountingThread = new Thread(new ThreadStart(async () => {
     Accountant accounting = new Accountant(
-        configuration["database:api:host"],
-        configuration["database:api:port"],
-        configuration["database:api:database"],
-        configuration["database:api:user"],
-        configuration["database:api:password"]
+        "127.0.0.1",
+        "1883"
     );
-    accounting.runServer();
+    await accounting.runServer();
 }));
 
 WebserverThread.Start();

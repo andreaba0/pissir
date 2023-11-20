@@ -5,69 +5,124 @@ using MQTTnet.Packets;
 using MQTTnet.Formatter;
 using MQTTnet.Exceptions;
 
+using Npgsql;
+
 using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Threading.Channels;
 
 public class Accountant
 {
-
-    private string mqtt_host;
-    private string mqtt_port;
+    private MqttClientOptions mqttClientOptions;
+    private string connectionString;
+    private NpgsqlDataSource dataSource;
+    private IMqttClient mqttClient;
     public Accountant(
         string mqtt_host,
-        string mqtt_port
+        string postgres_config
     )
     {
-        this.mqtt_host = mqtt_host;
-        this.mqtt_port = mqtt_port;
+        System.Console.WriteLine("Accounting...");
+        this.mqttClientOptions = new MqttClientOptionsBuilder().WithTcpServer($"{mqtt_host}").WithProtocolVersion(MqttProtocolVersion.V500).Build();
     }
 
-    public async Task runServer()
+    public int runServer()
     {
-
-        while (true) {
-            try {
-                await ConnectToBroker();
-                break;
-            } catch (MqttCommunicationException e) {
-                Console.WriteLine("Connection failed");
-            } catch (Exception e) {
-                Console.WriteLine(e);
-                Console.WriteLine("+++++++++++++++++++++++++");
-            } finally {
-                System.Threading.Thread.Sleep(5000);
+        var channel = Channel.CreateUnbounded<User>(
+            new UnboundedChannelOptions
+            {
+                SingleReader = false,
+                SingleWriter = true
             }
+        );
+        Task[] workers = new Task[6];
+        workers[0] = Task.Run(async () => await PubsubService(channel));
+        for (int i = 1; i < workers.Length; i++)
+        {
+            int id = i;
+            workers[i] = Task.Run(async () => await Worker(id, channel));
         }
+        Task.WaitAll(workers);
+        Console.WriteLine("Accounting done");
+        return 0;
     }
 
-    public async Task ConnectToBroker()
+    private async Task<int> Worker(int id, Channel<User> channel)
     {
+        while (true)
+        {
+            var user = await channel.Reader.ReadAsync();
+            Console.Write($"Worker {id}: ");
+            Console.WriteLine($"User: {user.id}");
+        }
+        return 0;
+    }
+
+    private async Task<int> PubsubService(Channel<User> channel)
+    {
+        int exitCode;
+        do
+        {
+            exitCode = await ConnectToBroker(channel);
+            Thread.Sleep(5000);
+        } while (exitCode != 0);
+        return exitCode;
+    }
+
+    private async Task ConnectToPostgres()
+    {
+        await using var dataSource = NpgsqlDataSource.Create(this.connectionString);
+        this.dataSource = dataSource;
+    }
+
+    private async Task<int> ConnectToBroker(Channel<User> channel)
+    {
+        var mqttClientOptions = new MqttClientOptionsBuilder().WithTcpServer($"127.0.0.1").WithProtocolVersion(MqttProtocolVersion.V500).Build();
+
         var mqttFactory = new MqttFactory();
         var mqttClient = mqttFactory.CreateMqttClient();
-        var mqttClientOptions = new MqttClientOptionsBuilder().WithTcpServer($"{this.mqtt_host}").WithProtocolVersion(MqttProtocolVersion.V500).Build();
 
-        mqttClient.ApplicationMessageReceivedAsync += processMessage;
+        mqttClient.ApplicationMessageReceivedAsync += e => processMessage(e, channel);
 
-        await mqttClient.ConnectAsync(mqttClientOptions, CancellationToken.None);
+        mqttClient.DisconnectedAsync += async e =>
+        {
+            Console.WriteLine("### DISCONNECTED FROM SERVER ###");
+            Task.FromResult(0);
+        };
+
+
+        try
+        {
+            using (var timeoutToken = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+            {
+                await mqttClient.ConnectAsync(mqttClientOptions, timeoutToken.Token);
+            }
+            System.Console.WriteLine("Connected to broker");
+        }
+        catch (Exception e)
+        {
+            return 1;
+        }
 
         var mqttSubscribeOptions = new MqttClientSubscribeOptionsBuilder()
             .WithTopicFilter("$share/api/user/signup")
             .Build();
 
         await mqttClient.SubscribeAsync(mqttSubscribeOptions);
-
-        while (true) {
-            //check if connection is still alive
-            if (!mqttClient.IsConnected) {
-                //close connection
-                await mqttClient.DisconnectAsync();
-                throw new MqttCommunicationException("Connection lost");
+        while (true)
+        {
+            if (this.mqttClient == null || !this.mqttClient.IsConnected)
+            {
+                System.Console.WriteLine("Connection to broker lost");
+                this.mqttClient.Dispose();
+                return 1;
             }
-
-            System.Threading.Thread.Sleep(5000);
         }
+        return 0;
     }
 
-    private async Task processMessage(MqttApplicationMessageReceivedEventArgs e)
+    private async Task processMessage(MqttApplicationMessageReceivedEventArgs e, Channel<User> channel)
     {
         Console.WriteLine("### RECEIVED APPLICATION MESSAGE ###");
         Console.WriteLine(e.ApplicationMessage.Topic);
@@ -78,6 +133,8 @@ public class Accountant
 
         UserParser userParser = new UserParser(payloadJson);
 
+        channel.Writer.TryWrite(payloadJson);
+
         Console.WriteLine($"User role: {userParser.getRole()}");
         Console.WriteLine($"Valid id: {userParser.isValidId()}");
 
@@ -85,7 +142,8 @@ public class Accountant
     }
 }
 
-class User {
+class User
+{
     public string id { get; set; }
     public string codice_fiscale { get; set; }
     public string name { get; set; }
@@ -94,32 +152,45 @@ class User {
     public string role { get; set; }
 }
 
-class UserParser : User {
+class UserParser : User
+{
     private User user;
-    public UserParser(User user) {
+    public UserParser(User user)
+    {
         this.user = user;
     }
 
-    public Role getRole() {
-        if (this.user?.role == "GSI") {
+    public Role getRole()
+    {
+        if (this.user?.role == "GSI")
+        {
             return Role.GSI;
-        } else if (this.user?.role == "UA") {
+        }
+        else if (this.user?.role == "UA")
+        {
             return Role.UA;
-        } else {
+        }
+        else
+        {
             return Role.UNKNOW;
         }
     }
 
-    public bool isValidId() {
-        if(Ulid.TryParse(this.user?.id, out var id)) {
+    public bool isValidId()
+    {
+        if (Ulid.TryParse(this.user?.id, out var id))
+        {
             return true;
-        } else {
+        }
+        else
+        {
             return false;
         }
     }
 }
 
-enum Role {
+enum Role
+{
     GSI,
     UA,
     UNKNOW

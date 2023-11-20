@@ -1,3 +1,5 @@
+
+
 public class Webserver
 {
     private PostgresPool postgresPool;
@@ -104,6 +106,7 @@ public class Webserver
         });
         app.MapPost("/api/water/offer", async context =>
         {
+
             context.Response.StatusCode = 200;
             await context.Response.WriteAsync("OK");
         });
@@ -137,7 +140,7 @@ public class Webserver
         app.MapPost("/api/water/limit/{company}", async context => {
             context.Response.StatusCode=200;
             await context.Response.WriteAsync("OK");
-        })
+        });
 
         app.Run();
     }

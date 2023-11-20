@@ -9,7 +9,7 @@ Thread WebserverThread;
 Thread AuditingThread;
 Thread AccountingThread;
 
-WebserverThread = new Thread(new ThreadStart(() => {
+/*WebserverThread = new Thread(new ThreadStart(() => {
     Webserver webserver = new Webserver(
         configuration["database:api:host"],
         configuration["database:api:port"],
@@ -18,31 +18,41 @@ WebserverThread = new Thread(new ThreadStart(() => {
         configuration["database:api:password"]
     );
     webserver.runServer();
-}));
+}));*/
 
-AuditingThread = new Thread(new ThreadStart(async () => {
-    /*Audit auditing = new Audit(
+/*AuditingThread = new Thread(new ThreadStart(async () => {
+    Audit auditing = new Audit(
         configuration["database:api:host"],
         configuration["database:api:port"],
         configuration["database:api:database"],
         configuration["database:api:user"],
         configuration["database:api:password"]
     );
-    await auditing.runServer();*/
-}));
+    await auditing.runServer();
+}));*/
 
-AccountingThread = new Thread(new ThreadStart(async () => {
-    Accountant accounting = new Accountant(
-        "127.0.0.1",
-        "1883"
-    );
-    await accounting.runServer();
-}));
+Accountant accountantProcess = new Accountant(
+    configuration["mqtt:host"],
+    $"Host={configuration["database:api:host"]};Port={configuration["database:api:port"]};Database={configuration["database:api:database"]};Username={configuration["database:api:user"]};Password={configuration["database:api:password"]}"
+);
 
-WebserverThread.Start();
-AuditingThread.Start();
-AccountingThread.Start();
+//AccountingThread = new Thread(new ThreadStart(async () => await accountantProcess.runServer()));
 
-WebserverThread.Join();
-AuditingThread.Join();
-AccountingThread.Join();
+//WebserverThread.Start();
+//AuditingThread.Start();
+//AccountingThread.Start();
+
+//WebserverThread.Join();
+//AuditingThread.Join();
+//AccountingThread.Join();
+
+
+Task accountingTask = Task.Run(() => accountantProcess.runServer());
+
+// You can do other work here if needed
+
+// Wait for the accounting task to complete before exiting
+
+accountingTask.Wait();
+
+System.Console.WriteLine("Hello World!");

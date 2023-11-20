@@ -14,6 +14,7 @@
     <PackageReference Include="Npgsql" Version="7.0.6" />
     <Compile Include="..\Shared\*.cs" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.3" />
+    <PackageReference Include="Ulid" Version="1.3.3" />
   </ItemGroup>
 
 

@@ -5,6 +5,10 @@ public class PostgresPool
     private NpgsqlDataSource pooledDataSource;
     private PostgresNode[] transactionDataSource;
     private int transactionTimeoutSeconds;
+    private bool sharedPool;
+    private bool transactionPool;
+
+
     public PostgresPool(
         string? host,
         string? port,
@@ -12,9 +16,13 @@ public class PostgresPool
         string? user,
         string? password,
         int poolSize = 20,
-        int transactionTimeoutSeconds = 60*5
+        int transactionTimeoutSeconds = 60*5,
+        bool sharedPool = true,
+        bool transactionPool = true
     )
     {
+        this.sharedPool = sharedPool;
+        this.transactionPool = transactionPool;
         this.transactionTimeoutSeconds = transactionTimeoutSeconds;
         int transactionPoolSize = poolSize * 60 / 100;
         int pooledPoolSize = poolSize - transactionPoolSize;
@@ -109,6 +117,9 @@ public class PostgresPool
 
     public async Task<DatabaseResponse> queryPooled(string query, object? args)
     {
+        if(!this.sharedPool) {
+            throw new System.Exception("Shared pool disabled");
+        }
         NpgsqlConnection conn = await pooledDataSource.OpenConnectionAsync();
         try
         {

@@ -2,7 +2,6 @@ public class Audit
 {
 
     private PostgresPool postgresPool;
-    private MqttClientPool mqttClientPool;
     public Audit(
         string host,
         string port,
@@ -11,8 +10,7 @@ public class Audit
         string password
     )
     {
-        mqttClientPool = new MqttClientPool();
-        postgresPool = new PostgresPool(
+        this.postgresPool = new PostgresPool(
             host,
             port,
             database,
@@ -24,9 +22,5 @@ public class Audit
     public async Task runServer()
     {
         Console.WriteLine("Auditing...");
-        await mqttClientPool.connectToBroker(
-            "127.0.0.1",
-            "1883"
-        );
     }
 }

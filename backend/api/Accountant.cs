@@ -57,9 +57,39 @@ public class Accountant
 
     private async Task Worker(int id, Channel<User> channelSQL, Channel<string> channelPush)
     {
+        Console.WriteLine($"Worker {id}: Started");
+        var connectionString = "Host=192.168.178.152;Username=andrea;Password=Andrea3000!;Database=pissir;Pooling=false;Timeout=5;Port=5432";
+        await using var dataSource = NpgsqlDataSource.Create(connectionString);
+
+        NpgsqlConnection? conn = null;
+
         while (true)
         {
             var user = await channelSQL.Reader.ReadAsync();
+            UserParser usr = new UserParser(user);
+
+            Console.WriteLine($"Worker {id}: Received user");
+
+            Console.WriteLine($"Worker {id}: Connecting to database");
+
+            try
+            {
+                if (conn==null || conn.State != System.Data.ConnectionState.Open)
+                {
+                    conn = await dataSource.OpenConnectionAsync(CancellationToken.None);
+                }
+                Console.Write($"Worker {id}: ");
+                Console.WriteLine($"Connected to database");
+                //conn?.Dispose();
+            }
+            catch (NpgsqlException ex)
+            {
+                conn?.Dispose();
+                Console.WriteLine(ex);
+                channelSQL.Writer.TryWrite(user);
+                continue;
+            }
+
             channelPush.Writer.TryWrite(user.id);
         }
     }
@@ -81,7 +111,8 @@ public class Accountant
             Console.WriteLine($"User: {id}");
             try
             {
-                if(!mqttClient.IsConnected) {
+                if (!mqttClient.IsConnected)
+                {
                     await mqttClient.ConnectAsync(mqttClientOptions);
                 }
                 var mqttApplicationMessage = new MqttApplicationMessageBuilder()

@@ -14,49 +14,89 @@ using System.Threading.Channels;
 
 public class Accountant
 {
-    private MqttClientOptions mqttClientOptions;
-    private string connectionString;
-    private NpgsqlDataSource dataSource;
-    private IMqttClient mqttClient;
-    public Accountant(
-        string mqtt_host,
-        string postgres_config
-    )
-    {
-        System.Console.WriteLine("Accounting...");
-        this.mqttClientOptions = new MqttClientOptionsBuilder().WithTcpServer($"{mqtt_host}").WithProtocolVersion(MqttProtocolVersion.V500).Build();
-    }
-
     public int runServer()
     {
-        var channel = Channel.CreateUnbounded<User>(
+        var channelSQL = Channel.CreateUnbounded<User>(
             new UnboundedChannelOptions
             {
                 SingleReader = false,
                 SingleWriter = true
             }
         );
-        Task[] workers = new Task[6];
-        workers[0] = Task.Run(async () => await PubsubService(channel));
-        for (int i = 1; i < workers.Length; i++)
+        var channelPush = Channel.CreateUnbounded<string>(
+            new UnboundedChannelOptions
+            {
+                SingleReader = false,
+                SingleWriter = false
+            }
+        );
+        Task[] workers = new Task[10];
+
+        //dispatch messages from mqtt broker to workers
+        workers[0] = Task.Factory.StartNew(async () => await PubsubService(channelSQL), TaskCreationOptions.LongRunning).Unwrap();
+
+        //every worker insert data into database
+        workers[1] = Task.Factory.StartNew(async () => await Worker(1, channelSQL, channelPush), TaskCreationOptions.LongRunning).Unwrap();
+        workers[2] = Task.Factory.StartNew(async () => await Worker(2, channelSQL, channelPush), TaskCreationOptions.LongRunning).Unwrap();
+        workers[3] = Task.Factory.StartNew(async () => await Worker(3, channelSQL, channelPush), TaskCreationOptions.LongRunning).Unwrap();
+        workers[4] = Task.Factory.StartNew(async () => await Worker(4, channelSQL, channelPush), TaskCreationOptions.LongRunning).Unwrap();
+        workers[5] = Task.Factory.StartNew(async () => await Worker(5, channelSQL, channelPush), TaskCreationOptions.LongRunning).Unwrap();
+        workers[6] = Task.Factory.StartNew(async () => await Worker(6, channelSQL, channelPush), TaskCreationOptions.LongRunning).Unwrap();
+
+        //every worker receive the id of the inserted user into the database from channelPush and send message back to mqtt broker
+        workers[7] = Task.Factory.StartNew(async () => await CommitWorker(1, channelPush), TaskCreationOptions.LongRunning).Unwrap();
+        workers[8] = Task.Factory.StartNew(async () => await CommitWorker(2, channelPush), TaskCreationOptions.LongRunning).Unwrap();
+        workers[9] = Task.Factory.StartNew(async () => await CommitWorker(3, channelPush), TaskCreationOptions.LongRunning).Unwrap();
+        Task res = Task.Factory.ContinueWhenAll(workers, completedTasks =>
         {
-            int id = i;
-            workers[i] = Task.Run(async () => await Worker(id, channel));
-        }
-        Task.WaitAll(workers);
-        Console.WriteLine("Accounting done");
+            Console.WriteLine("Accounting done");
+        });
+        res.Wait();
         return 0;
     }
 
-    private async Task<int> Worker(int id, Channel<User> channel)
+    private async Task Worker(int id, Channel<User> channelSQL, Channel<string> channelPush)
     {
         while (true)
         {
-            var user = await channel.Reader.ReadAsync();
-            Console.Write($"Worker {id}: ");
-            Console.WriteLine($"User: {user.id}");
+            var user = await channelSQL.Reader.ReadAsync();
+            channelPush.Writer.TryWrite(user.id);
         }
-        return 0;
+    }
+
+    private async Task CommitWorker(int workerId, Channel<string> channel)
+    {
+        List<string> pendingIds = new List<string>();
+
+        var mqttFactory = new MqttFactory();
+        var mqttClient = mqttFactory.CreateMqttClient();
+        var mqttClientOptions = new MqttClientOptionsBuilder()
+            .WithTcpServer("127.0.0.1")
+            .WithProtocolVersion(MqttProtocolVersion.V500)
+            .Build();
+        while (true)
+        {
+            var id = await channel.Reader.ReadAsync();
+            Console.Write($"CommitWorker {workerId}: ");
+            Console.WriteLine($"User: {id}");
+            try
+            {
+                if(!mqttClient.IsConnected) {
+                    await mqttClient.ConnectAsync(mqttClientOptions);
+                }
+                var mqttApplicationMessage = new MqttApplicationMessageBuilder()
+                    .WithTopic("api/commit/signup")
+                    .WithPayload(id)
+                    .Build();
+                await mqttClient.PublishAsync(mqttApplicationMessage, CancellationToken.None);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"Connection to broker lost from CommitWorker {workerId}");
+                pendingIds.Add(id);
+                continue;
+            }
+        }
     }
 
     private async Task<int> PubsubService(Channel<User> channel)
@@ -64,21 +104,30 @@ public class Accountant
         int exitCode;
         do
         {
-            exitCode = await ConnectToBroker(channel);
-            Thread.Sleep(5000);
+            try
+            {
+                await ConnectToBroker(channel);
+                exitCode = 0;
+            }
+            catch (Exception)
+            {
+                exitCode = 1;
+            }
+            finally
+            {
+                Console.WriteLine("Reconnecting to broker...");
+                Thread.Sleep(5000);
+            }
         } while (exitCode != 0);
         return exitCode;
     }
 
-    private async Task ConnectToPostgres()
+    private async Task ConnectToBroker(Channel<User> channel)
     {
-        await using var dataSource = NpgsqlDataSource.Create(this.connectionString);
-        this.dataSource = dataSource;
-    }
-
-    private async Task<int> ConnectToBroker(Channel<User> channel)
-    {
-        var mqttClientOptions = new MqttClientOptionsBuilder().WithTcpServer($"127.0.0.1").WithProtocolVersion(MqttProtocolVersion.V500).Build();
+        var mqttClientOptions = new MqttClientOptionsBuilder()
+        .WithTcpServer($"127.0.0.1")
+        .WithProtocolVersion(MqttProtocolVersion.V500)
+        .Build();
 
         var mqttFactory = new MqttFactory();
         var mqttClient = mqttFactory.CreateMqttClient();
@@ -87,8 +136,7 @@ public class Accountant
 
         mqttClient.DisconnectedAsync += async e =>
         {
-            Console.WriteLine("### DISCONNECTED FROM SERVER ###");
-            Task.FromResult(0);
+            await Task.CompletedTask;
         };
 
 
@@ -98,11 +146,10 @@ public class Accountant
             {
                 await mqttClient.ConnectAsync(mqttClientOptions, timeoutToken.Token);
             }
-            System.Console.WriteLine("Connected to broker");
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            return 1;
+            throw;
         }
 
         var mqttSubscribeOptions = new MqttClientSubscribeOptionsBuilder()
@@ -112,49 +159,40 @@ public class Accountant
         await mqttClient.SubscribeAsync(mqttSubscribeOptions);
         while (true)
         {
-            if (this.mqttClient == null || !this.mqttClient.IsConnected)
+            if (mqttClient == null)
             {
-                System.Console.WriteLine("Connection to broker lost");
-                this.mqttClient.Dispose();
-                return 1;
+                throw new Exception("mqttClient is null");
+            }
+            if (!mqttClient.IsConnected)
+            {
+                throw new Exception("Connection to broker lost");
             }
         }
-        return 0;
     }
 
     private async Task processMessage(MqttApplicationMessageReceivedEventArgs e, Channel<User> channel)
     {
-        Console.WriteLine("### RECEIVED APPLICATION MESSAGE ###");
-        Console.WriteLine(e.ApplicationMessage.Topic);
-
         //parse payload
-        var payload = System.Text.Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
+        var payload = System.Text.Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
         var payloadJson = JsonSerializer.Deserialize<User>(payload);
-
         UserParser userParser = new UserParser(payloadJson);
-
         channel.Writer.TryWrite(payloadJson);
-
-        Console.WriteLine($"User role: {userParser.getRole()}");
-        Console.WriteLine($"Valid id: {userParser.isValidId()}");
-
-        return;
     }
 }
 
 class User
 {
-    public string id { get; set; }
-    public string codice_fiscale { get; set; }
-    public string name { get; set; }
-    public string surname { get; set; }
-    public string company { get; set; }
-    public string role { get; set; }
+    public string? id { get; set; }
+    public string? codice_fiscale { get; set; }
+    public string? name { get; set; }
+    public string? surname { get; set; }
+    public string? company { get; set; }
+    public string? role { get; set; }
 }
 
 class UserParser : User
 {
-    private User user;
+    private User? user;
     public UserParser(User user)
     {
         this.user = user;

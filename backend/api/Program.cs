@@ -31,10 +31,7 @@ Thread AccountingThread;
     await auditing.runServer();
 }));*/
 
-Accountant accountantProcess = new Accountant(
-    configuration["mqtt:host"],
-    $"Host={configuration["database:api:host"]};Port={configuration["database:api:port"]};Database={configuration["database:api:database"]};Username={configuration["database:api:user"]};Password={configuration["database:api:password"]}"
-);
+Accountant accountantProcess = new Accountant();
 
 //AccountingThread = new Thread(new ThreadStart(async () => await accountantProcess.runServer()));
 
@@ -47,7 +44,7 @@ Accountant accountantProcess = new Accountant(
 //AccountingThread.Join();
 
 
-Task accountingTask = Task.Run(() => accountantProcess.runServer());
+Task accountingTask = Task.Factory.StartNew(() => accountantProcess.runServer(), TaskCreationOptions.LongRunning);
 
 // You can do other work here if needed
 

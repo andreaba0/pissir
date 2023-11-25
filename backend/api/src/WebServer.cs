@@ -1,25 +1,7 @@
 
 
-public class Webserver
+public class WebServer
 {
-    private PostgresPool postgresPool;
-    public Webserver(
-        string host,
-        string port,
-        string database,
-        string user,
-        string password
-    )
-    {
-        postgresPool = new PostgresPool(
-            host,
-            port,
-            database,
-            user,
-            password
-        );
-    }
-
     public void runServer()
     {
         var builder = WebApplication.CreateBuilder();
@@ -61,40 +43,11 @@ public class Webserver
                 await context.Response.WriteAsync("Missing user_id claim");
                 return;
             }
-            postgresPool.queryPooled("SELECT 1 FROM users WHERE id=$1", new object[] { instance.claims["user_id"] });
-            //if everything is ok, continue
             await next();
         });
 
         app.MapPost("/api/water/sell", async context =>
         {
-            Task<DatabaseResponse> taskTransaction = postgresPool.beginTransaction();
-            DatabaseResponse transaction = await taskTransaction;
-            if (!transaction.success)
-            {
-                context.Response.StatusCode = 500;
-                await context.Response.WriteAsync(transaction.error ?? "Generic error");
-                return;
-            }
-            int transactionId = (int)(transaction.data ?? -1);
-            Task<DatabaseResponse> insertQuery = postgresPool.queryTransaction("INSERT INTO test(qty, id) values(10, 'prova')", null, transactionId);
-            DatabaseResponse insert = await insertQuery;
-            if (!insert.success)
-            {
-                await postgresPool.rollbackTransaction(transactionId);
-                context.Response.StatusCode = 500;
-                await context.Response.WriteAsync(insert.error ?? "Generic error");
-                return;
-            }
-            Task<DatabaseResponse> commitQuery = postgresPool.commitTransaction(transactionId);
-            DatabaseResponse commit = await commitQuery;
-            if (!commit.success)
-            {
-                await postgresPool.rollbackTransaction(transactionId);
-                context.Response.StatusCode = 500;
-                await context.Response.WriteAsync(commit.error ?? "Generic error");
-                return;
-            }
             context.Response.StatusCode = 200;
             await context.Response.WriteAsync("OK");
         });

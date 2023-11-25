@@ -32,6 +32,7 @@ Thread AccountingThread;
 }));*/
 
 Accountant accountantProcess = new Accountant();
+WebServer webServer = new WebServer();
 
 //AccountingThread = new Thread(new ThreadStart(async () => await accountantProcess.runServer()));
 
@@ -45,11 +46,13 @@ Accountant accountantProcess = new Accountant();
 
 
 Task accountingTask = Task.Factory.StartNew(() => accountantProcess.runServer(), TaskCreationOptions.LongRunning);
+Task webServerTask = Task.Factory.StartNew(() => webServer.runServer(), TaskCreationOptions.LongRunning);
 
 // You can do other work here if needed
 
 // Wait for the accounting task to complete before exiting
 
 accountingTask.Wait();
+webServerTask.Wait();
 
-System.Console.WriteLine("Hello World!");
+System.Console.WriteLine("Exiting...");

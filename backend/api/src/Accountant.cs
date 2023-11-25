@@ -12,8 +12,15 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Threading.Channels;
 
+using System.Data.Common;
+
+using Utility;
+
 public class Accountant
 {
+
+    private readonly NpgsqlDataSource postgresqlDataSource;
+
     public int runServer()
     {
         var channelSQL = Channel.CreateUnbounded<User>(
@@ -59,18 +66,18 @@ public class Accountant
     {
         Console.WriteLine($"Worker {id}: Started");
         var connectionString = "Host=192.168.178.152;Username=andrea;Password=Andrea3000!;Database=pissir;Pooling=false;Timeout=5;Port=5432";
-        await using var dataSource = NpgsqlDataSource.Create(connectionString);
+        await using DbDataSource dataSource = NpgsqlDataSource.Create(connectionString);
 
-        NpgsqlConnection? conn = null;
+        DbConnection? conn = null;
 
         while (true)
         {
             var user = await channelSQL.Reader.ReadAsync();
-            UserParser usr = new UserParser(user);
+            //UserParser usr = new UserParser(user);
 
-            Console.WriteLine($"Worker {id}: Received user");
+            Console.WriteLine($"Worker {user.id}: Received user");
 
-            Console.WriteLine($"Worker {id}: Connecting to database");
+            Console.WriteLine($"Worker {user.id}: Connecting to database");
 
             try
             {
@@ -201,66 +208,13 @@ public class Accountant
         }
     }
 
-    private async Task processMessage(MqttApplicationMessageReceivedEventArgs e, Channel<User> channel)
+    public async Task processMessage(MqttApplicationMessageReceivedEventArgs e, Channel<User> channel)
     {
         //parse payload
         var payload = System.Text.Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
         var payloadJson = JsonSerializer.Deserialize<User>(payload);
-        UserParser userParser = new UserParser(payloadJson);
         channel.Writer.TryWrite(payloadJson);
+        Console.WriteLine($"Client id: {e.ClientId}");
+        Console.WriteLine($"User role: {payloadJson.role}");
     }
-}
-
-class User
-{
-    public string? id { get; set; }
-    public string? codice_fiscale { get; set; }
-    public string? name { get; set; }
-    public string? surname { get; set; }
-    public string? company { get; set; }
-    public string? role { get; set; }
-}
-
-class UserParser : User
-{
-    private User? user;
-    public UserParser(User user)
-    {
-        this.user = user;
-    }
-
-    public Role getRole()
-    {
-        if (this.user?.role == "GSI")
-        {
-            return Role.GSI;
-        }
-        else if (this.user?.role == "UA")
-        {
-            return Role.UA;
-        }
-        else
-        {
-            return Role.UNKNOW;
-        }
-    }
-
-    public bool isValidId()
-    {
-        if (Ulid.TryParse(this.user?.id, out var id))
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-}
-
-enum Role
-{
-    GSI,
-    UA,
-    UNKNOW
 }

@@ -1,4 +1,5 @@
 using Middleware;
+using Extension;
 
 public class WebServer
 {
@@ -7,7 +8,7 @@ public class WebServer
         var builder = WebApplication.CreateBuilder();
         var configuration = builder.Configuration;
         var app = builder.Build();
-        app.Use(Authentication.JwtCheck);
+        app.Use(async (context, next) => Authentication.JwtCheck(context, next, new HttpResponseExtension()));
 
         app.MapPost("/api/water/sell", async context =>
         {

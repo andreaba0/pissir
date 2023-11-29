@@ -29,7 +29,7 @@ public class PubSubClient: IPubSubClient {
         return 0;
     }
 
-    private async Task<bool> ConnectOnce() {
+    internal async Task<bool> ConnectOnce() {
         if(_mqttClient.IsConnected) {
             wasConnected = true;
             return true;

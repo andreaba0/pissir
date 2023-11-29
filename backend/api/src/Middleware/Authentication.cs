@@ -6,8 +6,45 @@ namespace Middleware;
 
 public static class Authentication
 {
-    public static async Task JwtCheck(HttpContext context, Func<Task> next)
+    public static async Task JwtCheck(HttpContext context, Func<Task> next, IStaticWrapperHRE httpResponseExtension)
     {
+        //get jwt bearer from header and check if it's valid
+        string? jwtBearer = context.Request.Headers["Authorization"];
+        if (jwtBearer == string.Empty || jwtBearer == null)
+        {
+            context.Response.StatusCode = 401;
+            await httpResponseExtension.WriteAsync(context.Response, "Missing Authorization header");
+            return;
+        }
+        if (!jwtBearer.StartsWith("Bearer "))
+        {
+            context.Response.StatusCode = 401;
+            await httpResponseExtension.WriteAsync(context.Response, "Invalid Authorization header");
+            return;
+        }
+        string jwt = jwtBearer.Substring(7);
+        TokenOut instance = JwtTokenManager.jwtVerified(jwt);
+        if (instance.success == false)
+        {
+            context.Response.StatusCode = 401;
+            await httpResponseExtension.WriteAsync(context.Response, instance.error);
+            return;
+        }
+        if (!instance.claims.TryGetValue("role", out _))
+        {
+            context.Response.StatusCode = 401;
+            await httpResponseExtension.WriteAsync(context.Response, "Missing role claim");
+            return;
+        }
+        if (!instance.claims.TryGetValue("user_id", out _))
+        {
+            context.Response.StatusCode = 401;
+            await httpResponseExtension.WriteAsync(context.Response, "Missing user_id claim");
+            return;
+        }
+        await next();
+    }
+    /*{
         HttpResponseExtension httpResponseExtension = new HttpResponseExtension();
         //get jwt bearer from header and check if it's valid
         string? jwtBearer = context.Request.Headers["Authorization"];
@@ -16,7 +53,7 @@ public static class Authentication
         {
             Console.WriteLine("Missing Authorization header");
             context.Response.StatusCode = 401;
-            await httpResponseExtension.WriteAsync(context.Response, "Missing Authorization header");
+            //await httpResponseExtension.WriteAsync(context.Response, "Missing Authorization header");
             return;
         }
         if (!jwtBearer.StartsWith("Bearer "))
@@ -46,5 +83,5 @@ public static class Authentication
             return;
         }
         await next();
-    }
+    }*/
 }

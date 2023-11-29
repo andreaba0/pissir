@@ -1,28 +1,28 @@
-alter table utente_idrico add foreign key (role) references user_role(role);
-alter table utente_agricolo add foreign key (role) references user_role(role);
+alter table user_wsp add foreign key (role) references user_role(role);
+alter table farmer add foreign key (role) references user_role(role);
 
-alter table utente_idrico add foreign key (codice_fiscale) references utente(codice_fiscale);
-alter table utente_agricolo add foreign key (codice_fiscale) references utente(codice_fiscale);
+alter table user_wsp add foreign key (tax_code) references person(tax_code);
+alter table farmer add foreign key (tax_code) references person(tax_code);
 
-alter table azienda_idrica add foreign key (categoria) references company_category(category);
-alter table azienda_agricola add foreign key (categoria) references company_category(category);
+alter table water_company add foreign key (industry_sector) references industry_sector(sector_name);
+alter table farm add foreign key (industry_sector) references industry_sector(sector_name);
 
-alter table azienda_idrica add foreign key (partita_iva) references azienda(partita_iva);
-alter table azienda_agricola add foreign key (partita_iva) references azienda(partita_iva);
+alter table water_company add foreign key (vat_number) references company(vat_number);
+alter table farm add foreign key (vat_number) references company(vat_number);
 
-alter table work_relation add foreign key (codice_fiscale) references utente(codice_fiscale);
-alter table work_relation add foreign key (partita_iva) references azienda(partita_iva);
+alter table work_relation add foreign key (tax_code) references person(tax_code);
+alter table work_relation add foreign key (vat_number) references company(vat_number);
 
-alter table offer add foreign key (partita_iva) references azienda(partita_iva);
+alter table offer add foreign key (vat_number) references company(vat_number);
 
 alter table buy_order add foreign key (offer_id) references offer(id);
-alter table buy_order add foreign key (campo_id) references campo(id);
+alter table buy_order add foreign key (farm_field_id) references farm_field(id);
 
-alter table campo add foreign key (partita_iva) references azienda(partita_iva);
-alter table campo add foreign key (tipo_irrigazione) references tipo_irrigazione(tipo);
+alter table farm_field add foreign key (vat_number) references company(vat_number);
+alter table farm_field add foreign key (irrigation_type) references irrigation_type(name);
 
 alter table object_logger add foreign key (sensor_type) references sensor_type(id);
-alter table object_logger add foreign key (campo_id) references campo(id);
+alter table object_logger add foreign key (farm_field_id) references farm_field(id);
 
 alter table umdty_sensor_log add foreign key (object_id) references object_logger(id);
 alter table umdty_sensor_log add foreign key (sensor_type) references sensor_type(id);

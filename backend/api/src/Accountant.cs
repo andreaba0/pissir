@@ -16,14 +16,17 @@ using System.Data.Common;
 
 using Utility;
 
+using Module.Accountant;
+
 public class Accountant
 {
 
-    private readonly NpgsqlDataSource postgresqlDataSource;
+    //private readonly NpgsqlDataSource postgresqlDataSource;
+    private readonly IPubSubClient pubSubClient;
 
     public int runServer()
     {
-        var channelSQL = Channel.CreateUnbounded<User>(
+        /*var channelSQL = Channel.CreateUnbounded<User>(
             new UnboundedChannelOptions
             {
                 SingleReader = false,
@@ -58,7 +61,25 @@ public class Accountant
         {
             Console.WriteLine("Accounting done");
         });
+        res.Wait();*/
+        Task[] workers = new Task[1];
+        workers[0] = Task.Factory.StartNew(async () => {
+            PubSubClient pubsubClient = new PubSubClient(
+                new MqttFactory().CreateMqttClient()
+            );
+            Console.WriteLine("Accountant: Started");
+            int ret = await pubsubClient.Routine(CancellationToken.None);
+
+            Console.WriteLine($"Accountant: {ret}");
+        }, TaskCreationOptions.LongRunning).Unwrap();
+        Task res = Task.Factory.ContinueWhenAll(workers, completedTasks =>
+        {
+            //log completed tasks
+            Console.WriteLine("Accounting done");
+        });
         res.Wait();
+        Console.WriteLine("Leaving accountant");
+        
         return 0;
     }
 

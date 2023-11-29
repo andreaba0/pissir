@@ -1,4 +1,4 @@
-
+using Middleware;
 
 public class WebServer
 {
@@ -7,44 +7,7 @@ public class WebServer
         var builder = WebApplication.CreateBuilder();
         var configuration = builder.Configuration;
         var app = builder.Build();
-        app.Use(async (context, next) =>
-        {
-            //get jwt bearer from header and check if it's valid
-            string? jwtBearer = context.Request.Headers["Authorization"];
-            if (jwtBearer == null)
-            {
-                context.Response.StatusCode = 401;
-                await context.Response.WriteAsync("Missing Authorization header");
-                return;
-            }
-            if (!jwtBearer.StartsWith("Bearer "))
-            {
-                context.Response.StatusCode = 401;
-                await context.Response.WriteAsync("Invalid Authorization header");
-                return;
-            }
-            string jwt = jwtBearer.Substring(7);
-            TokenOut instance = JwtTokenManager.jwtVerified(jwt);
-            if (instance.success == false)
-            {
-                context.Response.StatusCode = 401;
-                await context.Response.WriteAsync(instance.error);
-                return;
-            }
-            if (!instance.claims.TryGetValue("role", out _))
-            {
-                context.Response.StatusCode = 401;
-                await context.Response.WriteAsync("Missing role claim");
-                return;
-            }
-            if (!instance.claims.TryGetValue("user_id", out _))
-            {
-                context.Response.StatusCode = 401;
-                await context.Response.WriteAsync("Missing user_id claim");
-                return;
-            }
-            await next();
-        });
+        app.Use(Authentication.JwtCheck);
 
         app.MapPost("/api/water/sell", async context =>
         {

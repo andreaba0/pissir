@@ -68,5 +68,6 @@ public class Tests
         ValueTask<User> userTask = channelSQL.Reader.ReadAsync();
         User user = userTask.Result;
         Assert.AreEqual(user.name, "Andrea");
+        Assert.AreEqual(UserParser.getRole(user), UserRole.WSP);
     }
 }

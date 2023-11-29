@@ -9,7 +9,7 @@ using MQTTnet.Protocol;
 
 namespace Module.Accountant;
 
-public class PubSubClient: IPubSubClient {
+public class PubSubClient: IPubSubClient, IDisposable {
     private readonly IMqttClient _mqttClient;
     private bool wasConnected = false;
     public PubSubClient(
@@ -69,5 +69,9 @@ public class PubSubClient: IPubSubClient {
             .WithCleanSession()
             .Build();
         return options;
+    }
+
+    public void Dispose() {
+        _mqttClient?.Dispose();
     }
 }

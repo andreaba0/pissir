@@ -60,8 +60,11 @@ Thread AccountingThread;*/
 class Program {
     public static int Main(string[] args) {
         Accountant accountant = new Accountant();
+        WebServer webServer = new WebServer();
         Task accountantTask = Task.Factory.StartNew( () => accountant.runServer() , TaskCreationOptions.LongRunning);
+        Task webServerTask = Task.Factory.StartNew( () => webServer.runServer() , TaskCreationOptions.LongRunning);
         accountantTask.Wait();
+        webServerTask.Wait();
         Console.WriteLine("Exiting...");
         return 0;
     }

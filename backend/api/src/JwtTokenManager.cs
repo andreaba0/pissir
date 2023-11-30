@@ -14,6 +14,7 @@ using JWT;
 using System.IO;
 using JWT.Serializers;
 using System.Xml;
+using System.Collections.Generic;
 
 public class JwtTokenManager
 {
@@ -82,10 +83,24 @@ public class JwtTokenManager
             ClaimsPrincipal principal = handler.ValidateToken(token, validationParameters, out var validatedToken);
             //parse claims in dictionary
             Dictionary<string, string> claims = new Dictionary<string, string>();
-            foreach (var claim in principal.Claims)
+            /*foreach (var claim in principal.Claims)
             {
+                Console.WriteLine(claim.Type);
+                Console.WriteLine(claim.Value);
                 claims.Add(claim.Type, claim.Value);
+            }*/
+            if(!principal.HasClaim(c => c.Type == ClaimTypes.Role))
+            {
+                return new TokenOut
+                {
+                    success = false,
+                    error = "Missing role claim"
+                };
             }
+            var roles = principal.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
             return new TokenOut
             {
                 success = true,

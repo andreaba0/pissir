@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using System.Text.Json;
-using Ssytem.Security.Cryptography;
+using System.Security.Cryptography;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using Interface.Utility;
@@ -66,16 +66,16 @@ public class JwtControl
         if (!response.IsSuccessStatusCode) return false;
         var responseString = await response.Content.ReadAsStringAsync();
         int maxAge = ReturnMaxAgeFromHeader(response.Headers);
-        JwksResponse jwksData = JsonConvert.DeserializeObject<JwksResponse>(responseString);
+        JwksResponse jwksData = JsonSerializer.Deserialize<JwksResponse>(responseString);
         _jwtKeyStore.dropKeys();
-        foreach(JwksKey jwksKey in jwksData.keys) {
-            _jwtKeyStore.SetKey(jwksKey.kid, new RsaSecurityKey(new RSAParameters
+        foreach(JsonWebKey jwksKey in jwksData.keys) {
+            _jwtKeyStore.SetKey(jwksKey.Kid, new RsaSecurityKey(new RSAParameters
             {
                 Exponent = Base64UrlEncoder.DecodeBytes(jwksKey.E),
                 Modulus = Base64UrlEncoder.DecodeBytes(jwksKey.N)
             }));
         }
-        _jwtKeyStore.setExpiration(DateTime.Now.AddSeconds(maxAge));
+        _jwtKeyStore.setExpiration(maxAge);
         return true;
     }
 
@@ -103,8 +103,8 @@ public class JwtControl
         };
         try
         {
-            var handler = new JwtSecurityTokenHandler();
-            handler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+            var hnd = new JwtSecurityTokenHandler();
+            hnd.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
             return true;
         }
         catch (Exception)

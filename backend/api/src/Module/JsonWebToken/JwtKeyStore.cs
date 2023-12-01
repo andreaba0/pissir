@@ -4,13 +4,15 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Module.JsonWebToken;
 
-public class JwtKeyStore : IJwtKeyStore {
+public class JwtKeyStore : IJwtKeyStore
+{
     private Dictionary<string, RsaSecurityKey> keys = new Dictionary<string, RsaSecurityKey>();
     private DateTime expiration;
     private IClockCustom _clock;
     private readonly DateTime defaultExpiration;
 
-    public JwtKeyStore(IClockCustom clock) {
+    public JwtKeyStore(IClockCustom clock)
+    {
         _clock = clock;
 
         //expiration datetime = 1 1 1970
@@ -19,27 +21,39 @@ public class JwtKeyStore : IJwtKeyStore {
         expiration = defaultExpiration;
     }
 
-    public bool isExpired() {
+    public bool isExpired()
+    {
         return _clock.Now() > expiration;
     }
 
-    public void setExpiration(int seconds) {
+    public void setExpiration(int seconds)
+    {
         expiration = _clock.Now().AddSeconds(seconds);
     }
 
-    public void SetKey(string id, RsaSecurityKey key) {
+    public void SetKey(string id, RsaSecurityKey key)
+    {
         keys[id] = key;
     }
 
-    public RsaSecurityKey GetKey(string id) {
-        if(keys.ContainsKey(id)) {
+    public RsaSecurityKey GetKey(string id)
+    {
+        if (isExpired())
+        {
+            return null;
+        }
+        if (keys.ContainsKey(id))
+        {
             return keys[id];
-        } else {
+        }
+        else
+        {
             return null;
         }
     }
 
-    public void dropKeys() {
+    public void dropKeys()
+    {
         keys = new Dictionary<string, RsaSecurityKey>();
         expiration = defaultExpiration;
     }

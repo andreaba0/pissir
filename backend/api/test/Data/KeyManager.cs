@@ -1,3 +1,6 @@
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
+
 namespace Data;
 
 class KeyString
@@ -44,7 +47,7 @@ BhTE7o8IyLplAuQFrTaaMLU7yF77ay4TBxm6yTlTGku5614VZZFFFgBujSrd7pBg
 xYqWB6xWlcPGJGMpH8NBEA==
 -----END PRIVATE KEY-----
 ";
-        key1.KeyPrivate = @"-----BEGIN PUBLIC KEY-----
+        key1.KeyPublic = @"-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv2bjrn2Ai6MEthM0DsDh
 ZBx+9kzUOgmw8CGhhZ2VB5g4TwjdxhOWeC9AfJ3QnZ7iFblMnaD5Hd++U/TFqdYt
 k1eChun/2sravglNMj+q+hFYhFBlhublfDyBAGGkOWnEGfgii2gpPN4kcmKt+R8y
@@ -54,8 +57,8 @@ jA4P+GvKtMPpYFhB+2N5RjFHQdvGVlAcos4F8/oPIh7/SsR2kfG7TnHEoPqWUer4
 UQIDAQAB
 -----END PUBLIC KEY-----
 ";
-        key1.KeyId = "key1"
-KeyString key2 = new KeyString();
+        key1.KeyId = "key1";
+        KeyString key2 = new KeyString();
         key2.KeyPrivate = @"-----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDW518Aq/IsSFbF
 rFiR6c5TY/uf+mg2xg4baZiCHf7FBhshEPBBleqc5NTavWDLBv/g+7NEKmZrGSsM
@@ -137,7 +140,7 @@ wwIDAQAB
 -----END PUBLIC KEY-----
 ";
         key3.KeyId = "key3";
-        
+
         RSA rsa1 = RSA.Create();
         rsa1.ImportFromPem(key1.KeyPrivate.ToCharArray());
         publicKeys.Add(key1.KeyId, new RsaSecurityKey(rsa1.ExportParameters(false))

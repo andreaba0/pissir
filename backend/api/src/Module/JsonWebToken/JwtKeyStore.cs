@@ -55,6 +55,5 @@ public class JwtKeyStore : IJwtKeyStore
     public void dropKeys()
     {
         keys = new Dictionary<string, RsaSecurityKey>();
-        expiration = defaultExpiration;
     }
 }

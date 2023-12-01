@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Security.Cryptography;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using Interface.Utility;
 using Interface.Module.JsonWebToken;
@@ -33,14 +34,8 @@ public class JwtControl
 
     internal bool LifetimeValidator(DateTime? notBefore, DateTime? expires, SecurityToken securityToken, TokenValidationParameters validationParameters)
     {
-        if (expires != null)
-        {
-            if (_clockCustom.UtcNow() < expires)
-            {
-                return true;
-            }
-        }
-        return false;
+        if(expires is null) return false;
+        return _clockCustom.UtcNow() < expires;
     }
 
     internal int ReturnMaxAgeFromHeader(HttpResponseHeaders response) {
@@ -79,19 +74,19 @@ public class JwtControl
         return true;
     }
 
-    public async Task<bool> isValid(string token)
+    public async Task<ClaimsPrincipal> GetClaims(string token)
     {
         if (_jwtKeyStore.isExpired())
         {
             bool hasUpdated = await this.updateKeys();
-            if (!hasUpdated) return false;
+            if (!hasUpdated) return null;
         }
         //get kid from token
         var handler = new JwtSecurityTokenHandler();
         var tokenS = handler.ReadJwtToken(token);
         string kid = tokenS.Header.Kid;
         RsaSecurityKey key = _jwtKeyStore.GetKey(kid);
-        if (key == null) return false;
+        if (key == null) return null;
         var validationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -104,12 +99,14 @@ public class JwtControl
         try
         {
             var hnd = new JwtSecurityTokenHandler();
-            hnd.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
-            return true;
+            ClaimsPrincipal claims = hnd.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+            var clonedClaims = new ClaimsPrincipal(new ClaimsIdentity(claims.Identity));
+            return clonedClaims;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return false;
+            Console.WriteLine(ex);
+            return null;
         }
     }
 }

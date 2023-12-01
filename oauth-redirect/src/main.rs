@@ -1,4 +1,4 @@
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder, Result};
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, Result};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -6,9 +6,14 @@ struct Info {
     provider: String,
 }
 
-struct EncryptedToken {
-    redirect: u32,
-    signature: [u8; 16],
+#[derive(Deserialize)]
+struct AllowList {
+    state: String,
+}
+
+struct redirectString {
+    exp_at: u32,
+    state: u16,
 }
 
 #[get("/")]
@@ -19,6 +24,11 @@ async fn home() -> impl Responder {
 #[get("/exchange/{provider}")]
 async fn exchange(info: web::Path<Info>) -> Result<String> {
     Ok(format!("{}", info.provider))
+}
+
+#[post("/exchange/allow/{state}")]
+async fn allow(info: web::Path<AllowList>) -> Result<String> {
+    Ok(format!("OK"))
 }
 
 #[actix_web::main]

@@ -8,3 +8,5 @@ appsettings.json
 frontend/wwwroot/css/
 *.pem
 target/
+key*
+key*.*

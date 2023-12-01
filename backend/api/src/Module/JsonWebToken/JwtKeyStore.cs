@@ -1,19 +1,46 @@
+using Interface.Module.JsonWebToken;
+using Interface.Utility;
+using Microsoft.IdentityModel.Tokens;
+
 namespace Module.JsonWebToken;
 
 public class JwtKeyStore : IJwtKeyStore {
-    private List<RsaSecurityKey> keys = new List<RsaSecurityKey>();
+    private Dictionary<string, RsaSecurityKey> keys = new Dictionary<string, RsaSecurityKey>();
     private DateTime expiration;
+    private IClockCustom _clock;
+    private readonly DateTime defaultExpiration;
 
-    public List<RsaSecurityKey> GetKeys() {
-        return keys;
+    public JwtKeyStore(IClockCustom clock) {
+        _clock = clock;
+
+        //expiration datetime = 1 1 1970
+        defaultExpiration = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+
+        expiration = defaultExpiration;
     }
 
-    public void SetKeys(List<RsaSecurityKey> keys, DateTime expiration) {
-        this.keys = keys;
-        this.expiration = expiration;
+    public bool isExpired() {
+        return _clock.Now() > expiration;
     }
 
-    public bool isEmpty() {
-        return keys.Count == 0;
+    public void setExpiration(int seconds) {
+        expiration = _clock.Now().AddSeconds(seconds);
+    }
+
+    public void SetKey(string id, RsaSecurityKey key) {
+        keys[id] = key;
+    }
+
+    public RsaSecurityKey GetKey(string id) {
+        if(keys.ContainsKey(id)) {
+            return keys[id];
+        } else {
+            return null;
+        }
+    }
+
+    public void dropKeys() {
+        keys = new Dictionary<string, RsaSecurityKey>();
+        expiration = defaultExpiration;
     }
 }

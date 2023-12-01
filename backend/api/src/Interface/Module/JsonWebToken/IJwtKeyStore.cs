@@ -1,7 +1,11 @@
+using Microsoft.IdentityModel.Tokens;
+
 namespace Interface.Module.JsonWebToken;
 
 public interface IJwtKeyStore {
-    public List<RsaSecurityKey> GetKeys();
-    public void SetKeys(List<RsaSecurityKey> keys, DateTime expiration);
-    public bool isEmpty();
+    public bool isExpired();
+    public void setExpiration(int seconds);
+    public void SetKey(string id, RsaSecurityKey key);
+    public RsaSecurityKey GetKey(string id);
+    public void dropKeys();
 }

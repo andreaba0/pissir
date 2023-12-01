@@ -1,3 +1,5 @@
+using Interface.Utility;
+
 namespace Utility;
 
 public class ClockCustom : IClockCustom {

@@ -74,19 +74,19 @@ public class JwtControl
         return true;
     }
 
-    public async Task<ClaimsPrincipal> GetClaims(string token)
+    public async Task<Tuple<bool, ClaimsPrincipal>> GetClaims(string token)
     {
         if (_jwtKeyStore.isExpired())
         {
             bool hasUpdated = await this.updateKeys();
-            if (!hasUpdated) return null;
+            if (!hasUpdated) return new Tuple<bool, ClaimsPrincipal>(false, null);
         }
         //get kid from token
         var handler = new JwtSecurityTokenHandler();
         var tokenS = handler.ReadJwtToken(token);
         string kid = tokenS.Header.Kid;
         RsaSecurityKey key = _jwtKeyStore.GetKey(kid);
-        if (key == null) return null;
+        if (key == null) return new Tuple<bool, ClaimsPrincipal>(false, null);
         var validationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -99,13 +99,12 @@ public class JwtControl
         try
         {
             var hnd = new JwtSecurityTokenHandler();
-            ClaimsPrincipal claims = hnd.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
-            var clonedClaims = new ClaimsPrincipal(new ClaimsIdentity(claims.Identity));
-            return claims;
+            ClaimsPrincipal principal = hnd.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+            return new Tuple<bool, ClaimsPrincipal>(true, principal);       
         }
         catch (Exception ex)
         {
-            return null;
+            return new Tuple<bool, ClaimsPrincipal>(false, null);
         }
     }
 }

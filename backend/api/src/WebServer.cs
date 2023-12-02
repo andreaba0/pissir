@@ -8,10 +8,17 @@ public class WebServer
         var builder = WebApplication.CreateBuilder();
         var configuration = builder.Configuration;
         var app = builder.Build();
-        app.Use(async (context, next) => Authentication.JwtCheck(context, next, new HttpResponseExtension()));
+        //app.Use(async (context, next) => Authentication.JwtCheck(context, next, new HttpResponseExtension()));
 
         app.MapPost("/api/water/sell", async context =>
         {
+            bool isAuthenticated = Authentication.IsAuthenticated(context.Request.Headers["Authorization"], out string jwt, out string message);
+            if (!isAuthenticated)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(message);
+                return;
+            }
             context.Response.StatusCode = 200;
             await context.Response.WriteAsync("OK");
         });

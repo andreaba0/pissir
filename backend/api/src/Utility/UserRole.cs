@@ -1,5 +1,5 @@
 namespace Utility {
-    public enum UserRole
+    public enum Role
     {
         WSP,
         FAR,

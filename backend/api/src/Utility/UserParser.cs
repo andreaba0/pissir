@@ -14,19 +14,19 @@ namespace Utility
             }
         }
 
-        public static UserRole getRole(User user)
+        public static Role getRole(User user)
         {
             if (user.role == "WSP")
             {
-                return UserRole.WSP;
+                return Role.WSP;
             }
             else if (user.role == "FAR")
             {
-                return UserRole.FAR;
+                return Role.FAR;
             }
             else
             {
-                return UserRole.UNKNOW;
+                return Role.UNKNOW;
             }
         }
     }

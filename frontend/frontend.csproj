@@ -6,10 +6,30 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent"
-        Inputs="Styles\app.pcss"
-        Outputs="wwwroot\css\app.min.css">
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Inputs="Styles\app.pcss" Outputs="wwwroot\css\app.min.css">
     <Exec Command="npm run build" />
   </Target>
+
+  <ItemGroup>
+    <Compile Remove="Pages\Shared\_Layout.cshtml.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Styles\app.min.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\media\images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Pages\Shared\_Layout.cshtml.cs" />
+    <None Include="wwwroot\css\index.css" />
+    <None Include="wwwroot\css\layout.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
 
 </Project>

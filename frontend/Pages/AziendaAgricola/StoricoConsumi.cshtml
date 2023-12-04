@@ -1,0 +1,43 @@
+﻿@page
+@model frontend.Pages.AziendaAgricola.StoricoConsumiModel
+@{
+    ViewData["Page"] = "Storico Consumi";
+}
+<link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
+
+<div style="margin: 1em;">
+    <h4>Storico consumi</h4>
+    <small>• Viene visualizzato tutto lo storico dei consumi idrici dell'azienda agricola.</small>
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+    <table id="tabStoricoConsumi" class="table">
+        <thead>
+            <tr>
+                <th>Campo</th>
+                <th>Data</th>
+                <th>Litri Consumati</th>
+                <th>Quantità Prenotata</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.StoricoConsumi!=null)
+            {
+                @foreach (var consumo in Model.StoricoConsumi)
+                {
+                    <tr>
+                        <td>@consumo.Campo</td>
+                        <td>@consumo.Data</td>
+                        <td>@consumo.LitriConsumati</td>
+                        <td>@consumo.QuantitaPrenotata</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <label>Nessun consumo presente</label><br />
+            }
+            
+
+        </tbody>
+    </table>
+</div>

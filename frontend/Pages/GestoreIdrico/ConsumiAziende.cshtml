@@ -1,0 +1,46 @@
+﻿@page
+@model frontend.Pages.GestoreIdrico.ConsumiAziendeModel
+@{
+    ViewData["Page"] = "Consumi Aziende";
+}
+<link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
+
+<div style="margin: 1em;">
+    <h4>Consumi aziende</h4>
+    <small>• Vengono visualizzati tutti i consumi idrici delle aziende agricole a cui si è venduto l'acqua.</small>
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+    <table id="tabConsumiAziende" class="table">
+        <thead>
+            <tr>
+                <th>Partita IVA</th>
+                <th>Campo</th>
+                <th>Data</th>
+                <th>Litri Consumati</th>
+                <th>Quantità Prenotata</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.consumiAziende != null)
+            {
+                @foreach (var consumo in Model.consumiAziende)
+                {
+                    <tr>
+                        <td>@consumo.PartitaIva</td>
+                        <td>@consumo.Campo</td>
+                        <td>@consumo.Data</td>
+                        <td>@consumo.LitriConsumati</td>
+                        <td>@consumo.QuantitaPrenotata</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <label>Nessun consumo presente</label>
+                <br />
+            }
+
+
+        </tbody>
+    </table>
+</div>

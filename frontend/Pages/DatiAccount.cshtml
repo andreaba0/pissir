@@ -1,0 +1,46 @@
+﻿@page
+@model frontend.Pages.DatiAccountModel
+@{
+    ViewData["Page"] = "Dati Account";
+}
+
+<div style="margin: 1em;">
+    <h4>Dati account</h4>
+    <small>• Vengono visualizzati i dati sul profilo utente e sull'azienda di cui ne fa parte.</small>
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+    <h6>Informazioni utente</h6>
+    <ul>
+        <li><strong>Codice Fiscale:</strong> @ApiReq.utente.CodiceFiscale</li>
+        <li><strong>Nome:</strong> @ApiReq.utente.Nome</li>
+        <li><strong>Cognome:</strong> @ApiReq.utente.Cognome</li>
+        <li><strong>Ruolo:</strong> @ApiReq.utente.Role</li>
+    </ul>
+
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+    <h6>Informazioni azienda</h6>
+    <ul>
+        <li><strong>Partita Iva:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.PartitaIva : Model.aziendaAgricola?.PartitaIva)</li>
+        <li><strong>Nome azienda:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Nome : Model.aziendaAgricola?.Nome)</li>
+        <li><strong>Indirizzo:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Indirizzo : Model.aziendaAgricola?.Indirizzo)</li>
+        <li><strong>Telefono:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Telefono : Model.aziendaAgricola?.Telefono)</li>
+        <li><strong>Email:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Email : Model.aziendaAgricola?.Email)</li>
+        <li><strong>Categoria:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Categoria : Model.aziendaAgricola?.Categoria)</li>
+        @if (ApiReq.utente.Role == "GSI")
+        {
+            <li><strong>Limite Erogazione Globale:</strong> @Model.aziendaIdrica?.LimiteErogazioneGlobale</li>
+        }
+        else
+        {
+            <li><strong>Limite Acquisto Aziendale:</strong> @Model.aziendaAgricola?.LimiteAcquistoAziendale</li>
+        }
+    </ul>
+
+    <br />
+    <form class="logout-form" method="post" asp-page-handler="Logout">
+        <button type="submit">Logout</button>
+    </form>
+
+</div>
+

@@ -6,6 +6,7 @@ namespace Module.JsonWebToken;
 
 public class JwtKeyStore : IJwtKeyStore
 {
+    private readonly object keysLock = new object();
     private Dictionary<string, RsaSecurityKey> keys = new Dictionary<string, RsaSecurityKey>();
     private DateTime expiration;
     private IClockCustom _clock;
@@ -33,7 +34,10 @@ public class JwtKeyStore : IJwtKeyStore
 
     public void SetKey(string id, RsaSecurityKey key)
     {
-        keys[id] = key;
+        lock (keysLock)
+        {
+            keys[id] = key;
+        }
     }
 
     public RsaSecurityKey GetKey(string id)

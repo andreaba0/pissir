@@ -42,12 +42,7 @@ public static class Authentication
 
     public static bool CheckTokenClaim(ClaimsPrincipal principal, out string error_message) {
         error_message = string.Empty;
-        foreach (Claim claim in principal.Claims) {
-            Console.WriteLine($"Claim Type: {claim.Type}:\nClaim Value: {claim.Value}");
-            Console.WriteLine($"Value type: {claim.ValueType}");
-            Console.WriteLine($"ToString: {claim.ToString()}");
-        }
-        /*if(principal == null) {
+        if(principal == null) {
             error_message = "Missing claims";
             return false;
         }
@@ -55,10 +50,15 @@ public static class Authentication
             error_message = "Missing role claim";
             return false;
         }
-        if(!principal.HasClaim(c => c.Type == ClaimType.Expiration)) {
-            error_message = "Missing expiration claim";
+        if(!principal.HasClaim(c => c.Type == ClaimTypes.NameIdentifier)) {
+            error_message = "Missing user_id claim";
             return false;
-        }*/
+        }
+        //check if aud field is set
+        if(!principal.HasClaim(c => c.Type == ClaimTypes.Actor)) {
+            error_message = "Missing aud claim";
+            return false;
+        }
         return true;
     }
 

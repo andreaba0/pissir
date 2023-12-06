@@ -34,11 +34,17 @@ public class JwtControl
 
     internal bool LifetimeValidator(DateTime? notBefore, DateTime? expires, SecurityToken securityToken, TokenValidationParameters validationParameters)
     {
-        if(expires is null) return false;
+        if (expires is null) return false;
         return _clockCustom.UtcNow() < expires;
     }
 
-    internal int ReturnMaxAgeFromHeader(HttpResponseHeaders response) {
+    internal bool ValidateAudience(IEnumerable<string> audiences, SecurityToken securityToken, TokenValidationParameters validationParameters)
+    {
+        return true;
+    }
+
+    internal int ReturnMaxAgeFromHeader(HttpResponseHeaders response)
+    {
         string cacheControl = response.GetValues("Cache-Control").FirstOrDefault();
         Regex regex = new Regex(@"/max\-age\=[0-9]+/s");
 
@@ -63,7 +69,8 @@ public class JwtControl
         int maxAge = ReturnMaxAgeFromHeader(response.Headers);
         JwksResponse jwksData = JsonSerializer.Deserialize<JwksResponse>(responseString);
         _jwtKeyStore.dropKeys();
-        foreach(JsonWebKey jwksKey in jwksData.keys) {
+        foreach (JsonWebKey jwksKey in jwksData.keys)
+        {
             _jwtKeyStore.SetKey(jwksKey.Kid, new RsaSecurityKey(new RSAParameters
             {
                 Exponent = Base64UrlEncoder.DecodeBytes(jwksKey.E),
@@ -74,19 +81,18 @@ public class JwtControl
         return true;
     }
 
-    public async Task<Tuple<bool, ClaimsPrincipal>> GetClaims(string token)
+    public bool GetClaims(string token, out ClaimsPrincipal principal, out string error_message)
     {
-        if (_jwtKeyStore.isExpired())
-        {
-            bool hasUpdated = await this.updateKeys();
-            if (!hasUpdated) return new Tuple<bool, ClaimsPrincipal>(false, null);
-        }
-        //get kid from token
+        principal = null;
+        error_message = string.Empty;
         var handler = new JwtSecurityTokenHandler();
         var tokenS = handler.ReadJwtToken(token);
         string kid = tokenS.Header.Kid;
         RsaSecurityKey key = _jwtKeyStore.GetKey(kid);
-        if (key == null) return new Tuple<bool, ClaimsPrincipal>(false, null);
+        if (key == null) {
+            error_message = "Key not found";
+            return false;
+        }
         var validationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -94,17 +100,40 @@ public class JwtControl
             ValidateIssuer = false,
             ValidateAudience = false,
             ValidateLifetime = true,
-            LifetimeValidator = this.LifetimeValidator
+            LifetimeValidator = this.LifetimeValidator,
+            RequireExpirationTime = true
         };
         try
         {
             var hnd = new JwtSecurityTokenHandler();
-            ClaimsPrincipal principal = hnd.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
-            return new Tuple<bool, ClaimsPrincipal>(true, principal);       
+            ClaimsPrincipal prn = hnd.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+            principal = prn;
+            return true;
+        }
+        catch (SecurityTokenExpiredException ex)
+        {
+            error_message = "Token expired";
+            return false;
+        }
+        catch (SecurityTokenInvalidLifetimeException ex)
+        {
+            error_message = "Invalid lifetime";
+            return false;
+        }
+        catch (SecurityTokenInvalidSignatureException ex)
+        {
+            error_message = "Invalid signature";
+            return false;
+        }
+        catch (NotSupportedException ex)
+        {
+            error_message = "Not supported";
+            return false;
         }
         catch (Exception ex)
         {
-            return new Tuple<bool, ClaimsPrincipal>(false, null);
+            error_message = "Generic error";
+            return false;
         }
     }
 }

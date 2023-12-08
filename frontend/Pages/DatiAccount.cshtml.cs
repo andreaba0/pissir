@@ -41,7 +41,6 @@ namespace frontend.Pages
 
 
             // Simulazione dati
-            ApiReq.utente = GetSimulatedUserData();
             if (ApiReq.utente.Role == "GSI")
                 aziendaIdrica = GetSimulatedAziendaIdricaData();
             else
@@ -66,8 +65,6 @@ namespace frontend.Pages
             return RedirectToPage("/auth/SignIn");
         }
 
-
-
         // Controllo utente autenticato
         private bool IsUserAuth()
         {
@@ -78,21 +75,7 @@ namespace frontend.Pages
             return true;
         }
 
-
-        // ----- SIMULAZIONE DATI ------
-        // Simula i dati di un utente
-        private Utente GetSimulatedUserData()
-        {
-            return new Utente
-            {
-                CodiceFiscale = "ABC123XYZ4567890",
-                Nome = "Mario",
-                Cognome = "Rossi",
-                Role = "GSI" //GSI / GAA
-            };
-        }
-
-
+     
         // Simula i dati di un'azienda agricola
         private AziendaAgricolaModel GetSimulatedAziendaAgricolaData()
         {

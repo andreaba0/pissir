@@ -1,5 +1,5 @@
 ﻿@page
-@model frontend.Pages.AziendaAgricola.GestioneColtureModel
+@model GestioneColtureModel
 @{
     ViewData["Page"] = "Gestione Colture";
 }
@@ -9,42 +9,50 @@
 <div style="margin: 1em;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h4>Gestione colture</h4>
-        <button class="btn btn-primary" data-toggle="modal" data-target="#modalNuovaColtura">Aggiungi Coltura</button>
+        @if (ApiReq.utente.Role == "GSI")
+        {
+            <button class="btn btn-primary" data-toggle="modal" data-target="#modalNuovaColtura">Aggiungi Coltura</button>
+        }
     </div>
     <small>• Vengono visualizzati tutti le coltivazioni dell'azienda agricola, con possibilità di aggiunta, modifica ed eliminazione.</small>
 
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
-    <!-- Modale per l'aggiunta di una nuova coltura -->
-    <div id="modalNuovaColtura" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalNuovaColtura" data-backdrop="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalNuovaColturaLabel">Aggiungi Nuova Coltura</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form method="post" asp-page-handler="AggiungiColtura">
-                        <div class="form-group">
-                            <label for="metriQuadrati">Metri Quadrati</label>
-                            <input type="number" class="form-control" id="metriQuadrati" name="metriQuadrati" step="0.01" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="tipoColtura">Tipo Coltura</label>
-                            <input type="text" class="form-control" id="tipoColtura" name="tipoColtura" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="tipoIrrigazione">Tipo Irrigazione</label>
-                            <input type="text" class="form-control" id="tipoIrrigazione" name="tipoIrrigazione" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Conferma</button>
-                    </form>
+    @if (ApiReq.utente.Role == "GSI")
+    {
+        <!-- Modale per l'aggiunta di una nuova coltura -->
+        <div id="modalNuovaColtura" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalNuovaColtura" data-backdrop="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalNuovaColturaLabel">Aggiungi Nuova Coltura</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="post" asp-page-handler="AggiungiColtura">
+                            <div class="form-group">
+                                <label for="metriQuadrati">Metri Quadrati</label>
+                                <input type="number" class="form-control" id="metriQuadrati" name="metriQuadrati" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="tipoColtura">Tipo Coltura</label>
+                                <input type="text" class="form-control" id="tipoColtura" name="tipoColtura" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="tipoIrrigazione">Tipo Irrigazione</label>
+                                <input type="text" class="form-control" id="tipoIrrigazione" name="tipoIrrigazione" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Conferma</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
+
+    
 
     @if (TempData.ContainsKey("Messaggio"))
     {
@@ -84,8 +92,11 @@
                         <td>@coltura.TipoIrrigazione</td>
                         <td>
                             <button class="btn btn-primary" data-toggle="modal" data-target="#modalModifica\@coltura.Id">Modifica Parametri</button>
-                            <button class="btn btn-danger" data-toggle="modal" data-target="#modalElimina\@coltura.Id">Elimina</button>
 
+                            @if (ApiReq.utente.Role == "GSI")
+                            {
+                                <button class="btn btn-danger" data-toggle="modal" data-target="#modalElimina\@coltura.Id">Elimina</button>
+                            }
                         </td>
                     </tr>
 
@@ -121,27 +132,31 @@
                         </div>
                     </div>
 
-                    <!-- Modale per la conferma eliminazione -->
-                    <div id="modalElimina\@coltura.Id" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalConfermaEliminazione\@coltura.Id" aria-hidden="true" data-backdrop="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="ModalElimina\@coltura.Id">Eliminazione Coltura #@coltura.Id</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
-                                    <form method="post" asp-page-handler="EliminaColtura">
-                                        <input type="hidden" id="colturaId" name="colturaId" value="@coltura.Id" readonly />
-                                        <p>Sei sicuro di voler eliminare la coltura #@coltura.Id?</p>
-                                        <button type="submit" class="btn btn-danger">Elimina</button>
-                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annulla</button>
-                                    </form>
+                    @if (ApiReq.utente.Role == "GSI")
+                    {
+                        <!-- Modale per la conferma eliminazione -->
+                        <div id="modalElimina\@coltura.Id" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalConfermaEliminazione\@coltura.Id" aria-hidden="true" data-backdrop="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="ModalElimina\@coltura.Id">Eliminazione Coltura #@coltura.Id</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form method="post" asp-page-handler="EliminaColtura">
+                                            <input type="hidden" id="colturaId" name="colturaId" value="@coltura.Id" readonly />
+                                            <p>Sei sicuro di voler eliminare la coltura #@coltura.Id?</p>
+                                            <button type="submit" class="btn btn-danger">Elimina</button>
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    }
+                    
                 }
             }
 

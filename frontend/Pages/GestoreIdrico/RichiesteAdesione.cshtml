@@ -1,0 +1,110 @@
+﻿@page
+@model frontend.Pages.GestoreIdrico.RichiesteAdesioneModel
+@{
+    ViewData["Page"] = "Richieste Adesione";
+}
+
+<link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
+
+<div style="margin: 1em;">
+    <h4>Richieste Adesione</h4>
+    <small>• Elenco delle richieste di adesione per utenti e aziende agricole.</small>
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+    @if (TempData.ContainsKey("Messaggio"))
+    {
+        <div class="alert alert-info" role="alert">
+            @TempData["Messaggio"]
+        </div>
+    }
+
+    @if (TempData.ContainsKey("MessaggioErrore"))
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["MessaggioErrore"]
+        </div>
+    }
+
+
+    <h5>Richieste di adesione - Utenti</h5>
+    @if (Model.RichiesteUtenti == null || Model.RichiesteUtenti.Count == 0)
+    {
+        <label>Nessuna richiesta in attesa.</label>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Codice Fiscale</th>
+                    <th>Nome</th>
+                    <th>Cognome</th>
+                    <th>Partita Iva Azienda</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var utente in Model.RichiesteUtenti)
+                {
+                    <tr>
+                        <td>@utente.CodiceFiscale</td>
+                        <td>@utente.Nome</td>
+                        <td>@utente.Cognome</td>
+                        <td>@utente.PartitaIva</td>
+                        <td>
+                            <form method="post" asp-page-handler="ConfermaUtente">
+                                <input type="hidden" class="form-control" id="codiceFiscale" name="codiceFiscale" value="@utente.CodiceFiscale" readonly>
+                                <button type="submit" class="btn btn-primary">Conferma Registrazione</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    
+
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+    <h5>Richieste di adesione - Aziende Agricole</h5>
+    @if (Model.RichiesteAziendeAgricole == null || Model.RichiesteAziendeAgricole.Count == 0)
+    {
+        <label>Nessuna richiesta in attesa.</label>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Partita Iva</th>
+                    <th>Nome</th>
+                    <th>Indirizzo</th>
+                    <th>Telefono</th>
+                    <th>Email</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var aziende in Model.RichiesteAziendeAgricole)
+                {
+                    <tr>
+                        <td>@aziende.PartitaIva</td>
+                        <td>@aziende.Nome</td>
+                        <td>@aziende.Indirizzo</td>
+                        <td>@aziende.Telefono</td>
+                        <td>@aziende.Email</td>
+                        <td>
+                            <form method="post" asp-page-handler="ConfermaAzienda">
+                                <input type="hidden" class="form-control" id="partitaIva" name="partitaIva" value="@aziende.PartitaIva" readonly>
+                                <button type="submit" class="btn btn-primary">Conferma Registrazione</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    
+
+
+</div>

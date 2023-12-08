@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
 
-namespace frontend.Pages.AziendaAgricola
+namespace frontend.Pages
 {
     public class GestioneColtureModel : PageModel
     {

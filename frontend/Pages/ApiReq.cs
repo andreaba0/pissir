@@ -13,6 +13,25 @@ namespace frontend.Pages
         public static HttpClient httpClient = new();
         public static Utente? utente { get; set; }
 
+        //Costruttore statico per testare
+        static ApiReq()
+        {
+            utente = GetSimulatedUserData();
+
+        }
+
+        // Simula i dati di un utente
+        private static Utente GetSimulatedUserData()
+        {
+            return new Utente
+            {
+                CodiceFiscale = "ABC123XYZ4567890",
+                Nome = "Mario",
+                Cognome = "Rossi",
+                Role = "GSI" //GSI / GAA
+            };
+        }
+
         // Metodi richieste API
 
         // Richiesta dati utente
@@ -384,6 +403,59 @@ namespace frontend.Pages
             }
         }
 
+        // Richiesta dati sulle richieste di adesione per gli utenti
+        public static async Task<List<Utente>> GetRichiesteUtentiFromApi()
+        {
+            string urlTask = urlGenerico + "aziendaIdrica/richiesteUtenti/";
+
+            // Puoi impostare eventuali intestazioni necessarie qui
+            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+
+            // Esegue la chiamata POST
+            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Legge e deserializza i dati dalla risposta
+                string responseData = await response.Content.ReadAsStringAsync();
+                List<Utente> listaUtenti = JsonConvert.DeserializeObject<List<Utente>>(responseData);
+                if (listaUtenti != null)
+                    return listaUtenti;
+                else
+                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaUtenti = null");
+            }
+            else
+            {
+                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+            }
+        }
+
+        // Richiesta dati sulle richieste di adesione per le aziende agricole
+        public static async Task<List<AziendaAgricolaModel>> GetRichiesteAziendeAgricoleFromApi()
+        {
+            string urlTask = urlGenerico + "aziendaIdrica/richiesteAziendeAgricole/";
+
+            // Puoi impostare eventuali intestazioni necessarie qui
+            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+
+            // Esegue la chiamata POST
+            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Legge e deserializza i dati dalla risposta
+                string responseData = await response.Content.ReadAsStringAsync();
+                List<AziendaAgricolaModel> listaAziende = JsonConvert.DeserializeObject<List<AziendaAgricolaModel>>(responseData);
+                if (listaAziende != null)
+                    return listaAziende;
+                else
+                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaAziende = null");
+            }
+            else
+            {
+                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+            }
+        }
 
         // Richiesta dati per limiti di vendita per ogni azienda agricola in base alla azienda idrica
         public static async Task<List<LimiteAcquistoAzienda>> GetLimitiPerAziendaFromApi(string partitaIva)

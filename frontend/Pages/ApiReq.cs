@@ -13,11 +13,10 @@ namespace frontend.Pages
         public static HttpClient httpClient = new();
         public static Utente? utente { get; set; }
 
-        //Costruttore statico per testare
+        //Costruttore statico con utente statico
         static ApiReq()
         {
             utente = GetSimulatedUserData();
-
         }
 
         // Simula i dati di un utente
@@ -31,6 +30,8 @@ namespace frontend.Pages
                 Role = "GSI" //GSI / GAA
             };
         }
+
+
 
         // Metodi richieste API
 

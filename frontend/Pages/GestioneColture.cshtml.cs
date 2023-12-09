@@ -43,7 +43,7 @@ namespace frontend.Pages
 
 
         // Chiamata API per aggiunta coltura
-        public async Task<IActionResult> OnPostAggiungiColtura(string metriQuadrati, string tipoColtura, string tipoIrrigazione)
+        public async Task<IActionResult> OnPostAggiungiColtura(string partitaIva, string metriQuadrati, string tipoColtura, string tipoIrrigazione)
         {
             string urlTask = ApiReq.urlGenerico + "aziendaAgricola/coltura";
 
@@ -54,7 +54,7 @@ namespace frontend.Pages
             // Creare il corpo della richiesta
             var requestBody = new
             {
-                PartitaIva = ApiReq.utente.PartitaIva,
+                PartitaIva = partitaIva,
                 MetriQuadrati = metriQuadrati,
                 TipoColtura = tipoColtura,
                 TipoIrrigazione = tipoIrrigazione
@@ -68,7 +68,7 @@ namespace frontend.Pages
             if (response.IsSuccessStatusCode)
             {
                 // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Aggiunta della coltura effettuata con successo!";
+                TempData["Messaggio"] = "Aggiunta della coltura per l'azienda P.Iva "+ partitaIva +" effettuata con successo!";
             }
             else
             {
@@ -76,6 +76,7 @@ namespace frontend.Pages
                 TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova più tardi.";
             }
             */
+
             TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova più tardi.";
 
             return RedirectToPage();

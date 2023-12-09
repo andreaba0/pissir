@@ -198,6 +198,35 @@ namespace frontend.Pages
         }
 
 
+        // Richiesta dati dello storico ordini d'acqua
+        public static async Task<List<OrdineAcquisto>> GetStoricoOrdiniFromApi(string partitaIva)
+        {
+            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/ordini/"+partitaIva;
+
+            // Puoi impostare eventuali intestazioni necessarie qui
+            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+
+            // Esegue la chiamata POST
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Legge e deserializza i dati dalla risposta
+                string responseData = await response.Content.ReadAsStringAsync();
+                List<OrdineAcquisto> listaOrdini = JsonConvert.DeserializeObject<List<OrdineAcquisto>>(responseData);
+                if (listaOrdini != null)
+                    return listaOrdini;
+                else
+                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaOrdini = null");
+            }
+            else
+            {
+                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+            }
+        }
+
+
+
         // Richiesta dati sui consumi delle colture possedute dall'azienda
         public static async Task<List<ConsumoAziendaleCampo>> GetStoricoConsumiFromApi(string partitaIva)
         {

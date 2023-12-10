@@ -1,3 +1,6 @@
+using System;
+using System.Text.RegularExpressions;
+
 namespace MQTTConcurrent;
 
 public class ConnectionData
@@ -7,7 +10,7 @@ public class ConnectionData
     public string username { get; set; }
     public string password { get; set; }
     public int poolSize { get; set; }
-    public static struct defaultValue {
+    public struct defaultValue {
         public const string host = "localhost";
         public const int port = 1883;
         public const int poolSize = 4;
@@ -29,7 +32,7 @@ public class ConnectionData
         Match matchPort = regexPort.Match(connectionString);
         if (matchPort.Success)
         {
-            cData.port = int.Parse(matchPort.Groups["port"].Value) ?? defaultValue.port;
+            if(!int.TryParse(matchPort.Groups["port"].Value, out port))
         }
         Match matchUsername = regexUsername.Match(connectionString);
         if (matchUsername.Success)
@@ -44,7 +47,8 @@ public class ConnectionData
         Match matchPoolSize = regexPoolSize.Match(connectionString);
         if (matchPoolSize.Success)
         {
-            cData.poolSize = int.Parse(matchPoolSize.Groups["poolSize"].Value) ?? defaultValue.poolSize;
+            if(!int.TryParse(matchPoolSize.Groups["poolSize"].Value, out cData.poolSize))
+                cData.poolSize = defaultValue.poolSize;
         }
         return cData;
     }

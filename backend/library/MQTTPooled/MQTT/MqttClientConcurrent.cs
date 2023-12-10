@@ -1,22 +1,26 @@
 using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Extensions.ManagedClient;
+using System;
+using System.Threading;
+using System.Threading.Channels;
 
 namespace MQTTConcurrent;
 
-public class MqttClientConcurrent : IMQTTnetConcurrent
+public class MqttClientConcurrent
 {
     private readonly IManagedMqttClient mqttClient;
     private readonly ConnectionData cData;
     private Channel<string> sendChannel;
     private Channel<string> receiveChannel;
-    public MqttClientConcurrent(ref readonly ConnectionData cData)
+    public MqttClientConcurrent(ConnectionData cData)
     {
         this.mqttClient = new MqttFactory().CreateManagedMqttClient();
         this.cData = cData;
     }
 
 #if TEST
-    public MqttClientConcurrent( ref readonly ConnectionData cData, IManagedMqttClient mqttClient ) {
+    public MqttClientConcurrent(ConnectionData cData, IManagedMqttClient mqttClient ) {
         this.mqttClient = mqttClient;
         this.cData = cData;
     }

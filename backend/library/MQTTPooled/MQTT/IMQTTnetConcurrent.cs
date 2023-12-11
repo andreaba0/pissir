@@ -6,7 +6,7 @@ namespace MQTTConcurrent;
 public interface IMQTTnetConcurrent
 {
     public Task RunAsync();
-    public void PublishQueue(string topic, string message);
-    public void SubscribeQueue(string topic, Channel<MqttChannelMessage> channel);
-    public void UnsubscribeQueue(string topic);
+    public Task PublishQueue(string topic, string message);
+    public Task SubscribeQueue(string topic, Channel<MqttChannelMessage> channel);
+    public Task UnsubscribeQueue(string topic);
 }

@@ -10,10 +10,13 @@ public class ConnectionData
     public string username { get; set; }
     public string password { get; set; }
     public int poolSize { get; set; }
-    public struct defaultValue {
-        public const string host = "localhost";
-        public const int port = 1883;
-        public const int poolSize = 4;
+
+    public ConnectionData() {
+        this.host = "localhost";
+        this.port = 1883;
+        this.username = string.Empty;
+        this.password = string.Empty;
+        this.poolSize = 4;
     }
 
     public static ConnectionData Parse(string connectionString)
@@ -25,14 +28,17 @@ public class ConnectionData
         Regex regexPassword = new Regex(@"password=(?<password>[A-Za-z0-9_]+)");
         Regex regexPoolSize = new Regex(@"poolSize=(?<poolSize>[0-9]{1,3})");
         Match matchHost = regexHost.Match(connectionString);
-        if (matchHost.Success)
+        if (matchHost.Success&&matchHost.Groups["host"].Value!=null)
         {
-            cData.host = matchHost.Groups["host"].Value ?? defaultValue.host;
+            cData.host = matchHost.Groups["host"].Value;
         }
         Match matchPort = regexPort.Match(connectionString);
-        if (matchPort.Success)
+        if (matchPort.Success&&matchPort.Groups["port"].Value!=null)
         {
-            if(!int.TryParse(matchPort.Groups["port"].Value, out port))
+            string port = matchPort.Groups["port"].Value;
+            bool isInt = int.TryParse(port, out int newPort);
+            if(isInt)
+                cData.port = newPort;
         }
         Match matchUsername = regexUsername.Match(connectionString);
         if (matchUsername.Success)
@@ -45,10 +51,11 @@ public class ConnectionData
             cData.password = matchPassword.Groups["password"].Value ?? string.Empty;
         }
         Match matchPoolSize = regexPoolSize.Match(connectionString);
-        if (matchPoolSize.Success)
+        if (matchPoolSize.Success&&matchPoolSize.Groups["poolSize"].Value!=null)
         {
-            if(!int.TryParse(matchPoolSize.Groups["poolSize"].Value, out cData.poolSize))
-                cData.poolSize = defaultValue.poolSize;
+            bool isInt = int.TryParse(matchPoolSize.Groups["poolSize"].Value, out int newSize);
+            if(isInt)
+                cData.poolSize = newSize;
         }
         return cData;
     }

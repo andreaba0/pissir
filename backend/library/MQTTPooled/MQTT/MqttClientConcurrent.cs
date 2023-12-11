@@ -1,6 +1,10 @@
 using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Formatter;
 using MQTTnet.Extensions.ManagedClient;
+using MQTTnet.Protocol;
+using MQTTnet.Server;
+using MQTTnet.Packets;
 using System;
 using System.Threading;
 using System.Threading.Channels;
@@ -11,8 +15,8 @@ public class MqttClientConcurrent
 {
     private readonly IManagedMqttClient mqttClient;
     private readonly ConnectionData cData;
-    private Channel<string> sendChannel;
-    private Channel<string> receiveChannel;
+    private Channel<IMqttChannelBus> sendChannel;
+    private Channel<IMqttChannelBus> receiveChannel;
     public MqttClientConcurrent(ConnectionData cData)
     {
         this.mqttClient = new MqttFactory().CreateManagedMqttClient();
@@ -32,7 +36,7 @@ public class MqttClientConcurrent
             .WithAutoReconnectDelay(TimeSpan.FromSeconds(5))
             .WithClientOptions(new MqttClientOptionsBuilder()
                 .WithTcpServer(cData.host, cData.port)
-                .WithCredentials(cData.username, cData.password)
+                //.WithCredentials(cData.username, cData.password)
                 .WithProtocolVersion(MqttProtocolVersion.V500)
                 .WithCleanSession()
                 .Build())
@@ -41,12 +45,20 @@ public class MqttClientConcurrent
         this.mqttClient.ApplicationMessageReceivedAsync += OnMessageReceivedAsync;
         while (!ct.IsCancellationRequested)
         {
-            string message = await this.receiveChannel.Reader.ReadAsync(ct);
+            IMqttChannelBus message = await this.receiveChannel.Reader.ReadAsync(ct);
+            if(message is Message.MqttChannelSubscribe subscribeMessage) {
+                ProcessTopicSubscription(subscribeMessage);
+            }
         }
         return 0;
     }
 
-    internal Task ProcessTopicSubscription() {
+    internal Task ProcessTopicSubscription(Message.MqttChannelSubscribe message) {
+        List<MqttTopicFilter> topicFilters = new List<MqttTopicFilter>();
+        topicFilters.Add(new MqttTopicFilterBuilder()
+            .WithTopic(message.Topic)
+            .Build());
+        this.mqttClient.SubscribeAsync(topicFilters);
         return Task.CompletedTask;
     }
 

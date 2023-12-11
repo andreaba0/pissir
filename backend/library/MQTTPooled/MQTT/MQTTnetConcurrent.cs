@@ -8,7 +8,7 @@ namespace MQTTConcurrent;
 public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable {
     private readonly ConnectionData cData;
     private Dictionary<string, Channel<MqttChannelMessage>> subscribeChannels;
-    private Channel<string> demuxSendChannel;
+    private Channel<IMqttChannelBus> demuxSendChannel;
     private RoundRobinDispatcher dispatcher;
 
     public MQTTnetConcurrent(string connectionString) {
@@ -37,31 +37,26 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable {
         return Task.CompletedTask;
     }
 
-    public void PublishQueue(string topic, string message) {
+    public async Task PublishQueue(string topic, string message) {
         MqttChannelMessage mqttMessage = new MqttChannelMessage(
             topic, 
-            message, 
-            MqttChannelMessageType.MESSAGE
+            message
         );
-        lock (this.subscribeChannels) {
-            if (this.subscribeChannels.ContainsKey(topic)) {
-                this.subscribeChannels[topic].Send(mqttMessage);
-            }
-        }
+        await this.dispatcher.Push(mqttMessage);
     }
 
-    public void SubscribeQueue(string topic, Channel<MqttChannelMessage> channel) {
+    public async Task SubscribeQueue(string topic, Channel<MqttChannelMessage> channel) {
         lock (this.subscribeChannels) {
             if (this.subscribeChannels.ContainsKey(topic)) {
-                this.subscribeChannels[topic] = channel;
+                throw new MqttConcurrentException("Topic already subscribed");
             } else {
                 this.subscribeChannels.Add(topic, channel);
+                //TODO subscribe to topic in all clients
             }
         }
-        this.dispatcher.Push(topic);
     }
 
-    public void UnsubscribeQueue(string topic) {
+    public async Task UnsubscribeQueue(string topic) {
         throw new NotImplementedException();
     }
 

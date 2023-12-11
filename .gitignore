@@ -10,3 +10,4 @@ frontend/wwwroot/css/
 target/
 key*
 key*.*
+.vscode/

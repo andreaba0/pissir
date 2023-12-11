@@ -1,15 +1,19 @@
 ﻿@page
+@using Newtonsoft.Json
 @model frontend.Pages.AziendaAgricola.StoricoConsumiModel
 @{
     ViewData["Page"] = "Storico Consumi";
 }
 <link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div style="margin: 1em;">
     <h4>Storico consumi</h4>
     <small>• Viene visualizzato tutto lo storico dei consumi idrici dell'azienda agricola.</small>
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
+    <canvas id="consumiChart" height="90"></canvas><br />
+    
     <table id="tabStoricoConsumi" class="table">
         <thead>
             <tr>
@@ -41,3 +45,54 @@
         </tbody>
     </table>
 </div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var consumiData = @Html.Raw(JsonConvert.SerializeObject(Model.StoricoConsumi));
+
+        // Inizializzazione canvas per il grafico
+        var ctx = document.getElementById('consumiChart').getContext('2d');
+
+        // Get campi, litri consumati e prenotati
+        var campi = consumiData.map(function (consumo) {
+            return consumo.Campo;
+        });
+
+        var litriConsumati = consumiData.map(function (consumo) {
+            return consumo.LitriConsumati;
+        });
+
+        var quantitaPrenotata = consumiData.map(function (consumo) {
+            return consumo.QuantitaPrenotata;
+        });
+
+        // Configurazione del grafico
+        var chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: campi,
+                datasets: 
+                [
+                    {
+                        label: 'Quantità Prenotata',
+                        data: quantitaPrenotata,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Litri Consumati',
+                        data: litriConsumati,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                
+            }
+        });
+    });
+</script>

@@ -67,16 +67,16 @@ namespace frontend.Pages.GestoreIdrico
                     PartitaIva = "123456789",
                     Campo = "Campo1",
                     Data = "2023-01-01",
-                    LitriConsumati = 100.5f,
-                    QuantitaPrenotata = 50.2f
+                    LitriConsumati = 145.5f,
+                    QuantitaPrenotata = 150.2f
                 },
                 new ConsumoAziendaleCampo
                 {
                     PartitaIva = "344535334",
                     Campo = "Campo2",
                     Data = "2023-02-15",
-                    LitriConsumati = 75.2f,
-                    QuantitaPrenotata = 30.0f
+                    LitriConsumati = 95.2f,
+                    QuantitaPrenotata = 130.0f
                 },
                 new ConsumoAziendaleCampo
                 {
@@ -84,14 +84,14 @@ namespace frontend.Pages.GestoreIdrico
                     Campo = "Campo3",
                     Data = "2023-03-20",
                     LitriConsumati = 120.8f,
-                    QuantitaPrenotata = 60.1f
+                    QuantitaPrenotata = 160.1f
                 },
                 new ConsumoAziendaleCampo
                 {
                     PartitaIva = "246378676",
                     Campo = "Campo4",
                     Data = "2023-04-10",
-                    LitriConsumati = 90.0f,
+                    LitriConsumati = 40.0f,
                     QuantitaPrenotata = 45.5f
                 }
             };

@@ -66,7 +66,7 @@ namespace frontend.Pages.AziendaAgricola
                     Campo = "Campo1",
                     Data = "2023-01-01",
                     LitriConsumati = 100.5f,
-                    QuantitaPrenotata = 50.2f
+                    QuantitaPrenotata = 150.2f
                 },
                 new ConsumoAziendaleCampo
                 {
@@ -74,7 +74,7 @@ namespace frontend.Pages.AziendaAgricola
                     Campo = "Campo2",
                     Data = "2023-02-15",
                     LitriConsumati = 75.2f,
-                    QuantitaPrenotata = 30.0f
+                    QuantitaPrenotata = 130.0f
                 },
                 new ConsumoAziendaleCampo
                 {
@@ -82,7 +82,7 @@ namespace frontend.Pages.AziendaAgricola
                     Campo = "Campo3",
                     Data = "2023-03-20",
                     LitriConsumati = 120.8f,
-                    QuantitaPrenotata = 60.1f
+                    QuantitaPrenotata = 130.1f
                 },
                 new ConsumoAziendaleCampo
                 {
@@ -90,6 +90,22 @@ namespace frontend.Pages.AziendaAgricola
                     Campo = "Campo4",
                     Data = "2023-04-10",
                     LitriConsumati = 90.0f,
+                    QuantitaPrenotata = 90.5f
+                },
+                new ConsumoAziendaleCampo
+                {
+                    PartitaIva = "123456789",
+                    Campo = "Campo5",
+                    Data = "2023-04-10",
+                    LitriConsumati = 10.0f,
+                    QuantitaPrenotata = 45.5f
+                },
+                new ConsumoAziendaleCampo
+                {
+                    PartitaIva = "123456789",
+                    Campo = "Campo6",
+                    Data = "2023-04-10",
+                    LitriConsumati = 30.2f,
                     QuantitaPrenotata = 45.5f
                 }
             };

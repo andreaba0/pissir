@@ -5,65 +5,67 @@
     Layout = null;
 
     string[,] providers = new string[,] {
-{"Google", "fa-google", "https://accounts.google.com/o/oauth2/auth"},
-{"Facebook", "fa-facebook", "https://www.facebook.com/v12.0/dialog/oauth"},
-{"Github", "fa-github", "https://github.com/login/oauth/authorize"},
-{"DigitalOcean", "fa-digital-ocean", "https://cloud.digitalocean.com/v1/oauth/authorize"}
-};
+        {"Google", "fa-google", "https://accounts.google.com/o/oauth2/auth"},
+        {"Facebook", "fa-facebook", "https://www.facebook.com/v12.0/dialog/oauth"},
+        {"Github", "fa-github", "https://github.com/login/oauth/authorize"},
+        {"DigitalOcean", "fa-digital-ocean", "https://cloud.digitalocean.com/v1/oauth/authorize"}
+    };
 }
 
 <!DOCTYPE html>
 <html>
 
 <head>
-    <title>Signin</title>
+    <title>Registrazione Utente</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="~/css/app.min.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/frontend.styles.css" asp-append-version="true" />
-    <script src="https://kit.fontawesome.com/49ec009d21.js" crossorigin="anonymous"></script>
-    <style type="text/css">
-        a {
-            text-decoration: none;
-        }
 
-        a:hover {
-            text-decoration: none;
-        }
-    </style>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <!-- jQuery, Popper.js, and Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/index.css" asp-append-version="true" />
+
+    <script src="https://kit.fontawesome.com/49ec009d21.js" crossorigin="anonymous"></script>
 </head>
 
-<body class="bg-slate-100">
-    <div class="w-screen flex flex-col items-center justify-center">
-        <div class="w-full flex items-center justify-center py-9 max-w-xl font-thin text-3xl text-gray-800">
-            Servizio idrico integrato @Model.ClientId
-        </div>
-        <div class="flex w-full flex-col max-w-3xl items-center justify-center bg-white py-6 space-y-8">
-            <div class="font-medium text-4xl text-gray-800">
-                Scegli un provider
-            </div>
+<body class="center-container">
+
+    <h3>Accedi/Registrati al Servizio Idrico </h3>
+
+    <div class="center-content">
+
+        <h4>Scegli un provider</h4>
+        <hr style="margin-top: 0.5em; margin-bottom: 1.5em;">
+
+        <div class="row justify-content-center">
             @for (var i = 0; i < providers.GetLength(0); i++)
             {
-                <a class="block w-72 h-14" href="@providers[i, 2]">
-                    <div
-                        class="flex w-full h-full text-gray-800 border-gray-600 cursor-pointer rounded-md border-[1px] font-medium">
-                        <div class="w-14 h-full flex items-center justify-center">
-                            <i class="fa-brands fa-lg @providers[i, 1]"></i>
+                    <a class="link-login" style="text-decoration:none;" href="@providers[i, 2]">
+                        <div class="provider-box">
+                            <div>
+                                <i class="fa-brands fa-lg @providers[i, 1]"></i>
+                            </div>
+                            Accedi con<br /> @providers[i, 0]
                         </div>
-                        <div class="w-full flex items-center justify-center flex-grow text-center">
-                            Accedi con @providers[i, 0]
-                        </div>
-                    </div>
-                </a>
+                    </a>
+                
             }
-            <div class="w-full max-w-sm text-sm font-medium text-gray-800 text-center">
-                Pagina di accesso per amministratori ed utenti semplici.<br />
-                I provider non sono intercambiabili.<br />
-                Accedere con un provider diverso comporter&agrave; la creazione di un nuovo account.<br />
-                Se si &egrave; gi&agrave; registrati, accedere con lo stesso provider.
-            </div>
         </div>
+        <br /><br />
+        <p>
+            <b>NOTA:</b> I provider non possono essere scambiati; utilizzarne uno diverso implica la creazione di un nuovo account.
+            Se sei già registrato, accedi con lo stesso provider.
+            <a href="/auth/SignToFarm">Shortcut temp</a>
+
+        </p>
     </div>
 </body>
+
 
 </html>

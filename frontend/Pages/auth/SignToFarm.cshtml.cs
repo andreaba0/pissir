@@ -1,17 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace frontend.Pages.auth
 {
     public class SignToFarmModel : PageModel
     {
-        private readonly IConfiguration _configuration;
-
-        public SignToFarmModel(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
         public string CodiceFiscale { get; set; }
         public string NomeUtente { get; set; }
         public string CognomeUtente { get; set; }
@@ -25,13 +20,52 @@ namespace frontend.Pages.auth
             CognomeUtente = "Rossi";
         }
 
-        public IActionResult OnPostIscriviti(string partitaIva)
+        public async Task<IActionResult> OnPostIscriviti(string codiceFiscale, string partitaIva)
         {
-            // Qui puoi gestire la logica di iscrizione dell'utente all'azienda con la Partita IVA fornita
-            // Potresti chiamare un'API o eseguire altre operazioni di backend
+            string urlTask = ApiReq.urlGenerico + "registrazione/";
 
-            // Dopo l'iscrizione, reindirizza l'utente a una pagina di conferma o a una dashboard
-            return RedirectToPage("/ConfermaIscrizione");
+            /*
+            // L'utente non è autenticato, reindirizzamento sulla pagina di login
+            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+
+            // Creare il corpo della richiesta
+            var requestBody = new
+            {
+                CodiceFiscale = codiceFiscale,
+                PartitaIva = partitaIva
+            };
+            var jsonRequest = JsonConvert.SerializeObject(requestBody);
+            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+            // Esegue la chiamata POST per l'aggiunta della coltura
+            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Imposta un messaggio di successo
+                TempData["Messaggio"] = "Richiesta d'iscrizione all'azienda P.Iva "+ partitaIva +" effettuata con successo!";
+            }
+            else
+            {
+                // Imposta un messaggio di errore
+                TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
+            }
+            */
+            //TempData["Messaggio"] = "Richiesta d'iscrizione all'azienda P.Iva " + partitaIva + " effettuata con successo!";
+            TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
+
+            return RedirectToPage();
+        }
+
+
+        // Controllo utente autenticato
+        private bool IsUserAuth()
+        {
+            if (ApiReq.utente == null || User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

@@ -39,12 +39,27 @@
         
         <label>Inserisci la Partita IVA dell'azienda in cui lavorerai:</label>
         <form method="post" asp-page-handler="Iscriviti" class="form-inline w-100">
-            <input type="text" class="form-control ml-4 mr-1 col-8" name="partitaIva" required />
+            <input type="hidden" id="codiceFiscale" name="codiceFiscale" value="@Model.CodiceFiscale" readonly/>
+            <input type="text" class="form-control ml-4 mr-1 col-8" name="partitaIva" placeholder="Partita Iva" required />
             <button type="submit" class="btn btn-primary col" id="iscrivitiButton">Invia richiesta</button>
         </form>
         <br />
         Oppure <br />
         <a class="link-login" href="/auth/SignFarm">Crea una nuova azienda</a>
+        <br /><br />
+        @if (TempData.ContainsKey("Messaggio"))
+        {
+            <div class="alert alert-info" role="alert">
+                @TempData["Messaggio"]
+            </div>
+        }
+
+        @if (TempData.ContainsKey("MessaggioErrore"))
+        {
+            <div class="alert alert-danger" role="alert">
+                @TempData["MessaggioErrore"]
+            </div>
+        }
     </div>
 </body>
 

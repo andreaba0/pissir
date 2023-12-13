@@ -26,7 +26,6 @@
 </head>
 
 <body class="center-container">
-
     <h3>Registra la tua Azienda Agricola</h3>
 
     <div class="center-content" style="text-align:left;">
@@ -34,29 +33,43 @@
         <form method="post" asp-page-handler="RegistraAzienda">
             <div class="form-group">
                 <label>Partita IVA</label>
-                <input type="text" class="form-control" name="PartitaIva" placeholder="Partita Iva dell'azienda" required />
+                <input type="text" class="form-control" name="PartitaIva" placeholder="Partita Iva dell'azienda" value="@TempData["PartitaIva"]" required @((TempData.ContainsKey("Messaggio")) ? "disabled" : "") />
             </div>
             <div class="form-group">
                 <label>Nome</label>
-                <input type="text" class="form-control" name="Nome" placeholder="Nome dell'azienda" required />
+                <input type="text" class="form-control" name="Nome" placeholder="Nome dell'azienda" value="@TempData["Nome"]" required @((TempData.ContainsKey("Messaggio")) ? "disabled" : "") />
             </div>
             <div class="form-group">
                 <label>Indirizzo</label>
-                <input type="text" class="form-control" name="Indirizzo" placeholder="Indirizzo della sede aziendale" required />
+                <input type="text" class="form-control" name="Indirizzo" placeholder="Indirizzo della sede aziendale" value="@TempData["Indirizzo"]" required @((TempData.ContainsKey("Messaggio")) ? "disabled" : "") />
             </div>
             <div class="form-group">
                 <label>Telefono</label>
-                <input type="text" class="form-control" name="Telefono" placeholder="Contatto telefonico aziendale" required />
+                <input type="text" class="form-control" name="Telefono" placeholder="Contatto telefonico aziendale" value="@TempData["Telefono"]" required @((TempData.ContainsKey("Messaggio")) ? "disabled" : "") />
             </div>
             <div class="form-group">
                 <label>Email</label>
-                <input type="email" class="form-control" name="Email" placeholder="Email aziendale" required />
+                <input type="email" class="form-control" name="Email" placeholder="Email aziendale" value="@TempData["Email"]" required @((TempData.ContainsKey("Messaggio")) ? "disabled" : "") />
             </div>
-            
-            <button type="submit" class="btn btn-primary">Registra Azienda</button>
-        </form>
 
+            <button type="submit" class="btn btn-primary" @((TempData.ContainsKey("Messaggio")) ? "disabled" : "")>Richiedi registrazione</button>
+        </form>
+        <br />
+        @if (TempData.ContainsKey("Messaggio"))
+        {
+            <div class="alert alert-info" role="alert">
+                @TempData["Messaggio"]
+            </div>
+        }
+
+        @if (TempData.ContainsKey("MessaggioErrore"))
+        {
+            <div class="alert alert-danger" role="alert">
+                @TempData["MessaggioErrore"]
+            </div>
+        }
     </div>
 </body>
+
 
 </html>

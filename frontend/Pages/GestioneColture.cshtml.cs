@@ -62,7 +62,7 @@ namespace frontend.Pages
             var jsonRequest = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
-            // Esegue la chiamata POST per l'aggiunta della coltura
+            // Esegue la chiamata PUT per l'aggiunta della coltura
             HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
 
             if (response.IsSuccessStatusCode)
@@ -131,7 +131,7 @@ namespace frontend.Pages
         // Chiamata API per eliminazione coltura
         public async Task<IActionResult> OnPostEliminaColtura(string colturaId)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/coltura?id={colturaId}";
+            string urlTask = $"{ApiReq.urlGenerico}aziendaAgricola/coltura/?IdColtura={Uri.EscapeDataString(colturaId)}";
 
             /*
             // L'utente non è autenticato, reindirizzamento sulla pagina di login

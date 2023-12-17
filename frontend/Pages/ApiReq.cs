@@ -38,24 +38,20 @@ namespace frontend.Pages
         // Richiesta dati utente
         public static async Task<Utente> GetUserDataFromApi(string codFiscale)
         {
-            string urlTask = urlGenerico + "user/";
+            // Stringa interpolata
+            string urlTask = $"{urlGenerico}user/?CodiceFiscale={Uri.EscapeDataString(codFiscale)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { CodiceFiscale = codFiscale };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await httpClient.PostAsync(urlTask, content);
+            // Esegue la chiamata
+            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                Utente userData = JsonConvert.DeserializeObject<Utente>(responseData);
+                Utente? userData = JsonConvert.DeserializeObject<Utente>(responseData);
                 if (userData != null)
                     return userData;
                 else
@@ -70,24 +66,19 @@ namespace frontend.Pages
         // Richiesta dati azienda idrica
         public static async Task<AziendaIdricaModel> GetAziendaIdricaDataFromApi(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/";
+            string urlTask = $"{urlGenerico}aziendaIdrica/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            // Esegue la chiamata
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                AziendaIdricaModel aziendaData = JsonConvert.DeserializeObject<AziendaIdricaModel>(responseData);
+                AziendaIdricaModel? aziendaData = JsonConvert.DeserializeObject<AziendaIdricaModel>(responseData);
                 if (aziendaData != null)
                     return aziendaData;
                 else
@@ -103,24 +94,19 @@ namespace frontend.Pages
         // Richiesta dati azienda agricola
         public static async Task<AziendaAgricolaModel> GetAziendaAgricolaDataFromApi(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/";
+            string urlTask = $"{urlGenerico}aziendaAgricola/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            // Esegue la chiamata
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                AziendaAgricolaModel aziendaData = JsonConvert.DeserializeObject<AziendaAgricolaModel>(responseData);
+                AziendaAgricolaModel? aziendaData = JsonConvert.DeserializeObject<AziendaAgricolaModel>(responseData);
                 if (aziendaData != null)
                     return aziendaData;
                 else
@@ -140,24 +126,19 @@ namespace frontend.Pages
         // Richiesta dati sulle colture possedute dall'azienda
         public static async Task<List<Coltura>> GetColtureAziendaFromApi(string partitaIva)
         {
-            string urlTask = urlGenerico + "aziendaAgricola/colture";
+            string urlTask = $"{urlGenerico}aziendaAgricola/colture/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await httpClient.PostAsync(urlTask, content);
+            // Esegue la chiamata
+            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<Coltura> listaColture = JsonConvert.DeserializeObject<List<Coltura>>(responseData);
+                List<Coltura>? listaColture = JsonConvert.DeserializeObject<List<Coltura>>(responseData);
                 if (listaColture != null)
                     return listaColture;
                 else
@@ -172,20 +153,19 @@ namespace frontend.Pages
         // Richiesta dati sulla lista di offerte delle aziende idriche
         public static async Task<List<Offerta>> GetOfferteIdricheFromApi()
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/offerteIdriche";
+            string urlTask = $"{urlGenerico}aziendaAgricola/offerteIdriche";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-
-            // Esegue la chiamata POST
+            // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<Offerta> listaOfferte = JsonConvert.DeserializeObject<List<Offerta>>(responseData);
+                List<Offerta>? listaOfferte = JsonConvert.DeserializeObject<List<Offerta>>(responseData);
                 if (listaOfferte != null)
                     return listaOfferte;
                 else
@@ -201,19 +181,19 @@ namespace frontend.Pages
         // Richiesta dati dello storico ordini d'acqua
         public static async Task<List<OrdineAcquisto>> GetStoricoOrdiniFromApi(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/ordini/"+partitaIva;
+            string urlTask = $"{urlGenerico}aziendaAgricola/ordini/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Esegue la chiamata POST
+            // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<OrdineAcquisto> listaOrdini = JsonConvert.DeserializeObject<List<OrdineAcquisto>>(responseData);
+                List<OrdineAcquisto>? listaOrdini = JsonConvert.DeserializeObject<List<OrdineAcquisto>>(responseData);
                 if (listaOrdini != null)
                     return listaOrdini;
                 else
@@ -230,24 +210,19 @@ namespace frontend.Pages
         // Richiesta dati sui consumi delle colture possedute dall'azienda
         public static async Task<List<ConsumoAziendaleCampo>> GetStoricoConsumiFromApi(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/consumiColture";
+            string urlTask = $"{urlGenerico}aziendaAgricola/consumiColture/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            // Esegue la chiamata
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<ConsumoAziendaleCampo> listaConsumi = JsonConvert.DeserializeObject<List<ConsumoAziendaleCampo>>(responseData);
+                List<ConsumoAziendaleCampo>? listaConsumi = JsonConvert.DeserializeObject<List<ConsumoAziendaleCampo>>(responseData);
                 if (listaConsumi != null)
                     return listaConsumi;
                 else
@@ -264,24 +239,19 @@ namespace frontend.Pages
         // Richiesta dati storico sensori di umidità
         public static async Task<List<SensoreUmiditaLog>> GetSensoriUmiditaFromApi(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/storicoSensoriUmidita";
+            string urlTask = $"{urlGenerico}aziendaAgricola/storicoSensoriUmidita/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            // Esegue la chiamata 
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<SensoreUmiditaLog> lista = JsonConvert.DeserializeObject<List<SensoreUmiditaLog>>(responseData);
+                List<SensoreUmiditaLog>? lista = JsonConvert.DeserializeObject<List<SensoreUmiditaLog>>(responseData);
                 if (lista != null)
                     return lista;
                 else
@@ -296,24 +266,19 @@ namespace frontend.Pages
         // Richiesta dati storico sensori di temperatura
         public static async Task<List<SensoreTemperaturaLog>> GetSensoriTemperaturaFromApi(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/storicoSensoriTemperatura";
+            string urlTask = $"{urlGenerico}aziendaAgricola/storicoSensoriTemperatura/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            // Esegue la chiamata
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<SensoreTemperaturaLog> lista = JsonConvert.DeserializeObject<List<SensoreTemperaturaLog>>(responseData);
+                List<SensoreTemperaturaLog>? lista = JsonConvert.DeserializeObject<List<SensoreTemperaturaLog>>(responseData);
                 if (lista != null)
                     return lista;
                 else
@@ -329,24 +294,19 @@ namespace frontend.Pages
         // Richiesta dati storico attuatori
         public static async Task<List<AttuatoreLog>> GetAttuatoriFromApi(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/storicoAttuatori";
+            string urlTask = $"{urlGenerico}aziendaAgricola/storicoAttuatori/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            // Esegue la chiamata
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<AttuatoreLog> lista = JsonConvert.DeserializeObject<List<AttuatoreLog>>(responseData);
+                List<AttuatoreLog>? lista = JsonConvert.DeserializeObject<List<AttuatoreLog>>(responseData);
                 if (lista != null)
                     return lista;
                 else
@@ -369,26 +329,20 @@ namespace frontend.Pages
         // Richiesta dati per limite giornaliero
         public static async Task<float> GetLimiteGiornaliero(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/limiteGiornaliero/";
+            string urlTask = $"{urlGenerico}aziendaIdrica/limiteGiornaliero/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
             // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                float limite = 0;
-                limite = JsonConvert.DeserializeObject<float>(responseData);
-                if (limite == 0)
+                float limite = JsonConvert.DeserializeObject<float>(responseData);
+                if (responseData!=null)
                     return limite;
                 else
                     throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - limite = null");
@@ -403,18 +357,13 @@ namespace frontend.Pages
         // Richiesta dati acqua disponibile
         public static async Task<float> GetAcquaDisponibile(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/limiteGiornaliero/";
+            string urlTask = $"{urlGenerico}aziendaIdrica/acquaDisponibile/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
             // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
@@ -422,7 +371,7 @@ namespace frontend.Pages
                 string responseData = await response.Content.ReadAsStringAsync();
                 float acqua = 0;
                 acqua = JsonConvert.DeserializeObject<float>(responseData);
-                if (acqua == 0)
+                if (responseData != null)
                     return acqua;
                 else
                     throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - acqua = null");
@@ -488,26 +437,21 @@ namespace frontend.Pages
         }
 
         // Richiesta dati per limiti di vendita per ogni azienda agricola in base alla azienda idrica
-        public static async Task<List<LimiteAcquistoAzienda>> GetLimitiPerAziendaFromApi(string partitaIva)
+        public static async Task<List<LimiteAcquistoAzienda>> GetLimitiPerAziendaFromApi()
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/limitiPerAzienda/";
+            string urlTask = urlGenerico + "aziendaIdrica/limitiPerAzienda/";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            // Esegue la chiamata
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<LimiteAcquistoAzienda> limiti = JsonConvert.DeserializeObject<List<LimiteAcquistoAzienda>>(responseData);
+                List<LimiteAcquistoAzienda>? limiti = JsonConvert.DeserializeObject<List<LimiteAcquistoAzienda>>(responseData);
                 if (limiti != null)
                     return limiti;
                 else
@@ -523,24 +467,19 @@ namespace frontend.Pages
         // Richiesta dati storico vendite azienda idrica
         public static async Task<List<OrdineAcquisto>> GetStoricoVenditeFromApi(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/storicoVendite";
+            string urlTask = $"{urlGenerico}aziendaIdrica/storicoVendite/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            // Esegue la chiamata
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<OrdineAcquisto> storicoVendite = JsonConvert.DeserializeObject<List<OrdineAcquisto>>(responseData);
+                List<OrdineAcquisto>? storicoVendite = JsonConvert.DeserializeObject<List<OrdineAcquisto>>(responseData);
                 if (storicoVendite != null)
                     return storicoVendite;
                 else
@@ -556,24 +495,19 @@ namespace frontend.Pages
         // Richiesta dati consumo aziende agricole a cui l'azienda idrica ha venduto
         public static async Task<List<ConsumoAziendaleCampo>> GetConsumoAziendeFromApi(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/consumiAziende";
+            string urlTask = $"{urlGenerico}aziendaIdrica/consumiAziende/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             // Puoi impostare eventuali intestazioni necessarie qui
             // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
 
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            // Esegue la chiamata
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<ConsumoAziendaleCampo> listaConsumi = JsonConvert.DeserializeObject<List<ConsumoAziendaleCampo>>(responseData);
+                List<ConsumoAziendaleCampo>? listaConsumi = JsonConvert.DeserializeObject<List<ConsumoAziendaleCampo>>(responseData);
                 if (listaConsumi != null)
                     return listaConsumi;
                 else

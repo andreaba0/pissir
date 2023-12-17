@@ -81,10 +81,10 @@ namespace frontend.Pages.GestoreIdrico
             return RedirectToPage();
         }
 
-        // Chiamata API per modificare il limite aziendale
+        // Chiamata API per modificare il limite di acquisto per le aziende agricole
         public async Task<IActionResult> OnPostModificaLimiteAziendale(string nuovoLimite, string partitaIvaAzienda)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/offertaLimiti";
+            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/limitiAziende";
 
             /*
             // L'utente non è autenticato, reindirizzamento sulla pagina di login

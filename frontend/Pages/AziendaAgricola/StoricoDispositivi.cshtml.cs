@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace frontend.Pages.AziendaAgricola
@@ -19,17 +20,20 @@ namespace frontend.Pages.AziendaAgricola
             /*
             // L'utente non è autenticato, reindirizzamento sulla pagina di login
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
-               
+
+            // Imposta il token
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+
             // Ottieni il CF dell'utente loggato
             string codFiscale = User.FindFirst("sub")?.Value;
 
             // Chiamata alle API per ottenere i dati
             if (codFiscale != null)
             {
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale);
-                SensoriUmiditaLogs = await ApiReq.GetSensoriUmiditaFromApi(ApiReq.utente.PartitaIva);
-                SensoriTemperaturaLogs = await ApiReq.GetSensoriTemperaturaFromApi(ApiReq.utente.PartitaIva);
-                AttuatoriLogs = await ApiReq.GetAttuatoriFromApi(ApiReq.utente.PartitaIva);
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale, HttpContext);
+                SensoriUmiditaLogs = await ApiReq.GetSensoriUmiditaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+                SensoriTemperaturaLogs = await ApiReq.GetSensoriTemperaturaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+                AttuatoriLogs = await ApiReq.GetAttuatoriFromApi(ApiReq.utente.PartitaIva, HttpContext);
             }
             else
             {

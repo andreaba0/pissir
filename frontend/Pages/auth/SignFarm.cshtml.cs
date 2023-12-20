@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
+using System.Net.Http.Headers;
+using System.Net.Http;
 using System.Text;
 
 namespace frontend.Pages.auth
@@ -20,9 +22,11 @@ namespace frontend.Pages.auth
         {
             string urlTask = ApiReq.urlGenerico + "registraAzienda/";
 
-            /*
             // L'utente non è autenticato, reindirizzamento sulla pagina di login
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+
+            // Imposta il token
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
 
             // Creare il corpo della richiesta
             var requestBody = new
@@ -31,7 +35,7 @@ namespace frontend.Pages.auth
                 Nome = Nome,
                 Indirizzo = Indirizzo,
                 Telefono = Telefono,
-                Email = Email
+                Email = Email,
             };
 
             var jsonRequest = JsonConvert.SerializeObject(requestBody);
@@ -55,15 +59,10 @@ namespace frontend.Pages.auth
                 // Imposta un messaggio di errore
                 TempData["MessaggioErrore"] = "Errore durante la registrazione dell'azienda. Riprova più tardi.";
             }
-            */
             
-            TempData["Messaggio"] = "Richiesta di registrazione dell'azienda con P.Iva " + PartitaIva + " effettuata con successo!";
-            TempData["PartitaIva"] = PartitaIva;
-            TempData["Nome"] = Nome;
-            TempData["Indirizzo"] = Indirizzo;
-            TempData["Telefono"] = Telefono;
-            TempData["Email"] = Email;
 
+            TempData["Messaggio"] = "Richiesta di registrazione dell'azienda con P.Iva " + PartitaIva + " effettuata con successo!";
+            
             return RedirectToPage();
         }
 

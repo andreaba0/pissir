@@ -2,10 +2,7 @@ using frontend.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Newtonsoft.Json;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
+using System.Net.Http.Headers;
 
 namespace frontend.Pages
 {
@@ -14,24 +11,26 @@ namespace frontend.Pages
         public AziendaAgricolaModel? aziendaAgricola { get; set; }
         public AziendaIdricaModel? aziendaIdrica { get; set; }
 
-
         public async Task<IActionResult> OnGet()
         {
             /*
             // L'utente non è autenticato, reindirizzamento sulla pagina di login
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
+            // Imposta il token
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+
             // Ottieni il CF dell'utente loggato
             string codFiscale = User.FindFirst("sub")?.Value;
-
+            
             // Chiamata alle API per ottenere i dati
             if (codFiscale != null)
             {
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale);
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale, HttpContext);
                 if (ApiReq.utente.Role == "GSI")
-                    aziendaIdrica = await ApiReq.GetAziendaIdricaDataFromApi(ApiReq.utente.PartitaIva);
+                    aziendaIdrica = await ApiReq.GetAziendaIdricaDataFromApi(ApiReq.utente.PartitaIva, HttpContext);
                 else
-                    aziendaAgricola = await ApiReq.GetAziendaAgricolaDataFromApi(ApiReq.utente.PartitaIva);
+                    aziendaAgricola = await ApiReq.GetAziendaAgricolaDataFromApi(ApiReq.utente.PartitaIva, HttpContext);
             }
             else
             {
@@ -40,13 +39,12 @@ namespace frontend.Pages
             */
 
 
-            // Simulazione dati
+            // Simulazione dati          
             if (ApiReq.utente.Role == "GSI")
                 aziendaIdrica = GetSimulatedAziendaIdricaData();
             else
                 aziendaAgricola = GetSimulatedAziendaAgricolaData();
-
-
+            
             // Continua con la generazione della pagina
             return Page();
         }
@@ -74,6 +72,9 @@ namespace frontend.Pages
             }
             return true;
         }
+
+
+
 
      
         // Simula i dati di un'azienda agricola

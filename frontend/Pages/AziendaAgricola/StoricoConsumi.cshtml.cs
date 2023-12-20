@@ -2,6 +2,7 @@ using frontend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -17,14 +18,17 @@ namespace frontend.Pages.AziendaAgricola
             // L'utente non è autenticato, reindirizzamento sulla pagina di login
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
+            // Imposta il token
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+
             // Ottieni il CF dell'utente loggato
             string codFiscale = User.FindFirst("sub")?.Value;
 
             // Chiamata alle API per ottenere i dati
             if (codFiscale != null)
             {
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale);
-                StoricoConsumi = await ApiReq.GetStoricoConsumiFromApi(ApiReq.utente.PartitaIva);
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale, HttpContext);
+                StoricoConsumi = await ApiReq.GetStoricoConsumiFromApi(ApiReq.utente.PartitaIva, HttpContext);
             }
             else
             {

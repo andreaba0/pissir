@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace frontend.Pages
@@ -29,21 +30,19 @@ namespace frontend.Pages
                 Cognome = "Rossi",
                 Role = "GSI" //GSI / GAA
             };
+            
         }
-
-
 
         // Metodi richieste API
 
         // Richiesta dati utente
-        public static async Task<Utente> GetUserDataFromApi(string codFiscale)
+        public static async Task<Utente> GetUserDataFromApi(string codFiscale, HttpContext context)
         {
             // Stringa interpolata
             string urlTask = $"{urlGenerico}user/?CodiceFiscale={Uri.EscapeDataString(codFiscale)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
-
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);           
+            
             // Esegue la chiamata
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
 
@@ -61,15 +60,15 @@ namespace frontend.Pages
             {
                 throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
             }
+            
         }
 
         // Richiesta dati azienda idrica
-        public static async Task<AziendaIdricaModel> GetAziendaIdricaDataFromApi(string partitaIva)
+        public static async Task<AziendaIdricaModel> GetAziendaIdricaDataFromApi(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaIdrica/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -92,12 +91,11 @@ namespace frontend.Pages
 
 
         // Richiesta dati azienda agricola
-        public static async Task<AziendaAgricolaModel> GetAziendaAgricolaDataFromApi(string partitaIva)
+        public static async Task<AziendaAgricolaModel> GetAziendaAgricolaDataFromApi(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -124,12 +122,11 @@ namespace frontend.Pages
         // Metodi Azienda Agricola -----------------------------------------------
 
         // Richiesta dati sulle colture possedute dall'azienda
-        public static async Task<List<Coltura>> GetColtureAziendaFromApi(string partitaIva)
+        public static async Task<List<Coltura>> GetColtureAziendaFromApi(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/colture/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
@@ -151,12 +148,11 @@ namespace frontend.Pages
         }
 
         // Richiesta dati sulla lista di offerte delle aziende idriche
-        public static async Task<List<Offerta>> GetOfferteIdricheFromApi()
+        public static async Task<List<Offerta>> GetOfferteIdricheFromApi(HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/offerteIdriche";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -179,12 +175,11 @@ namespace frontend.Pages
 
 
         // Richiesta dati dello storico ordini d'acqua
-        public static async Task<List<OrdineAcquisto>> GetStoricoOrdiniFromApi(string partitaIva)
+        public static async Task<List<OrdineAcquisto>> GetStoricoOrdiniFromApi(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/ordini/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -208,12 +203,11 @@ namespace frontend.Pages
 
 
         // Richiesta dati sui consumi delle colture possedute dall'azienda
-        public static async Task<List<ConsumoAziendaleCampo>> GetStoricoConsumiFromApi(string partitaIva)
+        public static async Task<List<ConsumoAziendaleCampo>> GetStoricoConsumiFromApi(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/consumiColture/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -237,12 +231,11 @@ namespace frontend.Pages
 
 
         // Richiesta dati storico sensori di umidità
-        public static async Task<List<SensoreUmiditaLog>> GetSensoriUmiditaFromApi(string partitaIva)
+        public static async Task<List<SensoreUmiditaLog>> GetSensoriUmiditaFromApi(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/storicoSensoriUmidita/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata 
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -264,12 +257,11 @@ namespace frontend.Pages
         }
 
         // Richiesta dati storico sensori di temperatura
-        public static async Task<List<SensoreTemperaturaLog>> GetSensoriTemperaturaFromApi(string partitaIva)
+        public static async Task<List<SensoreTemperaturaLog>> GetSensoriTemperaturaFromApi(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/storicoSensoriTemperatura/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -292,12 +284,11 @@ namespace frontend.Pages
 
 
         // Richiesta dati storico attuatori
-        public static async Task<List<AttuatoreLog>> GetAttuatoriFromApi(string partitaIva)
+        public static async Task<List<AttuatoreLog>> GetAttuatoriFromApi(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/storicoAttuatori/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -327,12 +318,11 @@ namespace frontend.Pages
         // Metodi Azienda Idrica ---------------------------------------------------------
 
         // Richiesta dati per limite giornaliero
-        public static async Task<float> GetLimiteGiornaliero(string partitaIva)
+        public static async Task<float> GetLimiteGiornaliero(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaIdrica/limiteGiornaliero/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata POST
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -355,12 +345,11 @@ namespace frontend.Pages
 
 
         // Richiesta dati acqua disponibile
-        public static async Task<float> GetAcquaDisponibile(string partitaIva)
+        public static async Task<float> GetAcquaDisponibile(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaIdrica/acquaDisponibile/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata POST
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -383,12 +372,11 @@ namespace frontend.Pages
         }
 
         // Richiesta dati sulle richieste di adesione per gli utenti
-        public static async Task<List<Utente>> GetRichiesteUtentiFromApi()
+        public static async Task<List<Utente>> GetRichiesteUtentiFromApi(HttpContext context)
         {
             string urlTask = urlGenerico + "aziendaIdrica/richiesteUtenti/";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata POST
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
@@ -410,12 +398,11 @@ namespace frontend.Pages
         }
 
         // Richiesta dati sulle richieste di adesione per le aziende agricole
-        public static async Task<List<AziendaAgricolaModel>> GetRichiesteAziendeAgricoleFromApi()
+        public static async Task<List<AziendaAgricolaModel>> GetRichiesteAziendeAgricoleFromApi(HttpContext context)
         {
             string urlTask = urlGenerico + "aziendaIdrica/richiesteAziendeAgricole/";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata POST
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
@@ -437,12 +424,11 @@ namespace frontend.Pages
         }
 
         // Richiesta dati per limiti di vendita per ogni azienda agricola in base alla azienda idrica
-        public static async Task<List<LimiteAcquistoAzienda>> GetLimitiPerAziendaFromApi()
+        public static async Task<List<LimiteAcquistoAzienda>> GetLimitiPerAziendaFromApi(HttpContext context)
         {
             string urlTask = urlGenerico + "aziendaIdrica/limitiPerAzienda/";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -465,12 +451,11 @@ namespace frontend.Pages
 
 
         // Richiesta dati storico vendite azienda idrica
-        public static async Task<List<OrdineAcquisto>> GetStoricoVenditeFromApi(string partitaIva)
+        public static async Task<List<OrdineAcquisto>> GetStoricoVenditeFromApi(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaIdrica/storicoVendite/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -493,12 +478,11 @@ namespace frontend.Pages
 
 
         // Richiesta dati consumo aziende agricole a cui l'azienda idrica ha venduto
-        public static async Task<List<ConsumoAziendaleCampo>> GetConsumoAziendeFromApi(string partitaIva)
+        public static async Task<List<ConsumoAziendaleCampo>> GetConsumoAziendeFromApi(string partitaIva, HttpContext context)
         {
             string urlTask = $"{urlGenerico}aziendaIdrica/consumiAziende/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);

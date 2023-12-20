@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
+using System.Globalization;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace frontend.Pages.auth
@@ -10,6 +12,7 @@ namespace frontend.Pages.auth
         public string CodiceFiscale { get; set; }
         public string NomeUtente { get; set; }
         public string CognomeUtente { get; set; }
+        public string accessToken { get; set; }
 
         public void OnGet()
         {
@@ -18,6 +21,9 @@ namespace frontend.Pages.auth
             CodiceFiscale = "ABC123XYZ4567890";
             NomeUtente = "Mario";
             CognomeUtente = "Rossi";
+
+            // Recupera il token dai cookie
+            accessToken = Request.Cookies["accessToken"];
         }
 
         public async Task<IActionResult> OnPostIscriviti(string codiceFiscale, string partitaIva)
@@ -28,11 +34,15 @@ namespace frontend.Pages.auth
             // L'utente non è autenticato, reindirizzamento sulla pagina di login
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
+            // Imposta il token
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+
             // Creare il corpo della richiesta
             var requestBody = new
             {
                 CodiceFiscale = codiceFiscale,
-                PartitaIva = partitaIva
+                PartitaIva = partitaIva,
+                AccessToken = Request.Cookies["AccessToken"]
             };
             var jsonRequest = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");

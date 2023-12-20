@@ -58,13 +58,19 @@
                 
             }
         </div>
-        <br /><br />
+        <br />
         <p>
             <b>NOTA:</b> I provider non possono essere scambiati; utilizzarne uno diverso implica la creazione di un nuovo account.
             Se sei già registrato, accedi con lo stesso provider.
             <a href="/auth/SignToFarm">Shortcut temp</a>
 
         </p>
+        @if (TempData.ContainsKey("MessaggioErrore"))
+        {
+            <div class="alert alert-danger" role="alert">
+                @TempData["MessaggioErrore"]
+            </div>
+        }
     </div>
 </body>
 

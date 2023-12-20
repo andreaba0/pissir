@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Net.Http.Headers;
 using System.Text;
 using frontend.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +20,17 @@ namespace frontend.Pages
             // L'utente non è autenticato, reindirizzamento sulla pagina di login
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
+            // Imposta il token
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+
             // Ottieni il CF dell'utente loggato
             string codFiscale = User.FindFirst("sub")?.Value;
 
             // Chiamata alle API per ottenere i dati
             if (codFiscale != null)
             {
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale);
-                Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva);
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale, HttpContext);
+                Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva, HttpContext);
             }
             else
             {
@@ -50,6 +54,9 @@ namespace frontend.Pages
             /*
             // L'utente non è autenticato, reindirizzamento sulla pagina di login
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+
+            // Imposta il token
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
 
             // Creare il corpo della richiesta
             var requestBody = new
@@ -91,9 +98,9 @@ namespace frontend.Pages
             /*
             // L'utente non è autenticato, reindirizzamento sulla pagina di login
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
-            
-            // Puoi impostare eventuali intestazioni necessarie qui
-            // httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "IlTuoToken");
+
+            // Imposta il token
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
 
             // Creare il corpo della richiesta
             var requestBody = new 
@@ -136,7 +143,10 @@ namespace frontend.Pages
             /*
             // L'utente non è autenticato, reindirizzamento sulla pagina di login
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
-            
+
+            // Imposta il token
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+
             // Esegue la chiamata DELETE per l'eliminazione della coltura
             HttpResponseMessage response = await ApiReq.httpClient.DeleteAsync(urlTask);
 

@@ -36,8 +36,7 @@
         <strong>Nome:</strong> @Model.NomeUtente <br />
         <strong>Cognome:</strong> @Model.CognomeUtente <br />
         <strong>Codice Fiscale:</strong> @Model.CodiceFiscale <br /><br />  
-        @Model.accessToken
-        
+                
         <label>Inserisci la Partita IVA dell'azienda in cui lavorerai:</label>
         <form method="post" asp-page-handler="Iscriviti" class="form-inline w-100">
             <input type="hidden" id="codiceFiscale" name="codiceFiscale" value="@Model.CodiceFiscale" readonly/>

@@ -12,7 +12,6 @@ namespace frontend.Pages.auth
         public string CodiceFiscale { get; set; }
         public string NomeUtente { get; set; }
         public string CognomeUtente { get; set; }
-        public string accessToken { get; set; }
 
         public void OnGet()
         {
@@ -22,8 +21,6 @@ namespace frontend.Pages.auth
             NomeUtente = "Mario";
             CognomeUtente = "Rossi";
 
-            // Recupera il token dai cookie
-            accessToken = Request.Cookies["accessToken"];
         }
 
         public async Task<IActionResult> OnPostIscriviti(string codiceFiscale, string partitaIva)

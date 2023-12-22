@@ -1,0 +1,51 @@
+﻿/* Stile per i link */
+.link-login {
+    color: #0077cc;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.link-login:hover {
+    color: #004466;
+}
+
+
+
+/* Stile per la finestra di benvenuto e login/signup*/
+.background-container {
+    text-align: center;
+}
+
+/* Sfondo pagina principale */
+.background-overlay {
+    background-color: rgba(255, 255, 255, 0.6);
+    position: absolute;
+    top: 4em;
+    left: 0;
+    width: 100%;
+    height: 120vh;
+}
+.background-image {
+    width: 100%;
+    height: 120vh;
+    object-fit: cover;
+    display: block;
+}
+
+/* Contenuto finestra di benvenuto */
+.content {
+    color: black;
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 2em;
+    background-color: white;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: lightgray;
+    border-style: solid;
+    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 90%;
+}

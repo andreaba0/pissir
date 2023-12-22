@@ -1,14 +1,8 @@
-.bin/
-node_modules/
-build/
-bin/
-obj/
-appsettings.Development.json
-appsettings.json
-frontend/wwwroot/css/
-*.pem
-target/
-key*
-key*.*
+﻿################################################################################
+# Il file gitignore è stato creato automaticamente da Microsoft(R) Visual Studio.
+################################################################################
+
+/frontend/node_modules
+/frontend/obj
+/frontend/bin/Debug/net7.0
 /.vs
-/backend/api

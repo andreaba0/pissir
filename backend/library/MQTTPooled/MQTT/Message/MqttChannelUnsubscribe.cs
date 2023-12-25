@@ -1,6 +1,6 @@
 namespace MQTTConcurrent.Message;
 
-public class MqttChannelUnsubscribe : IMqttChannelBus {
+public sealed class MqttChannelUnsubscribe : IMqttBusPacket {
     public string Topic { get; set; }
     public MqttChannelMessageType Type { get; }
 

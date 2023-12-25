@@ -1,5 +1,5 @@
 namespace MQTTConcurrent;
 
-public interface IMqttChannelBus {
+public interface IMqttBusPacket {
     public MqttChannelMessageType Type { get; }
 }

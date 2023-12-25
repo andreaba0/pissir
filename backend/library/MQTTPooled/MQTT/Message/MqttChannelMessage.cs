@@ -1,6 +1,6 @@
-namespace MQTTConcurrent;
+namespace MQTTConcurrent.Message;
 
-public class MqttChannelMessage : IMqttChannelBus {
+public sealed class MqttChannelMessage : IMqttBusPacket {
     public string Topic { get; set; }
     public string Message { get; set; }
     public MqttChannelMessageType Type { get; }

@@ -7,6 +7,6 @@ public interface IMQTTnetConcurrent
 {
     public Task RunAsync();
     public Task PublishQueue(string topic, string message);
-    public Task SubscribeQueue(string topic, Channel<MqttChannelMessage> channel);
+    public Task SubscribeQueue(string topic, Channel<IMqttBusPacket> channel);
     public Task UnsubscribeQueue(string topic);
 }

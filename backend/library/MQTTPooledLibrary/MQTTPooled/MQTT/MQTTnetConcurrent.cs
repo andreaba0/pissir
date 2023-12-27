@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 
+using MQTTConcurrent.Message;
+
 namespace MQTTConcurrent;
 
 public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
 {
     private readonly ConnectionData cData;
-    private Dictionary<string, List<Channel<IMqttChannelMessage>>> subscriptionChannels
+    private Dictionary<string, List<Channel<IMqttChannelMessage>>> subscriptionChannels;
     private Channel<IMqttChannelMessage> demuxChannel;
     private RoundRobinDispatcher dispatcher;
     private Channel<IMqttBusPacket> sharedInputChannel;
@@ -19,9 +21,9 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
         )
     {
         this.cData = ConnectionData.Parse(connectionString);
-        this.subscribeChannels = new Dictionary<string, List<Channel<IMqttChannelMessage>>>();
+        this.subscriptionChannels = new Dictionary<string, List<Channel<IMqttChannelMessage>>>();
         this.dispatcher = new RoundRobinDispatcher(cData.poolSize);
-        this.demuxChannel = Channel.CreateUnbounded<IMqttBusPacket>();
+        this.demuxChannel = Channel.CreateUnbounded<IMqttChannelMessage>();
         this.sharedInputChannel = sharedInputChannel;
     }
 
@@ -47,18 +49,36 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
         Task[] workers = new Task[cData.poolSize + 2];
         for (int i = 0; i < cData.poolSize; i++)
         {
-            Channel<IMqttBusPacket> clientChannel = this.dispatcher.GetChannel(i);
-            mqttClients[i] = new MqttClientConcurrent(
+            int currentId = i;
+            Channel<IMqttBusPacket> clientChannel = this.dispatcher.GetChannel(currentId);
+            mqttClients[currentId] = new MqttClientConcurrent(
                 cData,
                 clientChannel,
                 this.demuxChannel
             );
-            workers[i] = Task.Factory.StartNew(
-                async () => await mqttClients[i].RunClient(ct), TaskCreationOptions.LongRunning
+            workers[currentId] = Task.Factory.StartNew(
+                async () => await mqttClients[currentId].RunClient(ct), TaskCreationOptions.LongRunning
             ).Unwrap();
         }
         workers[cData.poolSize] = Task.Run(async () => await MessageDispatcherRoutine(ct));
         workers[cData.poolSize + 1] = Task.Run(async () => await MessageDemuxRoutine(ct));
+        
+        // when any of the workers is done write the id in the array to console
+        // if ct is not cancelled yet, restart the worker
+        Task.Factory.ContinueWhenAny(workers, (t) =>
+        {
+            int id = Array.IndexOf(workers, t);
+            Console.WriteLine($"Worker {id} is done");
+            if (!ct.IsCancellationRequested)
+            {
+                Console.WriteLine($"Restarting worker {id}");
+                workers[id] = Task.Factory.StartNew(
+                    async () => await mqttClients[id].RunClient(ct), TaskCreationOptions.LongRunning
+                ).Unwrap();
+            }
+        });
+
+
         Task.WaitAll(workers);
         return Task.CompletedTask;
     }
@@ -78,24 +98,26 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
             }
             if (message is MqttChannelSubscribeCommand mqttSubscription)
             {
-                MqttChannelSubscribe pubsubMessage = new MqttChannelSubscribe(mqttSubscription.Topic);
+                string Topic = ConnectionData.parseTopic(mqttSubscription.Topic);
+                if(Topic==string.Empty) continue;
+                string idempotentTopic = "$share/server/" + Topic;
+                MqttChannelSubscribe pubsubMessage = new MqttChannelSubscribe(idempotentTopic);
                 this.dispatcher.PushAll(pubsubMessage);
-                string Topic = message.Topic;
                 if (!this.subscriptionChannels.ContainsKey(Topic))
                 {
                     this.subscriptionChannels[Topic] = new List<Channel<IMqttChannelMessage>>();
                 }
-                this.subscriptionChannels[Topic].Add(message.Channel);
+                this.subscriptionChannels[Topic].Add(mqttSubscription.Channel);
                 continue;
             }
             if (message is MqttChannelUnsubscribeCommand mqttUnsubscription)
             {
                 MqttChannelUnsubscribe pubsubMessage = new MqttChannelUnsubscribe(mqttUnsubscription.Topic);
                 this.dispatcher.PushAll(pubsubMessage);
-                string Topic = message.Topic;
+                string Topic = pubsubMessage.Topic;
                 if(this.subscriptionChannels.ContainsKey(Topic))
                 {
-                    this.subscriptionChannels[Topic].Remove(message.Channel);
+                    this.subscriptionChannels[Topic].Remove(mqttUnsubscription.Channel);
                 }
                 continue;
             }
@@ -110,7 +132,7 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
     {
         while (!ct.IsCancellationRequested)
         {
-            IMqttChannelMessage message = await channel.Reader.ReadAsync(ct);
+            IMqttChannelMessage message = await this.demuxChannel.Reader.ReadAsync(ct);
             string Topic = message.Topic;
             if (!this.subscriptionChannels.ContainsKey(Topic)) continue;
             foreach (Channel<IMqttChannelMessage> channel in this.subscriptionChannels[Topic])

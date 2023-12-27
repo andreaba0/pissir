@@ -9,6 +9,8 @@ using System;
 using System.Threading;
 using System.Threading.Channels;
 
+using MQTTConcurrent.Message;
+
 namespace MQTTConcurrent;
 
 public class MqttClientConcurrent
@@ -16,11 +18,11 @@ public class MqttClientConcurrent
     private readonly IManagedMqttClient mqttClient;
     private readonly ConnectionData cData;
     private readonly Channel<IMqttBusPacket> sendChannel;
-    private readonly Channel<IMqttBusPacket> receiveChannel;
+    private readonly Channel<IMqttChannelMessage> receiveChannel;
     public MqttClientConcurrent(
         ConnectionData cData,
         Channel<IMqttBusPacket> sendChannel,
-        Channel<IMqttBusPacket> receiveChannel
+        Channel<IMqttChannelMessage> receiveChannel
     )
     {
         this.mqttClient = new MqttFactory().CreateManagedMqttClient();
@@ -37,6 +39,7 @@ public class MqttClientConcurrent
 #endif
 
     public async Task<int> RunClient(CancellationToken ct) {
+        try {
         await this.mqttClient.StartAsync(new ManagedMqttClientOptionsBuilder()
             .WithAutoReconnectDelay(TimeSpan.FromSeconds(5))
             .WithClientOptions(new MqttClientOptionsBuilder()
@@ -46,11 +49,14 @@ public class MqttClientConcurrent
                 .WithCleanSession()
                 .Build())
             .Build());
+        } catch (Exception e) {
+            Console.WriteLine(e);
+        }
 
         this.mqttClient.ApplicationMessageReceivedAsync += OnMessageReceivedAsync;
         while (!ct.IsCancellationRequested)
         {
-            IMqttChannelBus message = await this.sendChannel.Reader.ReadAsync(ct);
+            IMqttBusPacket message = await this.sendChannel.Reader.ReadAsync(ct);
             if (message is Message.MqttChannelSubscribe subscribeMessage)
             {
                 ProcessTopicSubscription(subscribeMessage);
@@ -76,7 +82,7 @@ public class MqttClientConcurrent
         topicFilters.Add(new MqttTopicFilterBuilder()
             .WithTopic(message.Topic)
             .Build());
-        this.mqttClient.SubscribeAsync(topicFilters);
+        this.mqttClient.SubscribeAsync(topicFilters).Wait();
         return Task.CompletedTask;
     }
 
@@ -88,17 +94,17 @@ public class MqttClientConcurrent
 
     internal Task ProcessPublish(IMqttChannelMessage message)
     {
-        this.mqttClient.PublishAsync(new MqttApplicationMessageBuilder()
+        this.mqttClient.EnqueueAsync(new MqttApplicationMessageBuilder()
             .WithTopic(message.Topic)
-            .WithPayload(message.Message)
-            .WithExactlyOnceQoS()
+            .WithPayload(message.Payload)
             .Build());
         return Task.CompletedTask;
     }
 
     internal Task OnMessageReceivedAsync(MqttApplicationMessageReceivedEventArgs e)
     {
-        IMqttChannelBus message = new Message.MqttChannelMessage(
+        Console.WriteLine($"Received message on topic {e.ApplicationMessage.Topic}");
+        IMqttChannelMessage message = new Message.MqttChannelMessage(
             e.ApplicationMessage.Topic, 
             e.ApplicationMessage.ConvertPayloadToString()
         );

@@ -1,7 +1,7 @@
 namespace MQTTConcurrent.Message;
 
-public interface IMqttChannelMessage {
+public interface IMqttChannelMessage : IMqttBusPacket {
     public MqttChannelMessageType Type { get; }
     public string Topic { get; set; }
-    public string Message { get; set; }
+    public string Payload { get; set; }
 }

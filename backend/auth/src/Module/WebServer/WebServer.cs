@@ -96,20 +96,22 @@ public class WebServer
             }
         });
 
-        app.MapPost("/api/auth/certs", async context => {
+        app.MapGet("/api/auth/certs", async context => {
             //convert _rsaParameters to json and send it to the client
             Console.WriteLine("certs");
             KeyJson[] keys = new KeyJson[3];
-            RSAParameters[] _rsaParameters = new RSAParameters[3];
+            RSAArrayElement[] _rsaParameters = new RSAArrayElement[3];
             bool isOk = _keyManager.GetRsaParameters(out _rsaParameters);
             for(int i=0; i<3; i++) {
                 keys[i] = new KeyJson(
-                    Guid.NewGuid().ToString(),
-                    _rsaParameters[i]
+                    _rsaParameters[i].Id,
+                    _rsaParameters[i].Parameters
                 );
             }
             KeyArray keyArray = new KeyArray(keys);
             var json = JsonSerializer.Serialize(keyArray);
+            context.Response.ContentType = "application/json";
+            context.Response.Headers.Add("Cache-Control", "max-age=3600");
             await context.Response.WriteAsync(json);
         });
 

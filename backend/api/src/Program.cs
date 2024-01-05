@@ -1,70 +1,98 @@
 using System.Threading;
+using System.Threading.Channels;
+using MQTTConcurrent;
 
-/*var builder = new ConfigurationBuilder()
+using Npgsql;
+
+using System.Data.Common;
+
+using Module.Accountant;
+using Module.JsonWebToken;
+using Utility;
+
+class Program
+{
+    internal static string GetProperty(IConfiguration configuration, string key) {
+        string? value = configuration[key];
+        if(value == null) {
+            throw new Exception($"Missing configuration key: {key}");
+        }
+        return value;
+    }
+    public static int Main(string[] args)
+    {
+        var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
+#if DEVELOPMENT
             .AddJsonFile("appsettings.Development.json");
-var configuration = builder.Build();
+#else
+            .AddJsonFile("appsettings.json");
+#endif
+        var configuration = builder.Build();
 
-Thread WebserverThread;
-Thread AuditingThread;
-Thread AccountingThread;*/
+        string mqttHost = GetProperty(configuration, "mqtt:host");
+        string mqttPort = GetProperty(configuration, "mqtt:port");
+        string mqttUsername = GetProperty(configuration, "mqtt:username");
+        string mqttPassword = GetProperty(configuration, "mqtt:password");
+        string mqttPoolSize = GetProperty(configuration, "mqtt:poolSize");
 
-/*WebserverThread = new Thread(new ThreadStart(() => {
-    Webserver webserver = new Webserver(
-        configuration["database:api:host"],
-        configuration["database:api:port"],
-        configuration["database:api:database"],
-        configuration["database:api:user"],
-        configuration["database:api:password"]
-    );
-    webserver.runServer();
-}));*/
+        string postgresHost = GetProperty(configuration, "database:api:host");
+        string postgresPort = GetProperty(configuration, "database:api:port");
+        string postgresDatabaseName = GetProperty(configuration, "database:api:database");
+        string postgresUsername = GetProperty(configuration, "database:api:username");
+        string postgresPassword = GetProperty(configuration, "database:api:password");
+        string backendAuthUri = GetProperty(configuration, "auth:uri");
 
-/*AuditingThread = new Thread(new ThreadStart(async () => {
-    Audit auditing = new Audit(
-        configuration["database:api:host"],
-        configuration["database:api:port"],
-        configuration["database:api:database"],
-        configuration["database:api:user"],
-        configuration["database:api:password"]
-    );
-    await auditing.runServer();
-}));*/
+        CancellationTokenSource cts = new CancellationTokenSource();
 
-//Accountant accountantProcess = new Accountant();
-//WebServer webServer = new WebServer();
+        //Shared channel used to send data to mqtt client pool
+        Channel<IMqttBusPacket> mqttChannel = Channel.CreateUnbounded<IMqttBusPacket>();
 
-//AccountingThread = new Thread(new ThreadStart(async () => await accountantProcess.runServer()));
+        //Shared thread safe instances
+        DbDataSource dataSource = NpgsqlDataSource.Create($"host={postgresHost};port={postgresPort};database={postgresDatabaseName};username={postgresUsername};password={postgresPassword}");
+        MQTTnetConcurrent mqttPool = new MQTTnetConcurrent(
+            $"host={mqttHost};port={mqttPort};username={mqttUsername};password={mqttPassword};poolSize={mqttPoolSize}",
+            mqttChannel
+        );
 
-//WebserverThread.Start();
-//AuditingThread.Start();
-//AccountingThread.Start();
-
-//WebserverThread.Join();
-//AuditingThread.Join();
-//AccountingThread.Join();
+        KeyService keyManager = new KeyService(
+            backendAuthUri,
+            new Fetch()
+        );
 
 
-//Task accountingTask = Task.Factory.StartNew(() => accountantProcess.runServer(), TaskCreationOptions.LongRunning);
-//Task webServerTask = Task.Factory.StartNew(() => webServer.runServer(), TaskCreationOptions.LongRunning);
+        Accountant accountant = new Accountant(
+            dataSource,
+            mqttChannel
+        );
 
-// You can do other work here if needed
+        WebServer webServer = new WebServer(
+            dataSource,
+            new JwtControl(
+                new ClockCustom(),
+                new Fetch(),
+                backendAuthUri
+            ),
+            new ClockCustom(),
+            keyManager
+        );
 
-// Wait for the accounting task to complete before exiting
+        Task mqttTask = Task.Factory.StartNew(() => mqttPool.RunAsync(
+            cts.Token
+        ), TaskCreationOptions.LongRunning);
+        Task accountantTask = Task.Factory.StartNew(() => accountant.RunAsync(
+            cts.Token
+        ), TaskCreationOptions.LongRunning);
+        Task webServerTask = Task.Factory.StartNew(() => webServer.runServer(), TaskCreationOptions.LongRunning);
+        Task keyManagerTask = Task.Factory.StartNew(() => keyManager.RunAsync(
+            cts.Token
+        ), TaskCreationOptions.LongRunning);
 
-//accountingTask.Wait();
-//webServerTask.Wait();
-
-//System.Console.WriteLine("Exiting...");
-
-class Program {
-    public static int Main(string[] args) {
-        Accountant accountant = new Accountant();
-        WebServer webServer = new WebServer();
-        Task accountantTask = Task.Factory.StartNew( () => accountant.runServer() , TaskCreationOptions.LongRunning);
-        Task webServerTask = Task.Factory.StartNew( () => webServer.runServer() , TaskCreationOptions.LongRunning);
+        mqttTask.Wait();
         accountantTask.Wait();
         webServerTask.Wait();
+        keyManagerTask.Wait();
+
         Console.WriteLine("Exiting...");
         return 0;
     }

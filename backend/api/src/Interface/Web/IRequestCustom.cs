@@ -1,3 +1,5 @@
+using System.Collections.Specialized;
+
 namespace Web;
 public interface IRequestCustom
 {

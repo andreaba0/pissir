@@ -16,15 +16,30 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
     private Channel<IMqttBusPacket> sharedInputChannel;
 
     public MQTTnetConcurrent(
-        string connectionString,
-        Channel<IMqttBusPacket> sharedInputChannel
+        string connectionString
         )
     {
         this.cData = ConnectionData.Parse(connectionString);
         this.subscriptionChannels = new Dictionary<string, List<Channel<IMqttChannelMessage>>>();
-        this.dispatcher = new RoundRobinDispatcher(cData.poolSize);
+
+        if (cData.perClientCapacity.HasValue)
+        {
+            this.dispatcher = new RoundRobinDispatcher(cData.poolSize, cData.perClientCapacity.Value);
+        }
+        else
+        {
+            this.dispatcher = new RoundRobinDispatcher(cData.poolSize);
+        }
+        
         this.demuxChannel = Channel.CreateUnbounded<IMqttChannelMessage>();
-        this.sharedInputChannel = sharedInputChannel;
+        if (cData.perClientCapacity.HasValue)
+        {
+            this.sharedInputChannel = Channel.CreateBounded<IMqttBusPacket>(cData.perClientCapacity.Value);
+        }
+        else
+        {
+            this.sharedInputChannel = Channel.CreateUnbounded<IMqttBusPacket>();
+        }
     }
 
 #if TEST
@@ -42,6 +57,11 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
         this.sharedInputChannel = sharedInputChannel;
     }
 #endif
+
+    public Channel<IMqttBusPacket> GetSharedInputChannel()
+    {
+        return this.sharedInputChannel;
+    }
 
     public Task RunAsync(CancellationToken ct)
     {

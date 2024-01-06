@@ -10,6 +10,7 @@ public class ConnectionData
     public string username { get; set; }
     public string password { get; set; }
     public int poolSize { get; set; }
+    public int? perClientCapacity { get; set; }
 
     public ConnectionData() {
         this.host = "localhost";
@@ -17,6 +18,7 @@ public class ConnectionData
         this.username = string.Empty;
         this.password = string.Empty;
         this.poolSize = 4;
+        this.perClientCapacity = null;
     }
 
     public static ConnectionData Parse(string connectionString)
@@ -27,6 +29,7 @@ public class ConnectionData
         Regex regexUsername = new Regex(@"username=(?<username>[A-Za-z0-9_]+)");
         Regex regexPassword = new Regex(@"password=(?<password>[A-Za-z0-9_]+)");
         Regex regexPoolSize = new Regex(@"poolSize=(?<poolSize>[0-9]{1,3})");
+        Regex regexPerClientCapacity = new Regex(@"perClientCapacity=(?<perClientCapacity>[0-9]{1,3})");
         Match matchHost = regexHost.Match(connectionString);
         if (matchHost.Success&&matchHost.Groups["host"].Value!=null)
         {
@@ -56,6 +59,13 @@ public class ConnectionData
             bool isInt = int.TryParse(matchPoolSize.Groups["poolSize"].Value, out int newSize);
             if(isInt)
                 cData.poolSize = newSize;
+        }
+        Match matchPerClientCapacity = regexPerClientCapacity.Match(connectionString);
+        if (matchPerClientCapacity.Success&&matchPerClientCapacity.Groups["perClientCapacity"].Value!=null)
+        {
+            bool isInt = int.TryParse(matchPerClientCapacity.Groups["perClientCapacity"].Value, out int newCapacity);
+            if(isInt)
+                cData.perClientCapacity = newCapacity;
         }
         return cData;
     }

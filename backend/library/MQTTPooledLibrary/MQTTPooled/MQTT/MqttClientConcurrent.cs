@@ -38,24 +38,34 @@ public class MqttClientConcurrent
     }
 #endif
 
-    public async Task<int> RunClient(CancellationToken ct) {
-        try {
-        await this.mqttClient.StartAsync(new ManagedMqttClientOptionsBuilder()
-            .WithAutoReconnectDelay(TimeSpan.FromSeconds(5))
-            .WithClientOptions(new MqttClientOptionsBuilder()
-                .WithTcpServer(cData.host, cData.port)
-                //.WithCredentials(cData.username, cData.password)
-                .WithProtocolVersion(MqttProtocolVersion.V500)
-                .WithCleanSession()
-                .Build())
-            .Build());
-        } catch (Exception e) {
+    public async Task<int> RunClient(CancellationToken ct)
+    {
+        try
+        {
+            await this.mqttClient.StartAsync(new ManagedMqttClientOptionsBuilder()
+                .WithAutoReconnectDelay(TimeSpan.FromSeconds(5))
+                .WithClientOptions(new MqttClientOptionsBuilder()
+                    .WithTcpServer(cData.host, cData.port)
+                    //.WithCredentials(cData.username, cData.password)
+                    .WithProtocolVersion(MqttProtocolVersion.V500)
+                    .WithCleanSession()
+                    .Build())
+                .Build());
+        }
+        catch (Exception e)
+        {
             Console.WriteLine(e);
         }
 
         this.mqttClient.ApplicationMessageReceivedAsync += OnMessageReceivedAsync;
         while (!ct.IsCancellationRequested)
         {
+            if (!this.mqttClient.IsConnected)
+            {
+                //let the queue fill up while client is disconnected
+                await Task.Delay(1000);
+                continue;
+            }
             IMqttBusPacket message = await this.sendChannel.Reader.ReadAsync(ct);
             if (message is Message.MqttChannelSubscribe subscribeMessage)
             {
@@ -94,9 +104,17 @@ public class MqttClientConcurrent
 
     internal Task ProcessPublish(IMqttChannelMessage message)
     {
+        //eventually drop messages that have expired
+        //this avoids possible internal DDoS attack when mqtt broker comes back online after a long period of time
+        if (message.Lifetime != 0 && DateTime.Now > message.CreatedAt.AddSeconds(message.Lifetime))
+        {
+            return Task.CompletedTask;
+        }
+
         this.mqttClient.EnqueueAsync(new MqttApplicationMessageBuilder()
             .WithTopic(message.Topic)
             .WithPayload(message.Payload)
+            .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtMostOnce)
             .Build());
         return Task.CompletedTask;
     }
@@ -105,7 +123,7 @@ public class MqttClientConcurrent
     {
         Console.WriteLine($"Received message on topic {e.ApplicationMessage.Topic}");
         IMqttChannelMessage message = new Message.MqttChannelMessage(
-            e.ApplicationMessage.Topic, 
+            e.ApplicationMessage.Topic,
             e.ApplicationMessage.ConvertPayloadToString()
         );
         this.receiveChannel.Writer.WriteAsync(message);

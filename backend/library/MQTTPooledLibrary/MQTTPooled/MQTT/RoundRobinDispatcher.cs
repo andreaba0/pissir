@@ -16,6 +16,14 @@ public class RoundRobinDispatcher {
         this.index = 0;
     }
 
+    public RoundRobinDispatcher(int poolSize, int perClientCapacity) {
+        this.channels = new Channel<IMqttBusPacket>[poolSize];
+        for (int i = 0; i < poolSize; i++) {
+            this.channels[i] = Channel.CreateBounded<IMqttBusPacket>(perClientCapacity);
+        }
+        this.index = 0;
+    }
+
     public async Task Push(IMqttBusPacket message) {
         int currentIndex;
         lock (_lock) {

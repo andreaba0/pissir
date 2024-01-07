@@ -4,6 +4,8 @@ using MQTTConcurrent;
 
 using Npgsql;
 
+using Utility;
+
 using System.Data.Common;
 
 using Module.Accountant;
@@ -12,7 +14,7 @@ using Module.WebServer;
 class Program
 {
     internal static string GetProperty(IConfiguration configuration, string key) {
-        string value = configuration[key];
+        string? value = configuration[key];
         if(value == null) {
             throw new Exception($"Missing configuration key: {key}");
         }
@@ -34,6 +36,7 @@ class Program
         string mqttUsername = GetProperty(configuration, "mqtt:username");
         string mqttPassword = GetProperty(configuration, "mqtt:password");
         string mqttPoolSize = GetProperty(configuration, "mqtt:poolSize");
+        string mqttPerClientCapacity = GetProperty(configuration, "mqtt:perClientCapacity");
 
         string postgresHost = GetProperty(configuration, "database:api:host");
         string postgresPort = GetProperty(configuration, "database:api:port");
@@ -43,21 +46,24 @@ class Program
 
         CancellationTokenSource cts = new CancellationTokenSource();
 
-        //Shared channel used to send data to mqtt client pool
-        Channel<IMqttBusPacket> mqttChannel = Channel.CreateUnbounded<IMqttBusPacket>();
-
         //Shared thread safe instances
-        DbDataSource dataSource = NpgsqlDataSource.Create($"host={postgresHost};port={postgresPort};database={postgresDatabaseName};username={postgresUsername};password={postgresPassword}");
+        DbDataSource dataSource = NpgsqlDataSource.Create($"host={postgresHost};port={postgresPort};database={postgresDatabaseName};username={postgresUsername};password={postgresPassword};Pooling=true;");
         MQTTnetConcurrent mqttPool = new MQTTnetConcurrent(
-            $"host={mqttHost};port={mqttPort};username={mqttUsername};password={mqttPassword};poolSize={mqttPoolSize}",
-            mqttChannel
+            $"host={mqttHost};port={mqttPort};username={mqttUsername};password={mqttPassword};poolSize={mqttPoolSize};perClientCapacity={mqttPerClientCapacity}"
         );
 
+        //Shared channel used to send data to mqtt client pool
+        Channel<IMqttBusPacket> mqttChannel = mqttPool.GetSharedInputChannel();
 
-        /*Accountant accountant = new Accountant(
+        ISharedStorage dbHasChanged = new SharedStorage((bool)false);
+
+
+        Accountant accountant = new Accountant(
             dataSource,
-            mqttChannel
-        );*/
+            mqttChannel,
+            dbHasChanged
+        );
+        
         WebServer webServer = new WebServer(
             dataSource,
             5000
@@ -66,13 +72,13 @@ class Program
         Task mqttTask = Task.Factory.StartNew(() => mqttPool.RunAsync(
             cts.Token
         ), TaskCreationOptions.LongRunning);
-        /*Task accountantTask = Task.Factory.StartNew(() => accountant.RunAsync(
+        Task accountantTask = Task.Factory.StartNew(() => accountant.RunAsync(
             cts.Token
-        ), TaskCreationOptions.LongRunning);*/
+        ), TaskCreationOptions.LongRunning);
         Task webServerTask = Task.Factory.StartNew(() => webServer.RunAsync(cts.Token), TaskCreationOptions.LongRunning);
 
         mqttTask.Wait();
-        //accountantTask.Wait();
+        accountantTask.Wait();
         webServerTask.Wait();
 
         Console.WriteLine("Exiting...");

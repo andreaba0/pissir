@@ -57,8 +57,6 @@ public class WebServer
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
             ";
 
-            DbParameter test = CreateParameter(connection, DbType.Binary, parameters.D);
-
             DbParameter[] dbParameters = new DbParameter[] {
                 CreateParameter(connection, DbType.String, keyId),
                 CreateParameter(connection, DbType.Binary, parameters.D),
@@ -97,11 +95,14 @@ public class WebServer
         });
 
         app.MapGet("/api/auth/certs", async context => {
-            //convert _rsaParameters to json and send it to the client
-            Console.WriteLine("certs");
             KeyJson[] keys = new KeyJson[3];
-            RSAArrayElement[] _rsaParameters = new RSAArrayElement[3];
+            RSAArrayElement[]? _rsaParameters;
             bool isOk = _keyManager.GetRsaParameters(out _rsaParameters);
+            if(!isOk) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Internal Server Error");
+                return;
+            }
             for(int i=0; i<3; i++) {
                 keys[i] = new KeyJson(
                     _rsaParameters[i].Id,
@@ -124,7 +125,7 @@ public class WebServer
         return 0;
     }
 
-    DbParameter CreateParameter(DbConnection connection, DbType type, object value)
+    DbParameter CreateParameter(DbConnection connection, DbType type, object? value)
     {
         DbParameter parameter = DbProviderFactories.GetFactory(connection).CreateParameter();
         parameter.DbType = type;

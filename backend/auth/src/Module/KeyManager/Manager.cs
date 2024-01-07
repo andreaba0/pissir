@@ -132,12 +132,16 @@ public class Manager
         }
     }
 
-    public bool GetRsaParameters(out RSAArrayElement[] parameters)
+    public bool GetRsaParameters(out RSAArrayElement[]? parameters)
     {
         var _copy = new RSAArrayElement[3];
         for (int i = 0; i < 3; i++)
         {
-            Console.WriteLine(_rsaParameters[i].Id);
+            if (_rsaParameters[i] == null)
+            {
+                parameters = null;
+                return false;
+            }
             _copy[i] = new RSAArrayElement(
                 _rsaParameters[i].Id,
                 new RSAParameters
@@ -154,7 +158,6 @@ public class Manager
             );
         }
         parameters = _copy;
-        Console.WriteLine(parameters[0].Id);
         return true;
     }
 }

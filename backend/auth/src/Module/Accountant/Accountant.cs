@@ -14,21 +14,29 @@ using Utility;
 
 namespace Module.Accountant;
 
-internal class TransactionObject
+internal class UserObject {
+    public string Name {get; set;}
+    public string Surname {get; set;}
+    public string Id {get; set;}
+}
+
+internal class TransactionObject<T>
 {
     public string transaction_id { get; set; }
-    public string data { get; set; }
+    public string data_type { get; set; }
+    public T data { get; set; }
 }
 
 internal class UpdateInterval
 {
     private int _seconds;
     private int _dbCallCount;
+    private int _interval = 5;
     public UpdateInterval()
     {
         //convert DateTime.Now to seconds
         int actualTime = (int)(DateTimeOffset.Now.ToUnixTimeSeconds());
-        int seconds = actualTime % 30;
+        int seconds = actualTime % _interval;
         _seconds = actualTime - seconds;
         _dbCallCount = 0;
     }
@@ -36,7 +44,7 @@ internal class UpdateInterval
     {
         Console.WriteLine($"{_seconds} {_dbCallCount}");
         int actualTime = (int)(DateTimeOffset.Now.ToUnixTimeSeconds());
-        int seconds = actualTime % 30;
+        int seconds = actualTime % _interval;
         int interval = actualTime - seconds;
         if (interval == _seconds)
         {
@@ -87,17 +95,41 @@ public class Accountant
 
     public async Task<int> TransactionCommitRoutine(CancellationToken tk)
     {
-        mqttChannel.Writer.TryWrite(new MqttChannelSubscribeCommand("transaction/signup/user", commitChannel));
+        await mqttChannel.Writer.WriteAsync(new MqttChannelSubscribeCommand("transaction/commit/signup/user", commitChannel));
         while (!tk.IsCancellationRequested)
         {
+            Console.WriteLine("Waiting for commit");
             IMqttChannelMessage message = await commitChannel.Reader.ReadAsync(tk);
+            Console.WriteLine($"Committing transaction {message.Payload}");
+            //delete row from pending_transaction where id = message.payload
+            DbConnection connection = await _dbDataSource.OpenConnectionAsync();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                DELETE FROM pending_transaction
+                WHERE id = $1
+                RETURNING updated_at
+            ";
+            //create parameter
+            var idParameter = DbProviderFactories.GetFactory(connection).CreateParameter();
+            idParameter.Value = new Guid(message.Payload);
+            idParameter.DbType = DbType.Guid;
+            command.Parameters.Add(idParameter);
+            var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                var updatedAt = reader.GetDateTime(0);
+                Console.WriteLine($"Transaction {message.Payload} committed at {updatedAt}");
+            }
+            await reader.CloseAsync();
+            await connection.CloseAsync();
+
         }
         return 0;
     }
 
     public async Task<int> TransactionDispatcherRoutine(CancellationToken tk)
     {
-        (string id, string bodyData)[] transactions = new (string, string)[5];
+        (string id, string bodyData, string dataType)[] transactions = new (string, string, string)[5];
         int index = 0;
         while (!tk.IsCancellationRequested)
         {
@@ -107,7 +139,7 @@ public class Accountant
                 await Task.Delay(5 * 1000, tk);
                 continue;
             }
-            transactions = new (string, string)[5];
+            transactions = new (string, string, string)[5];
             index = 0;
             DbConnection connection = await _dbDataSource.OpenConnectionAsync();
             try
@@ -133,7 +165,7 @@ public class Accountant
                     //select 5 pending transactions that are not updated for more than currentRTT seconds
                     var command = connection.CreateCommand();
                     command.CommandText = @"
-                        SELECT id, body_data
+                        SELECT id, body_data, data_type
                         FROM pending_transaction
                         WHERE updated_at < now() - INTERVAL '$1 seconds'
                         FOR UPDATE SKIP LOCKED
@@ -149,14 +181,16 @@ public class Accountant
                     {
                         var id = reader.GetGuid(0).ToString();
                         var bodyData = reader.GetString(1);
-                        transactions[index++] = (id, bodyData);
+                        var dataType = reader.GetString(2);
+                        transactions[index++] = (id, bodyData, dataType);
                     }
                     if (index == 0)
                     {
+                        Console.WriteLine("rollback transaction");
                         await reader.CloseAsync();
-                        var commitCommand = connection.CreateCommand();
-                        commitCommand.CommandText = "COMMIT";
-                        await commitCommand.ExecuteNonQueryAsync();
+                        var rollbackCommand = connection.CreateCommand();
+                        rollbackCommand.CommandText = "ROLLBACK";
+                        await rollbackCommand.ExecuteNonQueryAsync();
                         await connection.CloseAsync();
                         await Task.Delay(currentRTT * 1000, tk);
                         continue;
@@ -196,10 +230,17 @@ public class Accountant
                 //TODO push to pubsub
                 for (int i = 0; i < index; i++)
                 {
-                    TransactionObject transactionObject = new TransactionObject();
+                    if(transactions[i].dataType !="signup") continue;
+                    TransactionObject<UserObject> transactionObject = new TransactionObject<UserObject>();
                     transactionObject.transaction_id = transactions[i].id;
-                    transactionObject.data = transactions[i].bodyData;
+                    transactionObject.data_type = transactions[i].dataType;
+                    Console.WriteLine(transactions[i].bodyData);
+                    transactionObject.data = JsonSerializer.Deserialize<UserObject>(transactions[i].bodyData, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
                     string json = JsonSerializer.Serialize(transactionObject);
+                    Console.WriteLine(json);
                     mqttChannel.Writer.TryWrite(new MqttChannelMessage("transaction/signup/user", json));
                 }
 
@@ -209,6 +250,7 @@ public class Accountant
                 if (wrapper.InnerException is IOException)
                 {
                     Console.WriteLine("Database connection lost");
+                    await connection.CloseAsync();
                     await Task.Delay(1000, tk);
                     continue;
                 }

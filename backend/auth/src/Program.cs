@@ -49,7 +49,8 @@ class Program
         //Shared thread safe instances
         DbDataSource dataSource = NpgsqlDataSource.Create($"host={postgresHost};port={postgresPort};database={postgresDatabaseName};username={postgresUsername};password={postgresPassword};Pooling=true;");
         MQTTnetConcurrent mqttPool = new MQTTnetConcurrent(
-            $"host={mqttHost};port={mqttPort};username={mqttUsername};password={mqttPassword};poolSize={mqttPoolSize};perClientCapacity={mqttPerClientCapacity}"
+            $"host={mqttHost};port={mqttPort};username={mqttUsername};password={mqttPassword};poolSize={mqttPoolSize};perClientCapacity={mqttPerClientCapacity}",
+            "auth"
         );
 
         //Shared channel used to send data to mqtt client pool

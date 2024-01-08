@@ -35,6 +35,7 @@ class Program
         string mqttUsername = GetProperty(configuration, "mqtt:username");
         string mqttPassword = GetProperty(configuration, "mqtt:password");
         string mqttPoolSize = GetProperty(configuration, "mqtt:poolSize");
+        string mqttPerClientCapacity = GetProperty(configuration, "mqtt:perClientCapacity");
 
         string postgresHost = GetProperty(configuration, "database:api:host");
         string postgresPort = GetProperty(configuration, "database:api:port");
@@ -45,15 +46,15 @@ class Program
 
         CancellationTokenSource cts = new CancellationTokenSource();
 
-        //Shared channel used to send data to mqtt client pool
-        Channel<IMqttBusPacket> mqttChannel = Channel.CreateUnbounded<IMqttBusPacket>();
-
         //Shared thread safe instances
-        DbDataSource dataSource = NpgsqlDataSource.Create($"host={postgresHost};port={postgresPort};database={postgresDatabaseName};username={postgresUsername};password={postgresPassword}");
+        DbDataSource dataSource = NpgsqlDataSource.Create($"host={postgresHost};port={postgresPort};database={postgresDatabaseName};username={postgresUsername};password={postgresPassword};Pooling=true");
         MQTTnetConcurrent mqttPool = new MQTTnetConcurrent(
-            $"host={mqttHost};port={mqttPort};username={mqttUsername};password={mqttPassword};poolSize={mqttPoolSize}",
-            mqttChannel
+            $"host={mqttHost};port={mqttPort};username={mqttUsername};password={mqttPassword};poolSize={mqttPoolSize};perClientCapacity={mqttPerClientCapacity}",
+            "api"
         );
+
+        //Shared channel used to send data to mqtt client pool
+        Channel<IMqttBusPacket> mqttChannel = mqttPool.GetSharedInputChannel();
 
         KeyService keyManager = new KeyService(
             backendAuthUri,

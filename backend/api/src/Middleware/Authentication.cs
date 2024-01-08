@@ -40,7 +40,7 @@ public static class Authentication
         return true;
     }
 
-    public static bool CheckTokenClaim(ClaimsPrincipal principal, out string error_message) {
+   /*public static bool CheckTokenClaim(ClaimsPrincipal principal, out string error_message) {
         error_message = string.Empty;
         if(principal == null) {
             error_message = "Missing claims";
@@ -99,7 +99,7 @@ public static class Authentication
             return;
         }
         await next();
-    }
+    }*/
     /*{
         HttpResponseExtension httpResponseExtension = new HttpResponseExtension();
         //get jwt bearer from header and check if it's valid

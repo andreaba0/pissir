@@ -1,18 +1,12 @@
-using Utility;
-using System.Security.Claims;
+using Types;
 
 namespace Middleware;
 
 public static class Authorization {
 
-    public static bool isAuthorized(ClaimsPrincipal claims, Role role) {
-        if(claims == null) return false;
-        if(role == Role.UNKNOW) return false;
-        if(role == Role.WSP&&claims.HasClaim("role", "WSP")) {
-            return true;
-        }
-        if(role == Role.FAR&&claims.HasClaim("role", "FAR")) {
-            return true;
+    public static bool isAuthorized(User user, User.Roles[] roles) {
+        foreach (User.Roles role in roles) {
+            if (User.ParseRole(user.Role) == role) return true;
         }
         return false;
     }

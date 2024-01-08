@@ -70,7 +70,7 @@ public class ConnectionData
         return cData;
     }
 
-    public static string parseTopic(string topic) {
+    public static string ParseTopic(string topic) {
         Regex regexTopic = new Regex(@"^(?<lb>(\$share\/[A-Za-z0-9\-_]+\/)?)(?<path>([A-Za-z0-9\-_]+\/)*[A-Za-z0-9\-_]+)$");
         Match matchTopic = regexTopic.Match(topic);
         //check for path only

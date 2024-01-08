@@ -14,13 +14,16 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
     private Channel<IMqttChannelMessage> demuxChannel;
     private RoundRobinDispatcher dispatcher;
     private Channel<IMqttBusPacket> sharedInputChannel;
+    private string ServerTopic;
 
     public MQTTnetConcurrent(
-        string connectionString
+        string connectionString,
+        string serverTopic
         )
     {
         this.cData = ConnectionData.Parse(connectionString);
         this.subscriptionChannels = new Dictionary<string, List<Channel<IMqttChannelMessage>>>();
+        this.ServerTopic = serverTopic;
 
         if (cData.perClientCapacity.HasValue)
         {
@@ -118,9 +121,10 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
             }
             if (message is MqttChannelSubscribeCommand mqttSubscription)
             {
-                string Topic = ConnectionData.parseTopic(mqttSubscription.Topic);
+                string Topic = ConnectionData.ParseTopic(mqttSubscription.Topic);
                 if(Topic==string.Empty) continue;
-                string idempotentTopic = "$share/server/" + Topic;
+                string idempotentTopic = "$share/"+this.ServerTopic+"/" + Topic;
+                Console.WriteLine($"Subscribing to {idempotentTopic}");
                 MqttChannelSubscribe pubsubMessage = new MqttChannelSubscribe(idempotentTopic);
                 this.dispatcher.PushAll(pubsubMessage);
                 if (!this.subscriptionChannels.ContainsKey(Topic))
@@ -153,10 +157,13 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
         while (!ct.IsCancellationRequested)
         {
             IMqttChannelMessage message = await this.demuxChannel.Reader.ReadAsync(ct);
+            Console.WriteLine(message.Payload);
+            Console.WriteLine(message.Topic);
             string Topic = message.Topic;
             if (!this.subscriptionChannels.ContainsKey(Topic)) continue;
             foreach (Channel<IMqttChannelMessage> channel in this.subscriptionChannels[Topic])
             {
+                Console.WriteLine("Writing to channel");
                 await channel.Writer.WriteAsync(message);
             }
         }

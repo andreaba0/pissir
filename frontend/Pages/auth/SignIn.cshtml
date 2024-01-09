@@ -5,12 +5,43 @@
     Layout = null;
 
     string[,] providers = new string[,] {
-        {"Google", "fa-google", "https://accounts.google.com/o/oauth2/auth"},
-        {"Facebook", "fa-facebook", "https://www.facebook.com/v12.0/dialog/oauth"},
-        {"Github", "fa-github", "https://github.com/login/oauth/authorize"},
-        {"DigitalOcean", "fa-digital-ocean", "https://cloud.digitalocean.com/v1/oauth/authorize"}
+        {
+        "Google",
+        "fa-google",
+        "https://accounts.google.com/o/oauth2/auth?" +
+        "scope=openid&" +
+        "access_type=online&" +
+        "response_type=id_token&" +
+        "state=1234567890qwerty&" +
+        "redirect_uri=https%3A//redirect.localhost.andreabarchietto.it/oauth/google&" +
+        "client_id=218970200448-62ddcs49ilsub6a1r1l2k2vpd84elkqs.apps.googleusercontent.com"
+        },
+
+        {
+        "Facebook",
+        "fa-facebook",
+        "https://www.facebook.com/v18.0/dialog/oauth?" +
+        "scope=openid&" +
+        "response_type=code&" +
+        "state=1234567890qwerty&" +
+        "redirect_uri=https%3A//redirect.localhost.andreabarchietto.it/oauth/facebook&" +
+        "client_id=709636884633879&"+
+        "client_secret=f502cde6c8b5dec3d1046ceef2aa78e8"
+        }
+
     };
 }
+    <!--https://redirect.localhost.andreabarchietto.it/oauth/<provider>
+    
+    https://accounts.google.com/o/oauth2/v2/auth
+    scope=https%3A//www.googleapis.com/auth/drive.metadata.readonly&
+    access_type=online&
+    include_granted_scopes=true&
+    response_type=token_id&
+    state=state_parameter_passthrough_value&
+    redirect_uri= https%3A//redirect.localhost.andreabarchietto.it/oauth/google
+    client_id=218970200448-62ddcs49ilsub6a1r1l2k2vpd84elkqs.apps.googleusercontent.com
+    -->
 
 <!DOCTYPE html>
 <html>

@@ -5,34 +5,27 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 public class SignInModel : PageModel
 {
     // test
-    string token = "XXXXXAAAAA";
+    //string token = "XXXXXAAAAA";
 
     public IActionResult OnGet()
-    {
-        // Salvataggio del token come cookie
-        Response.Cookies.Append("AccessToken", token, new CookieOptions
-        {
-            Path = "/",
-            Expires = DateTime.Now.AddDays(1),
-            HttpOnly = false,
-            Secure = false,
-        });
-
+    {      
         return Page();
     }
 
     public async Task<IActionResult> OnGetCallbackAsync()
     {
-        string? token = Request.Query["token"];
-        
+        string? token = Request.Query["id_token"];
+
         // Verifica se il token è valido (es. presenza e formato)
         if (!string.IsNullOrEmpty(token))
         {
+            // Salvataggio del token nel cookie
             Response.Cookies.Append("AccessToken", token, new CookieOptions
             {
                 Path = "/",
+                // TODO cache-control in sec preso da token
                 Expires = DateTime.Now.AddDays(1),
-                HttpOnly = false,
+                HttpOnly = true,
                 Secure = false,
             });
 
@@ -60,10 +53,10 @@ public class SignInModel : PageModel
             TempData["MessaggioErrore"] = "Qualcosa è andato storto. Autenticazione fallita.";
             return RedirectToPage();
         }
-        
 
         TempData["MessaggioErrore"] = "Qualcosa è andato storto. Autenticazione fallita.";
         return RedirectToPage();
+
     }
 
 }

@@ -6,3 +6,5 @@
 /frontend/obj
 /frontend/bin/Debug/net7.0
 /.vs
+/backend/api
+/.gitignore

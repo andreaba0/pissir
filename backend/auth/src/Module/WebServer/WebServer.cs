@@ -26,7 +26,8 @@ public class WebServer
 {
     private readonly DbDataSource _dbDataSource;
     private Manager _keyManager;
-    private RemoteManager _remoteManager;
+    private RemoteManager _remoteGoogleManager;
+    private RemoteManager _remoteFacebookManager;
     private int _port;
 
     public WebServer(DbDataSource dbDataSource, int port)
@@ -36,8 +37,12 @@ public class WebServer
         _keyManager = new LocalManager(
             _dbDataSource
         );
-        _remoteManager = new RemoteManager(
+        _remoteGoogleManager = new RemoteManager(
             "https://www.googleapis.com/oauth2/v3/certs",
+            new Fetch()
+        );
+        _remoteFacebookManager = new RemoteManager(
+            "https://www.facebook.com/.well-known/oauth/openid/jwks",
             new Fetch()
         );
     }
@@ -55,12 +60,19 @@ public class WebServer
         });
 
         app.MapGet("/oauth/google/jwks", async context => {
-            RSAArrayElement[] keys = _remoteManager.GetKeys();
+            RSAArrayElement[] keys = _remoteGoogleManager.GetKeys();
             //return the keys as json
             //KeyArray keyArray = new KeyArray(keys);
             var json = JsonSerializer.Serialize(keys);
             context.Response.ContentType = "application/json";
-            context.Response.Headers.Add("Cache-Control", "max-age=3600");
+            await context.Response.WriteAsync(json);
+        });
+        app.MapGet("/oauth/facebook/jwks", async context => {
+            RSAArrayElement[] keys = _remoteFacebookManager.GetKeys();
+            //return the keys as json
+            //KeyArray keyArray = new KeyArray(keys);
+            var json = JsonSerializer.Serialize(keys);
+            context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         });
 
@@ -141,7 +153,8 @@ public class WebServer
         Task[] tasks = new Task[] {
             _keyManager.RunAsync(cancellationToken),
             app.RunAsync(cancellationToken),
-            _remoteManager.RunAsync(cancellationToken)
+            _remoteGoogleManager.RunAsync(cancellationToken),
+            _remoteFacebookManager.RunAsync(cancellationToken)
         };
         await Task.WhenAll(tasks);
 

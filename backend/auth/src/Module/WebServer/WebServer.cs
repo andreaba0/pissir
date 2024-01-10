@@ -5,6 +5,8 @@ using System.Security.Cryptography;
 using Npgsql;
 using NpgsqlTypes;
 
+using Utility;
+
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Collections.Generic;
@@ -24,14 +26,19 @@ public class WebServer
 {
     private readonly DbDataSource _dbDataSource;
     private Manager _keyManager;
+    private RemoteManager _remoteManager;
     private int _port;
 
     public WebServer(DbDataSource dbDataSource, int port)
     {
         _dbDataSource = dbDataSource;
         _port = port;
-        _keyManager = new Manager(
+        _keyManager = new LocalManager(
             _dbDataSource
+        );
+        _remoteManager = new RemoteManager(
+            "https://www.googleapis.com/oauth2/v3/certs",
+            new Fetch()
         );
     }
 
@@ -41,6 +48,21 @@ public class WebServer
         var builder = WebApplication.CreateBuilder();
         var configuration = builder.Configuration;
         var app = builder.Build();
+
+        app.MapGet("/ping", async context =>
+        {
+            await context.Response.WriteAsync("pong");
+        });
+
+        app.MapGet("/oauth/google/jwks", async context => {
+            RSAArrayElement[] keys = _remoteManager.GetKeys();
+            //return the keys as json
+            //KeyArray keyArray = new KeyArray(keys);
+            var json = JsonSerializer.Serialize(keys);
+            context.Response.ContentType = "application/json";
+            context.Response.Headers.Add("Cache-Control", "max-age=3600");
+            await context.Response.WriteAsync(json);
+        });
 
         app.MapPost("/api/key", async context =>
         {
@@ -94,7 +116,7 @@ public class WebServer
             }
         });
 
-        app.MapGet("/api/auth/certs", async context => {
+        app.MapGet("/.well-known/oauth/openid/jwks", async context => {
             KeyJson[] keys = new KeyJson[3];
             RSAArrayElement[]? _rsaParameters;
             bool isOk = _keyManager.GetRsaParameters(out _rsaParameters);
@@ -118,7 +140,8 @@ public class WebServer
 
         Task[] tasks = new Task[] {
             _keyManager.RunAsync(cancellationToken),
-            app.RunAsync(cancellationToken)
+            app.RunAsync(cancellationToken),
+            _remoteManager.RunAsync(cancellationToken)
         };
         await Task.WhenAll(tasks);
 

@@ -29,16 +29,18 @@ static_resources:
                   name: local_route
                   virtual_hosts:
                     - name: local_service
-                      domains: ["192.168.178.137"] # Web page cluster domain
+                      domains: ["*"] # Web page cluster domain
                       routes:
                         - match:
-                            prefix: "/api/auth/"
+                            prefix: "/api/authorization/"
                           route:
                             cluster: auth
+                            prefix_rewrite: "/"
                         - match:
-                            prefix: "/api/"
+                            prefix: "/api/hydroservice/"
                           route:
                             cluster: api
+                            prefix_rewrite: "/"
                         - match:
                             prefix: "/"
                           route:

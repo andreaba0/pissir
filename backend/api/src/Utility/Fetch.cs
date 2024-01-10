@@ -1,4 +1,6 @@
 using Interface.Utility;
+using Interface.Types;
+using Types;
 
 namespace Utility;
 
@@ -9,6 +11,10 @@ public class Fetch : IFetch {
         POST,
         PUT,
         DELETE
+    }
+    public enum ContentType {
+        JSON,
+        TEXT
     }
 
     public Fetch() {
@@ -24,4 +30,21 @@ public class Fetch : IFetch {
             return null;
         }
     }
+    /*public async Task<IFetchResponseCustom?> Get(string url) {
+        FetchResponseCustom response = new FetchResponseCustom();
+        try {
+            var res = await _client.GetAsync(url);
+            response.StatusCode = res.StatusCode;
+            response.Headers.Add("Cache-Control", res.Headers.CacheControl);
+            if(response.IsSuccessStatusCode) {
+                var content = await response.Content.ReadAsStringAsync();
+                response.Content = content;
+            } else {
+                response.Content = string.Empty;
+            }
+            return response;
+        } catch(Exception e) {
+            return null;
+        }
+    }*/
 }

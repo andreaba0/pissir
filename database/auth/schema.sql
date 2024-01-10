@@ -1,29 +1,83 @@
-create table registered_provider (
-    name text primary key,
-    iss text not null,
-);
-
-create table signin_credential (
-    registered_provider text not null,
-    id text not null,
-    primary key (provider, id)
-);
-
-create table user_account (
-    id text primary key,
-    name text,
-    surname text not null,
-    email text not null,
+create table registered_provider_iss (
+    provider_uri text primary key, -- corresponds to the iss field in the (openid standard) id_token
     registered_provider text not null
 );
 
-create table presentation_letter (
+create table registered_provider (
+    name text primary key
+);
+
+create table user_account (
+    id bigserial primary key,
     registered_provider text not null,
+    unique (registered_provider, id)
+);
+
+create table user_role (
+    role_name varchar(3) primary key check(role_name in ('WSP', 'FAR'))
+);
+create table industry_sector (
+    sector_name varchar(2) primary key check(sector_name in ('WA', 'FA'))
+);
+
+create table person(
+    global_id uuid unique not null default gen_random_uuid(),
+    account_id bigint primary key,
+    tax_code varchar(16) not null unique,
+    given_name text not null,
+    family_name text not null,
+    email text not null,
+    person_role varchar(3) not null,
+    unique (tax_code, person_role)
+);
+create table user_wsp(
+    person_id bigint primary key,
+    person_role varchar(3) not null check(person_role = 'WSP')
+);
+create table farmer(
+    person_id bigint primary key,
+    person_role varchar(3) not null check(person_role = 'FAR')
+);
+
+create table company(
+    vat_number varchar(11) primary key,
+    industry_sector varchar(2) not null,
+    unique (vat_number, industry_sector)
+);
+
+create table water_company(
+    vat_number varchar(11) primary key,
+    industry_sector varchar(2) not null check(industry_sector = 'WA')
+);
+create table farm(
+    vat_number varchar(11) primary key,
+    industry_sector varchar(2) not null check(industry_sector = 'FA')
+);
+
+
+create table presentation_letter (
+    user_account bigint not null,
     name text not null,
     surname text not null,
     email text not null,
-    signin_credential_id text not null,
-    primary key (registered_provider, signin_credential_id),
+    tax_code varchar(16) not null,
+    company_vat_number varchar(11) not null,
+    company_industry_sector varchar(2) not null,
+    primary key (user_account, company_vat_number, company_industry_sector)
+);
+
+create table api_acl (
+    person_id bigint not null,
+    date_start timestamptz not null,
+    date_end timestamptz not null check(date_end > date_start),
+    primary key (person_id, date_start, date_end)
+);
+
+create table api_acl_request (
+    person_id bigint not null,
+    date_start timestamptz not null,
+    date_end timestamptz not null check(date_end > date_start),
+    primary key (person_id, date_start, date_end)
 );
 
 create table rsa (

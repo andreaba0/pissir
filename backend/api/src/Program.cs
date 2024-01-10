@@ -37,11 +37,11 @@ class Program
         string mqttPoolSize = GetProperty(configuration, "mqtt:poolSize");
         string mqttPerClientCapacity = GetProperty(configuration, "mqtt:perClientCapacity");
 
-        string postgresHost = GetProperty(configuration, "database:api:host");
-        string postgresPort = GetProperty(configuration, "database:api:port");
-        string postgresDatabaseName = GetProperty(configuration, "database:api:database");
-        string postgresUsername = GetProperty(configuration, "database:api:username");
-        string postgresPassword = GetProperty(configuration, "database:api:password");
+        string postgresHost = GetProperty(configuration, "database:host");
+        string postgresPort = GetProperty(configuration, "database:port");
+        string postgresDatabaseName = GetProperty(configuration, "database:database");
+        string postgresUsername = GetProperty(configuration, "database:username");
+        string postgresPassword = GetProperty(configuration, "database:password");
         string backendAuthUri = GetProperty(configuration, "auth:uri");
 
         CancellationTokenSource cts = new CancellationTokenSource();

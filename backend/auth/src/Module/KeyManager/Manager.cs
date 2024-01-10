@@ -54,6 +54,20 @@ public class KeyJson
         use = "sig";
         kty = "RSA";
     }
+
+    public KeyJson(string kid, string n, string e, string use, string kty, string alg)
+    {
+        this.alg = alg;
+        this.kid = kid;
+        this.n = n;
+        this.e = e;
+        this.use = use;
+        this.kty = kty;
+    }
+
+    public KeyJson() {
+
+    }
     public static string Serialize(KeyJson keyJson)
     {
         return JsonSerializer.Serialize(keyJson);
@@ -73,15 +87,11 @@ public abstract class Manager {
     {
         while (!tk.IsCancellationRequested)
         {
-            if(this._expiration>0) {
-                this._expiration--;
-                await Task.Delay(3000, tk);
-                continue;
-            }
             while (!await UpdateRsaParameters())
             {
                 await Task.Delay(1000, tk);
             }
+            await Task.Delay(_expiration * 1000, tk);
         }
         return 0;
     }
@@ -169,12 +179,12 @@ public class LocalManager : Manager
             {
                 _rsaParameters[i] = parameters[i];
             }
-            base._expiration=3600/3;
+            base._expiration=60*5;
             return true;
         }
         catch (Exception ex)
         {
-            base._expiration=0;
+            base._expiration=1;
             return false;
         }
     }
@@ -183,6 +193,7 @@ public class LocalManager : Manager
 public class RemoteManager : Manager {
     private readonly string _uri;
     private readonly IFetch _fetch;
+    private static readonly char[] padding = { '=' };
     public RemoteManager(string uri, IFetch fetch) : base()
     {
         _uri = uri;
@@ -192,50 +203,46 @@ public class RemoteManager : Manager {
     internal override async Task<bool> UpdateRsaParameters() {
         try
         {
-            IFetchResponseCustom? response = await _fetch.Get(_uri);
-            Console.WriteLine(response);
-            Console.WriteLine($"Content: {response?.Content}");
+            IFetchResponseCustom response = await _fetch.Get(_uri);
             if(response == null) {
-                base._expiration=0;
+                base._expiration=1;
                 return false;
             }
-            if(response.StatusCode==HttpStatusCode.OK) {
-                base._expiration=0;
+            if(response.StatusCode!=HttpStatusCode.OK) {
+                base._expiration=1;
                 return false;
             }
-            Console.WriteLine(response.Content);
             KeyArray? json = JsonSerializer.Deserialize<KeyArray>(response.Content);
             if(json == null) {
-                base._expiration=0;
+                base._expiration=1;
                 return false;
             }
             _rsaParameters = new RSAArrayElement[json.keys.Length];
             for(int i=0; i<json.keys.Length; i++) {
+                string kid = json.keys[i].kid;
+                string nBase64 = json.keys[i].n.Replace('-', '+').Replace('_', '/');
+                if(nBase64.Length % 4 > 0) {
+                    nBase64 = nBase64.PadRight(nBase64.Length + 4 - nBase64.Length % 4, '=');
+                }
+                string eBase64 = json.keys[i].e.Replace('-', '+').Replace('_', '/');
+                if(eBase64.Length % 4 > 0) {
+                    eBase64 = eBase64.PadRight(eBase64.Length + 4 - eBase64.Length % 4, '=');
+                }
                 _rsaParameters[i] = new RSAArrayElement(
                     json.keys[i].kid,
                     new RSAParameters {
-                        Modulus = Convert.FromBase64String(json.keys[i].n),
-                        Exponent = Convert.FromBase64String(json.keys[i].e)
+                        Modulus = Convert.FromBase64String(nBase64),
+                        Exponent = Convert.FromBase64String(eBase64)
                     }
                 );
             }
-            //convert Cache-Control max-age to seconds
-            CacheControlHeaderValue? cacheControl = (CacheControlHeaderValue?)response.Headers["Cache-Control"];
-            if(cacheControl == null) {
-                base._expiration=30;
-                return true;
-            }
-            if(cacheControl.MaxAge == null) {
-                base._expiration=30;
-                return true;
-            }
-            base._expiration = (int)cacheControl.MaxAge.Value.TotalSeconds;
+            base._expiration = 60*5;
             return true;
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex);
-            base._expiration=0;
+            base._expiration=1;
             return false;
         }
     }

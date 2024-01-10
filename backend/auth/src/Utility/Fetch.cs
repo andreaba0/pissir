@@ -5,7 +5,7 @@ using System.Net;
 namespace Utility;
 
 public interface IFetch {
-    public Task<IFetchResponseCustom?> Get(string url);
+    public Task<IFetchResponseCustom> Get(string url);
 }
 public class Fetch : IFetch {
     private readonly HttpClient _client;
@@ -24,28 +24,25 @@ public class Fetch : IFetch {
         this._client = new HttpClient();
         _client.Timeout = TimeSpan.FromSeconds(5);
     }
-    public async Task<IFetchResponseCustom?> Get(string url) {
-        FetchResponseCustom response = new FetchResponseCustom();
+    public async Task<IFetchResponseCustom> Get(string url) {
+        IFetchResponseCustom response = new FetchResponseCustom();
+        string content = string.Empty;
+        HttpStatusCode statusCode;
         try {
             Console.WriteLine("Fetching " + url);
             var res = await _client.GetAsync(url);
-            response.StatusCode = res.StatusCode;
-            Console.WriteLine("Status code: " + res.StatusCode);
-            //response.Headers.
-            //response.Headers.Add("Cache-Control", res.Headers.CacheControl);
-            //Console.WriteLine("Cache-Control: " + res.Headers.CacheControl);
+            statusCode = res.StatusCode;
             if(res.StatusCode == HttpStatusCode.OK) {
-                string content = await res.Content.ReadAsStringAsync();
-                response.Content = content.Clone();
-                Console.WriteLine(response.Content);
-                Console.WriteLine("OK");
-            } else {
-                response.Content = string.Empty;
+                content = await res.Content.ReadAsStringAsync();
             }
+            response.Headers = new Dictionary<string, object>();
+            response.Content = content;
+            response.StatusCode = statusCode;
             return response;
         } catch(Exception e) {
-            Console.WriteLine(e);
-            return null;
+            response.Content=string.Empty;
+            response.StatusCode=HttpStatusCode.InternalServerError;
+            return response;
         }
     }
 }

@@ -10,8 +10,8 @@ namespace frontend.Pages
     public static class ApiReq
     {
         // Variabili comuni alle classi
-        public static string urlGenerico = "http://tuo-api-url.com/api/";
-        public static HttpClient httpClient = new();
+        public static readonly string urlGenerico = "http://tuo-api-url.com/api/";
+        public static readonly HttpClient httpClient = new();
         public static Utente? utente { get; set; }
 
         //Costruttore statico con utente statico
@@ -28,7 +28,7 @@ namespace frontend.Pages
                 CodiceFiscale = "ABC123XYZ4567890",
                 Nome = "Mario",
                 Cognome = "Rossi",
-                Role = "GSI" //GSI / GAA
+                Role = "WSP" //WSP / FAR
             };
             
         }
@@ -36,10 +36,10 @@ namespace frontend.Pages
         // Metodi richieste API
 
         // Richiesta dati utente
-        public static async Task<Utente> GetUserDataFromApi(string codFiscale, HttpContext context)
+        public static async Task<Utente> GetUserDataFromApi(HttpContext context)
         {
             // Stringa interpolata
-            string urlTask = $"{urlGenerico}user/?CodiceFiscale={Uri.EscapeDataString(codFiscale)}";
+            string urlTask = $"{urlGenerico}user/?user_info=tax_code+name+surname+role";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);           
             
@@ -64,9 +64,9 @@ namespace frontend.Pages
         }
 
         // Richiesta dati azienda idrica
-        public static async Task<AziendaIdricaModel> GetAziendaIdricaDataFromApi(string partitaIva, HttpContext context)
+        public static async Task<AziendaIdricaModel> GetAziendaIdricaDataFromApi(HttpContext context)
         {
-            string urlTask = $"{urlGenerico}aziendaIdrica/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
+            string urlTask = $"{urlGenerico}aziendaIdrica/?azienda_info=vat_number+name+address+phone_number+email+industry_sector+daily_limit";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
@@ -91,9 +91,9 @@ namespace frontend.Pages
 
 
         // Richiesta dati azienda agricola
-        public static async Task<AziendaAgricolaModel> GetAziendaAgricolaDataFromApi(string partitaIva, HttpContext context)
+        public static async Task<AziendaAgricolaModel> GetAziendaAgricolaDataFromApi(HttpContext context)
         {
-            string urlTask = $"{urlGenerico}aziendaAgricola/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
+            string urlTask = $"{urlGenerico}aziendaAgricola/?azienda_info=vat_number+name+address+phone_number+email+industry_sector+buy_daily_limit";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
 
@@ -358,8 +358,7 @@ namespace frontend.Pages
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                float acqua = 0;
-                acqua = JsonConvert.DeserializeObject<float>(responseData);
+                float acqua = JsonConvert.DeserializeObject<float>(responseData);
                 if (responseData != null)
                     return acqua;
                 else
@@ -385,7 +384,7 @@ namespace frontend.Pages
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<Utente> listaUtenti = JsonConvert.DeserializeObject<List<Utente>>(responseData);
+                List<Utente>? listaUtenti = JsonConvert.DeserializeObject<List<Utente>>(responseData);
                 if (listaUtenti != null)
                     return listaUtenti;
                 else
@@ -411,7 +410,7 @@ namespace frontend.Pages
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<AziendaAgricolaModel> listaAziende = JsonConvert.DeserializeObject<List<AziendaAgricolaModel>>(responseData);
+                List<AziendaAgricolaModel>? listaAziende = JsonConvert.DeserializeObject<List<AziendaAgricolaModel>>(responseData);
                 if (listaAziende != null)
                     return listaAziende;
                 else

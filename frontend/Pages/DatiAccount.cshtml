@@ -28,7 +28,7 @@
         <li><strong>Email:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Email : Model.aziendaAgricola?.Email)</li>
         <li><strong>Categoria:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Categoria : Model.aziendaAgricola?.Categoria)</li>
         
-        @if (ApiReq.utente.Role == "GSI")
+        @if (ApiReq.utente.Role == "WSP")
         {
             <li><strong>Limite Erogazione Globale:</strong> @Model.aziendaIdrica?.LimiteErogazioneGlobale</li>
         }

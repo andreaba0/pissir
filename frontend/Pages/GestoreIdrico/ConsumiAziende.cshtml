@@ -12,7 +12,8 @@
     <small>• Vengono visualizzati tutti i consumi idrici delle aziende agricole a cui si è venduto l'acqua.</small>
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
-    <canvas id="consumiAziendeChart" height="90"></canvas><br />
+    <canvas id="consumiAziendeChart" height="1"></canvas><br />
+    <div id="graphics"></div>
 
     <table id="tabConsumiAziende" class="table">
         <thead>
@@ -53,48 +54,103 @@
     document.addEventListener('DOMContentLoaded', function () {
         var consumiData = @Html.Raw(JsonConvert.SerializeObject(Model.consumiAziende));
 
-        // Inizializzazione canvas per il grafico
-        var ctx = document.getElementById('consumiAziendeChart').getContext('2d');
-
-        // Get campi, litri consumati e prenotati
-        var campi = consumiData.map(function (consumo) {
-            return consumo.Campo+" - P.Iva "+consumo.PartitaIva;
+        // Raggruppa i dati per azienda
+        var consumiPerAzienda = {};
+        consumiData.forEach(function (consumo) {
+            var aziendaKey = consumo.PartitaIva;
+            if (!consumiPerAzienda[aziendaKey]) {
+                consumiPerAzienda[aziendaKey] = {
+                    litriConsumatiTotali: 0,
+                    quantitaPrenotataTotali: 0,
+                    minDate: consumo.Data,
+                    maxDate: consumo.Data
+                };
+            } else {
+                // Aggiorna minDate e maxDate se necessario
+                if (consumo.Data < consumiPerAzienda[aziendaKey].minDate) {
+                    consumiPerAzienda[aziendaKey].minDate = consumo.Data;
+                }
+                if (consumo.Data > consumiPerAzienda[aziendaKey].maxDate) {
+                    consumiPerAzienda[aziendaKey].maxDate = consumo.Data;
+                }
+            }
+            consumiPerAzienda[aziendaKey].litriConsumatiTotali += consumo.LitriConsumati;
+            consumiPerAzienda[aziendaKey].quantitaPrenotataTotali += consumo.QuantitaPrenotata;
         });
 
-        var litriConsumati = consumiData.map(function (consumo) {
-            return consumo.LitriConsumati;
-        });
 
-        var quantitaPrenotata = consumiData.map(function (consumo) {
-            return consumo.QuantitaPrenotata;
-        });
+        // Inizializzazione div per i grafici
+        var graphicsDiv = document.getElementById('graphics');
 
         // Configurazione del grafico
-        var chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: campi,
-                datasets:
-                    [
+        var charts = {};
+        Object.keys(consumiPerAzienda).forEach(function (aziendaKey) {
+            var aziendaData = consumiPerAzienda[aziendaKey];
+
+            // Creazione di un div per ogni grafico
+            var chartDiv = document.createElement('div');
+            chartDiv.className = 'chart-container';
+            graphicsDiv.appendChild(chartDiv);
+
+            // Aggiunta del titolo dell'azienda sopra il grafico con il periodo
+            var aziendaTitle = document.createElement('h5');
+            aziendaTitle.innerHTML = 'Azienda con Partita IVA: ' + aziendaKey + ' - Periodo: ' + getFormattedDateRange(aziendaData.minDate, aziendaData.maxDate);
+            chartDiv.appendChild(aziendaTitle);
+
+
+            // Creazione del canvas per il grafico
+            var canvasId = 'consumiAziendeChart_' + aziendaKey;
+            var newCanvas = document.createElement('canvas');
+            newCanvas.id = canvasId;
+            newCanvas.height = 50;
+            chartDiv.appendChild(newCanvas);
+
+            var newCtx = newCanvas.getContext('2d');
+
+            charts[aziendaKey] = new Chart(newCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Quantità Prenotata', 'Litri Consumati'],
+                    datasets: [
                         {
-                            label: 'Quantità Prenotata',
-                            data: quantitaPrenotata,
+                            label: 'Totale Prenotato',
+                            data: [aziendaData.quantitaPrenotataTotali, 0],
                             backgroundColor: 'rgba(75, 192, 192, 0.2)',
                             borderColor: 'rgba(75, 192, 192, 1)',
                             borderWidth: 2
                         },
                         {
-                            label: 'Litri Consumati',
-                            data: litriConsumati,
+                            label: 'Totale Consumato',
+                            data: [0, aziendaData.litriConsumatiTotali],
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
                             borderColor: 'rgba(255, 99, 132, 1)',
                             borderWidth: 2
                         }
                     ]
-            },
-            options: {
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                }
+            });
 
-            }
+
+
+            // Aggiunta della linea dopo il grafico
+            var hrLine = document.createElement('hr');
+            hrLine.style.marginTop = '0.5em';
+            hrLine.style.marginBottom = '0.5em';
+            chartDiv.appendChild(hrLine);
         });
     });
+
+    function getFormattedDateRange(startDate, endDate) {
+        return startDate + ' - ' + endDate;
+    }
+
+
 </script>
+

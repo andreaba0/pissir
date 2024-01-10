@@ -28,9 +28,9 @@
 
     <!-- Parte centrale -->
     <div class="flex-container @(ViewData["Page"] as string == "Index" ? "hide-aside" : "")">
-        @if (User.IsInRole("GSI"))
+        @if (User.IsInRole("WSP"))
         {
-            <!-- Aside per l'utente GSI -->
+            <!-- Aside per l'utente WSP -->
             <aside>
                 <a href="/DatiAccount" class="@((ViewData["Page"] as string == "Dati Account") ? "current-page" : "")">Dati account</a>
                 <a href="/GestoreIdrico/OffertaLimiti" class="@((ViewData["Page"] as string == "Offerta e limiti") ? "current-page" : "")">Offerta e limiti</a>
@@ -41,9 +41,9 @@
 
             </aside>
         }
-        else if (User.IsInRole("GAA"))
+        else if (User.IsInRole("FAR"))
         {
-            <!-- Aside per l'utente GAA -->
+            <!-- Aside per l'utente FAR -->
             <aside>
                 <a href="/DatiAccount" class="@((ViewData["Page"] as string == "Dati Account") ? "current-page" : "")">Dati account</a>
                 <a href="/GestioneColture" class="@((ViewData["Page"] as string == "Gestione Colture") ? "current-page" : "")">Gestione Colture</a>

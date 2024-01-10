@@ -20,27 +20,20 @@ namespace frontend.Pages
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
 
-            // Ottieni il CF dell'utente loggato
-            string codFiscale = User.FindFirst("sub")?.Value;
-            
+
             // Chiamata alle API per ottenere i dati
-            if (codFiscale != null)
-            {
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale, HttpContext);
-                if (ApiReq.utente.Role == "GSI")
-                    aziendaIdrica = await ApiReq.GetAziendaIdricaDataFromApi(ApiReq.utente.PartitaIva, HttpContext);
-                else
-                    aziendaAgricola = await ApiReq.GetAziendaAgricolaDataFromApi(ApiReq.utente.PartitaIva, HttpContext);
-            }
+            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+            if (ApiReq.utente.Role == "WSP")
+                aziendaIdrica = await ApiReq.GetAziendaIdricaDataFromApi(HttpContext);
+            else if(ApiReq.utente.Role == "FAR")
+                aziendaAgricola = await ApiReq.GetAziendaAgricolaDataFromApi(HttpContext);
             else
-            {
-                return BadRequest();
-            }
+                BadRequest();
             */
 
 
             // Simulazione dati          
-            if (ApiReq.utente.Role == "GSI")
+            if (ApiReq.utente.Role == "WSP")
                 aziendaIdrica = GetSimulatedAziendaIdricaData();
             else
                 aziendaAgricola = GetSimulatedAziendaAgricolaData();
@@ -87,7 +80,7 @@ namespace frontend.Pages
                 Indirizzo = "Via delle Campagne, 123",
                 Telefono = "0123456789",
                 Email = "info@aziendaagricolarossi.com",
-                Categoria = "AA", // AA / AI
+                Categoria = "FA",
                 LimiteAcquistoAziendale = 5000.0f
             };
         }
@@ -103,7 +96,7 @@ namespace frontend.Pages
                 Indirizzo = "Via dell'Acqua, 456",
                 Telefono = "9876543210",
                 Email = "info@aziendaidricablu.com",
-                Categoria = "AI",
+                Categoria = "WA",
                 LimiteErogazioneGlobale = 100000.0f
             };
         }

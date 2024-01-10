@@ -76,7 +76,15 @@ namespace frontend.Pages.GestoreIdrico
                 },
                 new ConsumoAziendaleCampo
                 {
-                    PartitaIva = "344535334",
+                    PartitaIva = "123456789",
+                    Campo = "Campo1",
+                    Data = "2023-01-02",
+                    LitriConsumati = 45.5f,
+                    QuantitaPrenotata = 60.2f
+                },
+                new ConsumoAziendaleCampo
+                {
+                    PartitaIva = "123456789",
                     Campo = "Campo2",
                     Data = "2023-02-15",
                     LitriConsumati = 95.2f,
@@ -89,6 +97,30 @@ namespace frontend.Pages.GestoreIdrico
                     Data = "2023-03-20",
                     LitriConsumati = 120.8f,
                     QuantitaPrenotata = 160.1f
+                },
+                new ConsumoAziendaleCampo
+                {
+                    PartitaIva = "575757576",
+                    Campo = "Campo2",
+                    Data = "2023-03-20",
+                    LitriConsumati = 120.8f,
+                    QuantitaPrenotata = 160.1f
+                },
+                new ConsumoAziendaleCampo
+                {
+                    PartitaIva = "575757576",
+                    Campo = "Campo3",
+                    Data = "2023-03-20",
+                    LitriConsumati = 130.8f,
+                    QuantitaPrenotata = 160.1f
+                },
+                new ConsumoAziendaleCampo
+                {
+                    PartitaIva = "575757576",
+                    Campo = "Campo3",
+                    Data = "2023-03-20",
+                    LitriConsumati = 20.8f,
+                    QuantitaPrenotata = 60.1f
                 },
                 new ConsumoAziendaleCampo
                 {

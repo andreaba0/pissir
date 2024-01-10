@@ -10,9 +10,10 @@
 <div style="margin: 1em;">
     <h4>Storico consumi</h4>
     <small>• Viene visualizzato tutto lo storico dei consumi idrici dell'azienda agricola.</small>
-    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+    <hr style="margin-top: 0.5em; margin-bottom: 0.5em;">
 
-    <canvas id="consumiChart" height="90"></canvas><br />
+    <canvas id="consumiChart" height="0" margin="0"></canvas>
+    <div id="graphics"></div>
     
     <table id="tabStoricoConsumi" class="table">
         <thead>
@@ -51,48 +52,82 @@
     document.addEventListener('DOMContentLoaded', function () {
         var consumiData = @Html.Raw(JsonConvert.SerializeObject(Model.StoricoConsumi));
 
+        // Raggruppa i dati per campo
+        var consumiPerCampo = {};
+        consumiData.forEach(function (consumo) {
+            if (!consumiPerCampo[consumo.Campo]) {
+                consumiPerCampo[consumo.Campo] = {
+                    litriConsumati: [],
+                    quantitaPrenotata: []
+                };
+            }
+            consumiPerCampo[consumo.Campo].litriConsumati.push(consumo.LitriConsumati);
+            consumiPerCampo[consumo.Campo].quantitaPrenotata.push(consumo.QuantitaPrenotata);
+        });
+
         // Inizializzazione canvas per il grafico
         var ctx = document.getElementById('consumiChart').getContext('2d');
 
-        // Get campi, litri consumati e prenotati
-        var campi = consumiData.map(function (consumo) {
-            return consumo.Campo;
-        });
-
-        var litriConsumati = consumiData.map(function (consumo) {
-            return consumo.LitriConsumati;
-        });
-
-        var quantitaPrenotata = consumiData.map(function (consumo) {
-            return consumo.QuantitaPrenotata;
-        });
-
         // Configurazione del grafico
-        var chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: campi,
-                datasets: 
-                [
-                    {
-                        label: 'Quantità Prenotata',
-                        data: quantitaPrenotata,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 2
-                    },
-                    {
-                        label: 'Litri Consumati',
-                        data: litriConsumati,
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 2
-                    }
-                ]
-            },
-            options: {
-                
-            }
+        var charts = {};
+        var mainDiv = document.getElementById('graphics');
+        Object.keys(consumiPerCampo).forEach(function (campo) {
+            // Creazione di un div per ogni grafico
+            var chartDiv = document.createElement('div');
+            chartDiv.className = 'chart-container';
+            mainDiv.appendChild(chartDiv);
+
+            // Aggiunta del titolo del campo sopra il grafico
+            var campoTitle = document.createElement('h5');
+            campoTitle.innerHTML = campo;
+            chartDiv.appendChild(campoTitle);
+
+            // Creazione del canvas per il grafico
+            var canvasId = 'consumiChart_' + campo.replace(/\s+/g, ''); // ID unico per ogni grafico
+            var newCanvas = document.createElement('canvas');
+            newCanvas.id = canvasId;
+            newCanvas.height = 40;
+            chartDiv.appendChild(newCanvas); // Aggiungi il canvas al div del grafico
+
+            var newCtx = newCanvas.getContext('2d');
+
+            charts[campo] = new Chart(newCtx, {
+                type: 'line',
+                //bar, line, pie, doughnut, radar, bubble, scatter, area, heatmap, funnel
+                data: {
+                    labels: consumiData.filter(consumo => consumo.Campo === campo).map(consumo => consumo.Data),
+                    datasets: [
+                        {
+                            label: 'Quantità Prenotata',
+                            data: consumiPerCampo[campo].quantitaPrenotata,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Litri Consumati',
+                            data: consumiPerCampo[campo].litriConsumati,
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    
+                }
+            });
+
+            // Aggiunta della linea dopo il grafico
+            var hrLine = document.createElement('hr');
+            hrLine.style.marginTop = '0.5em';
+            hrLine.style.marginBottom = '0.5em';
+            mainDiv.appendChild(hrLine);
+
         });
+
+
     });
+
+
 </script>

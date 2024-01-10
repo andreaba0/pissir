@@ -23,19 +23,10 @@ namespace frontend.Pages
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
 
-            // Ottieni il CF dell'utente loggato
-            string codFiscale = User.FindFirst("sub")?.Value;
-
             // Chiamata alle API per ottenere i dati
-            if (codFiscale != null)
-            {
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale, HttpContext);
-                Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva, HttpContext);
-            }
-            else
-            {
-                return BadRequest();
-            }
+            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+            Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+
             */
 
             // Simulazione dati
@@ -188,7 +179,8 @@ namespace frontend.Pages
             {
                 new Coltura { Id = "1", PartitaIva = "12345678901", MetriQuadrati = 100, TipoColtura = "Grano", TipoIrrigazione = "Goccia" },
                 new Coltura { Id = "2", PartitaIva = "12345678901", MetriQuadrati = 200, TipoColtura = "Sorgo", TipoIrrigazione = "Goccia" },
-                new Coltura { Id = "3", PartitaIva = "12345678901", MetriQuadrati = 150, TipoColtura = "Mais", TipoIrrigazione = "Spruzzo" }
+                new Coltura { Id = "3", PartitaIva = "12345678901", MetriQuadrati = 150, TipoColtura = "Mais", TipoIrrigazione = "Spruzzo" },
+                new Coltura { Id = "4", PartitaIva = "12345678901", MetriQuadrati = 10, TipoColtura = "Cotone", TipoIrrigazione = "Goccia" }
             };
         }
     }

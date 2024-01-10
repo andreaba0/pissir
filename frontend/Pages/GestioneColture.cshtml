@@ -9,7 +9,7 @@
 <div style="margin: 1em;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h4>Gestione colture</h4>
-        @if (ApiReq.utente.Role == "GSI")
+        @if (ApiReq.utente.Role == "WSP")
         {
             <button class="btn btn-primary" data-toggle="modal" data-target="#modalNuovaColtura">Aggiungi Coltura</button>
         }
@@ -18,7 +18,7 @@
 
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
-    @if (ApiReq.utente.Role == "GSI")
+    @if (ApiReq.utente.Role == "WSP")
     {
         <!-- Modale per l'aggiunta di una nuova coltura -->
         <div id="modalNuovaColtura" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalNuovaColtura" data-backdrop="true">
@@ -97,7 +97,7 @@
                         <td>
                             <button class="btn btn-primary" data-toggle="modal" data-target="#modalModifica\@coltura.Id">Modifica Parametri</button>
 
-                            @if (ApiReq.utente.Role == "GSI")
+                            @if (ApiReq.utente.Role == "WSP")
                             {
                                 <button class="btn btn-danger" data-toggle="modal" data-target="#modalElimina\@coltura.Id">Elimina</button>
                             }
@@ -136,7 +136,7 @@
                         </div>
                     </div>
 
-                    @if (ApiReq.utente.Role == "GSI")
+                    @if (ApiReq.utente.Role == "WSP")
                     {
                         <!-- Modale per la conferma eliminazione -->
                         <div id="modalElimina\@coltura.Id" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalConfermaEliminazione\@coltura.Id" aria-hidden="true" data-backdrop="true">

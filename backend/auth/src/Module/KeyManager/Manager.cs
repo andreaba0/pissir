@@ -4,6 +4,12 @@ using System.Security.Cryptography;
 using System.Data.Common;
 using System.Data;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using Types;
+using Utility;
+using System.Net.Http.Headers;
+using System.Net.Http;
+using System.Net;
 
 namespace Module.KeyManager;
 
@@ -53,16 +59,13 @@ public class KeyJson
         return JsonSerializer.Serialize(keyJson);
     }
 }
-public class Manager
-{
-    private readonly DbDataSource _dbDataSource;
-    private RSAArrayElement[] _rsaParameters;
 
-    public Manager(
-        DbDataSource dbDataSource
-    )
+public abstract class Manager {
+    protected RSAArrayElement[] _rsaParameters;
+    protected int _expiration;
+
+    public Manager()
     {
-        _dbDataSource = dbDataSource;
         _rsaParameters = new RSAArrayElement[3];
     }
 
@@ -70,18 +73,60 @@ public class Manager
     {
         while (!tk.IsCancellationRequested)
         {
+            if(this._expiration>0) {
+                this._expiration--;
+                await Task.Delay(3000, tk);
+                continue;
+            }
             while (!await UpdateRsaParameters())
             {
                 await Task.Delay(1000, tk);
             }
-
-            await Task.Delay(5000, tk);
         }
         return 0;
     }
 
-    internal async Task<bool> UpdateRsaParameters()
+    internal abstract Task<bool> UpdateRsaParameters();
+
+    public bool GetRsaParameters(out RSAArrayElement[]? parameters)
     {
+        var _copy = new RSAArrayElement[this._rsaParameters.Length];
+        for (int i = 0; i < _copy.Length; i++)
+        {
+            if (_rsaParameters[i] == null)
+            {
+                parameters = null;
+                return false;
+            }
+            _copy[i] = new RSAArrayElement(
+                _rsaParameters[i].Id,
+                new RSAParameters
+                {
+                    D = _rsaParameters[i].Parameters.D,
+                    DP = _rsaParameters[i].Parameters.DP,
+                    DQ = _rsaParameters[i].Parameters.DQ,
+                    Exponent = _rsaParameters[i].Parameters.Exponent,
+                    InverseQ = _rsaParameters[i].Parameters.InverseQ,
+                    Modulus = _rsaParameters[i].Parameters.Modulus,
+                    P = _rsaParameters[i].Parameters.P,
+                    Q = _rsaParameters[i].Parameters.Q
+                }
+            );
+        }
+        parameters = _copy;
+        return true;
+    }
+}
+
+public class LocalManager : Manager
+{
+    private readonly DbDataSource _dbDataSource;
+    public LocalManager(DbDataSource dbDataSource) : base()
+    {
+        _dbDataSource = dbDataSource;
+    }
+
+    internal override async Task<bool> UpdateRsaParameters() {
         try
         {
             await using var connection = await _dbDataSource.OpenConnectionAsync();
@@ -124,40 +169,79 @@ public class Manager
             {
                 _rsaParameters[i] = parameters[i];
             }
+            base._expiration=3600/3;
             return true;
         }
         catch (Exception ex)
         {
+            base._expiration=0;
+            return false;
+        }
+    }
+}
+
+public class RemoteManager : Manager {
+    private readonly string _uri;
+    private readonly IFetch _fetch;
+    public RemoteManager(string uri, IFetch fetch) : base()
+    {
+        _uri = uri;
+        _fetch = fetch;
+    }
+
+    internal override async Task<bool> UpdateRsaParameters() {
+        try
+        {
+            IFetchResponseCustom? response = await _fetch.Get(_uri);
+            Console.WriteLine(response);
+            Console.WriteLine($"Content: {response?.Content}");
+            if(response == null) {
+                base._expiration=0;
+                return false;
+            }
+            if(response.StatusCode==HttpStatusCode.OK) {
+                base._expiration=0;
+                return false;
+            }
+            Console.WriteLine(response.Content);
+            KeyArray? json = JsonSerializer.Deserialize<KeyArray>(response.Content);
+            if(json == null) {
+                base._expiration=0;
+                return false;
+            }
+            _rsaParameters = new RSAArrayElement[json.keys.Length];
+            for(int i=0; i<json.keys.Length; i++) {
+                _rsaParameters[i] = new RSAArrayElement(
+                    json.keys[i].kid,
+                    new RSAParameters {
+                        Modulus = Convert.FromBase64String(json.keys[i].n),
+                        Exponent = Convert.FromBase64String(json.keys[i].e)
+                    }
+                );
+            }
+            //convert Cache-Control max-age to seconds
+            CacheControlHeaderValue? cacheControl = (CacheControlHeaderValue?)response.Headers["Cache-Control"];
+            if(cacheControl == null) {
+                base._expiration=30;
+                return true;
+            }
+            if(cacheControl.MaxAge == null) {
+                base._expiration=30;
+                return true;
+            }
+            base._expiration = (int)cacheControl.MaxAge.Value.TotalSeconds;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            base._expiration=0;
             return false;
         }
     }
 
-    public bool GetRsaParameters(out RSAArrayElement[]? parameters)
+    public RSAArrayElement[] GetKeys()
     {
-        var _copy = new RSAArrayElement[3];
-        for (int i = 0; i < 3; i++)
-        {
-            if (_rsaParameters[i] == null)
-            {
-                parameters = null;
-                return false;
-            }
-            _copy[i] = new RSAArrayElement(
-                _rsaParameters[i].Id,
-                new RSAParameters
-                {
-                    D = _rsaParameters[i].Parameters.D,
-                    DP = _rsaParameters[i].Parameters.DP,
-                    DQ = _rsaParameters[i].Parameters.DQ,
-                    Exponent = _rsaParameters[i].Parameters.Exponent,
-                    InverseQ = _rsaParameters[i].Parameters.InverseQ,
-                    Modulus = _rsaParameters[i].Parameters.Modulus,
-                    P = _rsaParameters[i].Parameters.P,
-                    Q = _rsaParameters[i].Parameters.Q
-                }
-            );
-        }
-        parameters = _copy;
-        return true;
+        return _rsaParameters;
     }
 }

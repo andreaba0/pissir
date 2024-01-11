@@ -21,23 +21,14 @@ namespace frontend.Pages.AziendaAgricola
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
-            // Ottieni il CF dell'utente loggato
-            string codFiscale = User.FindFirst("sub")?.Value;
-
-            // Chiamata alle API per ottenere i dati
-            if (codFiscale != null)
-            {
-                Offerte = await ApiReq.GetOfferteIdricheFromApi(HttpContext);
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale, HttpContext);
-                Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva, HttpContext);
-                Colture = GetListaColture();
-            }
-            else
-            {
-                return BadRequest();
-            }
+            
+            Offerte = await ApiReq.GetOfferteIdricheFromApi(HttpContext);
+            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+            Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+            Colture = GetListaColture();
+           
             */
 
             // Simulazione dati

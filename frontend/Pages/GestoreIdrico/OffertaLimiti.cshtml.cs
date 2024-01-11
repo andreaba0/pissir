@@ -21,23 +21,14 @@ namespace frontend.Pages.GestoreIdrico
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
-            // Ottieni il CF dell'utente loggato
-            string codFiscale = User.FindFirst("sub")?.Value;
-
-            // Chiamata alle API per ottenere i dati
-            if (codFiscale != null)
-            {
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale, HttpContext);
-                AcquaDisponibile = await ApiReq.GetAcquaDisponibile(ApiReq.utente.PartitaIva, HttpContext);
-                LimiteGiornalieroVendita = await ApiReq.GetLimiteGiornaliero(ApiReq.utente.PartitaIva, HttpContext);
-                LimitiAcquistoPerAzienda = await ApiReq.GetLimitiPerAziendaFromApi(HttpContext);
-            }
-            else
-            {
-                return BadRequest();
-            }
+            
+            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+            AcquaDisponibile = await ApiReq.GetAcquaDisponibile(ApiReq.utente.PartitaIva, HttpContext);
+            LimiteGiornalieroVendita = await ApiReq.GetLimiteGiornaliero(ApiReq.utente.PartitaIva, HttpContext);
+            LimitiAcquistoPerAzienda = await ApiReq.GetLimitiPerAziendaFromApi(HttpContext);
+            
             */
 
             // Simula i dati di esempio
@@ -57,7 +48,7 @@ namespace frontend.Pages.GestoreIdrico
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
             // Creare il corpo della richiesta
             var requestBody = new
@@ -98,7 +89,7 @@ namespace frontend.Pages.GestoreIdrico
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
             // Creare il corpo della richiesta
             var requestBody = new

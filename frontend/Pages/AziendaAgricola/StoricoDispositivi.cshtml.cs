@@ -22,23 +22,13 @@ namespace frontend.Pages.AziendaAgricola
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
-
-            // Ottieni il CF dell'utente loggato
-            string codFiscale = User.FindFirst("sub")?.Value;
-
-            // Chiamata alle API per ottenere i dati
-            if (codFiscale != null)
-            {
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(codFiscale, HttpContext);
-                SensoriUmiditaLogs = await ApiReq.GetSensoriUmiditaFromApi(ApiReq.utente.PartitaIva, HttpContext);
-                SensoriTemperaturaLogs = await ApiReq.GetSensoriTemperaturaFromApi(ApiReq.utente.PartitaIva, HttpContext);
-                AttuatoriLogs = await ApiReq.GetAttuatoriFromApi(ApiReq.utente.PartitaIva, HttpContext);
-            }
-            else
-            {
-                return BadRequest();
-            }
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+                        
+            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+            SensoriUmiditaLogs = await ApiReq.GetSensoriUmiditaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+            SensoriTemperaturaLogs = await ApiReq.GetSensoriTemperaturaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+            AttuatoriLogs = await ApiReq.GetAttuatoriFromApi(ApiReq.utente.PartitaIva, HttpContext);
+            
             */
             
             // Simulazione dati

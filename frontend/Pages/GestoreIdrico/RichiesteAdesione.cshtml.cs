@@ -19,23 +19,12 @@ namespace frontend.Pages.GestoreIdrico
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
-            // Ottieni il CF dell'utente loggato
-            string codFiscale = User.FindFirst("sub")?.Value;
-
-            // Chiamata alle API per ottenere i dati
-            if (codFiscale != null)
-            {
-                RichiesteUtenti = await ApiReq.GetRichiesteUtentiFromApi(HttpContext);
-                RichiesteAziendeAgricole = await ApiReq.GetRichiesteAziendeAgricoleFromApi(HttpContext);
-            }
-            else
-            {
-                return BadRequest();
-            }
+            
+            RichiesteUtenti = await ApiReq.GetRichiesteUtentiFromApi(HttpContext);
+            RichiesteAziendeAgricole = await ApiReq.GetRichiesteAziendeAgricoleFromApi(HttpContext);
             */
-
 
 
             // Simula dati di richieste
@@ -56,7 +45,7 @@ namespace frontend.Pages.GestoreIdrico
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
             // Creare il corpo della richiesta
             var requestBody = new { CodiceFiscale = codiceFiscale };
@@ -94,7 +83,7 @@ namespace frontend.Pages.GestoreIdrico
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
             // Creare il corpo della richiesta
             var requestBody = new { PartitaIva = partitaIva };

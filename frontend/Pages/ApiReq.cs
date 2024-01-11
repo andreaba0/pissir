@@ -41,7 +41,7 @@ namespace frontend.Pages
             // Stringa interpolata
             string urlTask = $"{urlGenerico}user/?user_info=tax_code+name+surname+role";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);           
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);           
             
             // Esegue la chiamata
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
@@ -68,7 +68,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaIdrica/?azienda_info=vat_number+name+address+phone_number+email+industry_sector+daily_limit";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -95,7 +95,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/?azienda_info=vat_number+name+address+phone_number+email+industry_sector+buy_daily_limit";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -126,7 +126,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/colture/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
@@ -152,7 +152,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/offerteIdriche";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -179,7 +179,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/ordini/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -207,7 +207,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/consumiColture/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -235,7 +235,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/storicoSensoriUmidita/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata 
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -261,7 +261,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/storicoSensoriTemperatura/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -288,7 +288,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaAgricola/storicoAttuatori/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -322,7 +322,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaIdrica/limiteGiornaliero/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata POST
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -349,7 +349,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaIdrica/acquaDisponibile/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata POST
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -375,7 +375,7 @@ namespace frontend.Pages
         {
             string urlTask = urlGenerico + "aziendaIdrica/richiesteUtenti/";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata POST
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
@@ -401,7 +401,7 @@ namespace frontend.Pages
         {
             string urlTask = urlGenerico + "aziendaIdrica/richiesteAziendeAgricole/";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata POST
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
@@ -427,7 +427,7 @@ namespace frontend.Pages
         {
             string urlTask = urlGenerico + "aziendaIdrica/limitiPerAzienda/";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -454,7 +454,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaIdrica/storicoVendite/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
@@ -481,7 +481,7 @@ namespace frontend.Pages
         {
             string urlTask = $"{urlGenerico}aziendaIdrica/consumiAziende/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["AccessToken"]);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
             // Esegue la chiamata
             HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);

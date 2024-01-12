@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
@@ -11,16 +12,31 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Net;
 
+using Module.KeyManager.Openid;
+
 namespace Module.KeyManager;
 
-public class RSAArrayElement
+public class RSAKey : ICloneable
 {
     public string Id { get; set; }
     public RSAParameters Parameters { get; set; }
-    public RSAArrayElement(string id, RSAParameters parameters)
+    public RSAKey(string id, RSAParameters parameters)
     {
         this.Id = id;
         this.Parameters = parameters;
+    }
+
+    public object Clone() {
+        return new RSAKey(Id, new RSAParameters {
+            D = Parameters.D,
+            DP = Parameters.DP,
+            DQ = Parameters.DQ,
+            Exponent = Parameters.Exponent,
+            InverseQ = Parameters.InverseQ,
+            Modulus = Parameters.Modulus,
+            P = Parameters.P,
+            Q = Parameters.Q
+        });
     }
 }
 
@@ -75,12 +91,12 @@ public class KeyJson
 }
 
 public abstract class Manager {
-    protected RSAArrayElement[] _rsaParameters;
-    protected int _expiration;
+    private RSAKey?[] _rsaParameters;
+    private object _lock = new object();
 
     public Manager()
     {
-        _rsaParameters = new RSAArrayElement[3];
+        _rsaParameters = new RSAKey[3];
     }
 
     public async Task<int> RunAsync(CancellationToken tk)
@@ -91,40 +107,34 @@ public abstract class Manager {
             {
                 await Task.Delay(1000, tk);
             }
-            await Task.Delay(_expiration * 1000, tk);
+            await Task.Delay(60 * 5 * 1000, tk);
         }
         return 0;
     }
 
     internal abstract Task<bool> UpdateRsaParameters();
 
-    public bool GetRsaParameters(out RSAArrayElement[]? parameters)
+    public bool GetRsaParameters(out RSAKey[]? parameters)
     {
-        var _copy = new RSAArrayElement[this._rsaParameters.Length];
-        for (int i = 0; i < _copy.Length; i++)
-        {
-            if (_rsaParameters[i] == null)
-            {
+        lock(_lock) {
+            if(_rsaParameters == null) {
                 parameters = null;
                 return false;
             }
-            _copy[i] = new RSAArrayElement(
-                _rsaParameters[i].Id,
-                new RSAParameters
-                {
-                    D = _rsaParameters[i].Parameters.D,
-                    DP = _rsaParameters[i].Parameters.DP,
-                    DQ = _rsaParameters[i].Parameters.DQ,
-                    Exponent = _rsaParameters[i].Parameters.Exponent,
-                    InverseQ = _rsaParameters[i].Parameters.InverseQ,
-                    Modulus = _rsaParameters[i].Parameters.Modulus,
-                    P = _rsaParameters[i].Parameters.P,
-                    Q = _rsaParameters[i].Parameters.Q
-                }
-            );
+            RSAKey?[] _copy = new RSAKey[this._rsaParameters.Length];
+            for(int i=0;i<_copy.Length;i++) {
+                _copy[i] = (RSAKey?)_rsaParameters[i]?.Clone();
+            }
+            parameters = _copy as RSAKey[];
+            return true;
         }
-        parameters = _copy;
-        return true;
+    }
+
+    protected Task SwitchArray(RSAKey[]? parameters) {
+        lock(_lock) {
+            Interlocked.Exchange(ref this._rsaParameters, parameters);
+        }
+        return Task.CompletedTask;
     }
 }
 
@@ -146,7 +156,7 @@ public class LocalManager : Manager
             FROM rsa
             ORDER BY created_at DESC
             LIMIT 3";
-            var parameters = new RSAArrayElement[3];
+            var parameters = new RSAKey[3];
             int index = 0;
             await using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -160,7 +170,7 @@ public class LocalManager : Manager
                 var modulus = (byte[])reader.GetValue(6);
                 var p = (byte[])reader.GetValue(7);
                 var q = (byte[])reader.GetValue(8);
-                parameters[index++] = new RSAArrayElement(
+                parameters[index++] = new RSAKey(
                     id,
                     new RSAParameters
                     {
@@ -175,18 +185,28 @@ public class LocalManager : Manager
                     }
                 );
             }
-            for (int i = 0; i < 3; i++)
+            if (index != 3)
             {
-                _rsaParameters[i] = parameters[i];
+                base.SwitchArray(null);
+                return false;
             }
-            base._expiration=60*5;
+            base.SwitchArray(parameters);
             return true;
         }
         catch (Exception ex)
         {
-            base._expiration=1;
+            base.SwitchArray(null);
             return false;
         }
+    }
+
+    public RSAKey? GetSignKey() {
+        RSAKey[]? parameters;
+        bool isOk = base.GetRsaParameters(out parameters);
+        if(!isOk) {
+            return null;
+        }
+        return parameters[1];
     }
 }
 
@@ -204,20 +224,11 @@ public class RemoteManager : Manager {
         try
         {
             IFetchResponseCustom response = await _fetch.Get(_uri);
-            if(response == null) {
-                base._expiration=1;
-                return false;
-            }
-            if(response.StatusCode!=HttpStatusCode.OK) {
-                base._expiration=1;
-                return false;
-            }
+            if(response == null) return false;
+            if(response.StatusCode!=HttpStatusCode.OK) return false;
             KeyArray? json = JsonSerializer.Deserialize<KeyArray>(response.Content);
-            if(json == null) {
-                base._expiration=1;
-                return false;
-            }
-            _rsaParameters = new RSAArrayElement[json.keys.Length];
+            if(json == null) return false;
+            RSAKey?[] _rsaParameters = new RSAKey[json.keys.Length];
             for(int i=0; i<json.keys.Length; i++) {
                 string kid = json.keys[i].kid;
                 string nBase64 = json.keys[i].n.Replace('-', '+').Replace('_', '/');
@@ -228,7 +239,7 @@ public class RemoteManager : Manager {
                 if(eBase64.Length % 4 > 0) {
                     eBase64 = eBase64.PadRight(eBase64.Length + 4 - eBase64.Length % 4, '=');
                 }
-                _rsaParameters[i] = new RSAArrayElement(
+                _rsaParameters[i] = new RSAKey(
                     json.keys[i].kid,
                     new RSAParameters {
                         Modulus = Convert.FromBase64String(nBase64),
@@ -236,19 +247,81 @@ public class RemoteManager : Manager {
                     }
                 );
             }
-            base._expiration = 60*5;
+            base.SwitchArray(_rsaParameters);
             return true;
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex);
-            base._expiration=1;
             return false;
         }
     }
+}
 
-    public RSAArrayElement[] GetKeys()
-    {
-        return _rsaParameters;
+public interface IRemoteJwksHub {
+    RSAParameters? GetKey(string kid, string iss);
+    Task<int> RunAsync(CancellationToken tk);
+    Task SetupAsync(List<ProviderInfo> providers);
+}
+
+public class RemoteJwksHub : IRemoteJwksHub {
+    private class IssuerInfo {
+        public string[] audience {get;}
+        public string[] jwks {get;}
+        public string name {get;}
+        public RemoteManager manager {get;}
+        public IssuerInfo(string name, string[] audience, string[] jwks, RemoteManager manager) {
+            this.name = name;
+            this.audience = audience;
+            this.jwks = jwks;
+            this.manager = manager;
+        }
+    }
+    private readonly Dictionary<string, IssuerInfo> _allowedIssuers;
+    private IFetch _fetch;
+    public RemoteJwksHub(IFetch fetch) {
+        _fetch = fetch;
+        _allowedIssuers = new Dictionary<string, IssuerInfo>();
+    }
+
+    public async Task SetupAsync(List<ProviderInfo> providers) {
+        foreach(var provider in providers) {
+            var configuration = await Provider.GetConfigurationAsync(_fetch, provider.configuration_uri);
+            var issuer = Provider.GetIssuerWithoutPrococol(configuration.issuer);
+            _allowedIssuers.Add(issuer, new IssuerInfo(
+                provider.name,
+                provider.audience,
+                new string[] { configuration.jwks_uri },
+                new RemoteManager(configuration.jwks_uri, _fetch)
+            ));
+        }
+    }
+
+    public async Task<int> RunAsync(CancellationToken tk) {
+        Task[] tasks = new Task[_allowedIssuers.Count];
+        int index = 0;
+        foreach(var issuer in _allowedIssuers) {
+            tasks[index++] = issuer.Value.manager.RunAsync(tk);
+        }
+        await Task.WhenAll(tasks);
+        return 0;
+    }
+
+    public RSAParameters? GetKey(string kid, string iss) {
+        var issuer = Provider.GetIssuerWithoutPrococol(iss);
+        if(!_allowedIssuers.ContainsKey(issuer)) {
+            return null;
+        }
+        RSAKey[]? parameters;
+        bool isOk = _allowedIssuers[issuer].manager.GetRsaParameters(out parameters);
+        if(!isOk) {
+            return null;
+        }
+        foreach(var p in parameters) {
+            if(p.Id == kid) {
+                return p.Parameters;
+            }
+        }
+        return null;
     }
 }

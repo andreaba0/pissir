@@ -18,7 +18,7 @@ namespace frontend.Pages
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
 
             // Chiamata alle API per ottenere i dati

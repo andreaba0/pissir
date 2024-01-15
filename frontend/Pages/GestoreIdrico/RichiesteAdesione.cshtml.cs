@@ -9,6 +9,7 @@ namespace frontend.Pages.GestoreIdrico
 {
     public class RichiesteAdesioneModel : PageModel
     {
+        public List<UtentePeriodo> RichiestePeriodo { get; set; }
         public List<Utente> RichiesteUtenti { get; set; }
         public List<AziendaAgricolaModel> RichiesteAziendeAgricole { get; set; }
 
@@ -21,13 +22,14 @@ namespace frontend.Pages.GestoreIdrico
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
-            
+            RichiestePeriodo = await ApiReq.GetRichiestePeriodoFromApi(HttpContext);
             RichiesteUtenti = await ApiReq.GetRichiesteUtentiFromApi(HttpContext);
             RichiesteAziendeAgricole = await ApiReq.GetRichiesteAziendeAgricoleFromApi(HttpContext);
             */
 
 
             // Simula dati di richieste
+            RichiestePeriodo = GetSimulatedRichiestePeriodo();
             RichiesteUtenti = GetSimulatedRichiesteUtenti();
             RichiesteAziendeAgricole = GetSimulatedRichiesteAziendeAgricole();
 
@@ -38,7 +40,7 @@ namespace frontend.Pages.GestoreIdrico
         // Chiamata API per confermare un nuovo utente
         public async Task<IActionResult> OnPostConfermaUtente(string codiceFiscale)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/offertaLimiti";
+            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/confermaUtente";
 
             /*
             // L'utente non è autenticato, reindirizzamento sulla pagina di login
@@ -67,6 +69,45 @@ namespace frontend.Pages.GestoreIdrico
             }
             */
 
+            TempData["Messaggio"] = "Conferma utente con codice fiscale: " + codiceFiscale + " effettuata con successo!";
+            TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
+
+            return RedirectToPage();
+        }
+
+        // Chiamata API per confermare un nuovo utente
+        public async Task<IActionResult> OnPostConfermaUtentePeriodo(string codiceFiscale)
+        {
+            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/confermaUtentePeriodo";
+
+            /*
+            // L'utente non è autenticato, reindirizzamento sulla pagina di login
+            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+
+            // Imposta il token
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+
+            // Creare il corpo della richiesta
+            var requestBody = new { CodiceFiscale = codiceFiscale };
+            var jsonRequest = JsonConvert.SerializeObject(requestBody);
+            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+            // Esegue la chiamata PUT
+            HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Imposta un messaggio di successo
+                TempData["Messaggio"] = "Conferma periodo di accesso utente con codice fiscale: "+ codiceFiscale +" effettuata con successo!";
+            }
+            else
+            {
+                // Imposta un messaggio di errore
+                TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
+            }
+            */
+
+            TempData["Messaggio"] = "Conferma periodo di accesso utente con codice fiscale: " + codiceFiscale + " effettuata con successo!";
             TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
 
             return RedirectToPage();
@@ -76,7 +117,7 @@ namespace frontend.Pages.GestoreIdrico
         // Chiamata API per confermare un nuovo utente
         public async Task<IActionResult> OnPostConfermaAzienda(string partitaIva)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/offertaLimiti";
+            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/confermaAzienda";
 
             /*
             // L'utente non è autenticato, reindirizzamento sulla pagina di login
@@ -104,7 +145,7 @@ namespace frontend.Pages.GestoreIdrico
                 TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
             }
             */
-
+            TempData["Messaggio"] = "Conferma azienda con partita iva: " + partitaIva + " effettuata con successo!";
             TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
 
             return RedirectToPage();
@@ -138,6 +179,19 @@ namespace frontend.Pages.GestoreIdrico
                 new Utente { CodiceFiscale = "DEF789", Nome = "Luca", Cognome = "Verdi", PartitaIva = "999956789" },
             };
         }
+
+        // Simula dati di richieste utenti
+        private List<UtentePeriodo> GetSimulatedRichiestePeriodo()
+        {
+            return new List<UtentePeriodo>
+            {
+                new UtentePeriodo { CodiceFiscale = "ABC123", Nome = "Giovanni", Cognome = "Bianchi", PartitaIva = "123456789", DataInizio = "2024-02-12", DataFine = "2024-03-12"},
+                new UtentePeriodo { CodiceFiscale = "XYZ456", Nome = "Maria", Cognome = "Rossi", PartitaIva = "888856789", DataInizio = "2024-03-22", DataFine = "2024-03-23" },
+                new UtentePeriodo { CodiceFiscale = "DEF789", Nome = "Luca", Cognome = "Verdi", PartitaIva = "999956789", DataInizio = "2024-01-29", DataFine = "2025-01-29" },
+            };
+        }
+
+
 
         // Simula dati di richieste aziende agricole
         private List<AziendaAgricolaModel> GetSimulatedRichiesteAziendeAgricole()

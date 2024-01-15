@@ -8,7 +8,7 @@
 
 <div style="margin: 1em;">
     <h4>Richieste Adesione</h4>
-    <small>• Elenco delle richieste di adesione per utenti e aziende agricole.</small>
+    <small>• Elenco delle richieste di adesione per utenti, aziende agricole e richieste del periodo di accesso ai servizi.</small>
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
     @if (TempData.ContainsKey("Messaggio"))
@@ -54,7 +54,7 @@
                         <td>
                             <form method="post" asp-page-handler="ConfermaUtente">
                                 <input type="hidden" class="form-control" id="codiceFiscale" name="codiceFiscale" value="@utente.CodiceFiscale" readonly>
-                                <button type="submit" class="btn btn-primary">Conferma Registrazione</button>
+                                <button type="submit" class="btn btn-primary">Conferma Adesione</button>
                             </form>
                         </td>
                     </tr>
@@ -62,7 +62,49 @@
             </tbody>
         </table>
     }
+
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
     
+    <h5>Richieste di accesso - Utenti per periodo</h5>
+    @if (Model.RichiestePeriodo == null || Model.RichiestePeriodo.Count == 0)
+    {
+        <label>Nessuna richiesta in attesa.</label>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Codice Fiscale</th>
+                    <th>Nome</th>
+                    <th>Cognome</th>
+                    <th>Partita Iva Azienda</th>
+                    <th>Data Inizio</th>
+                    <th>Data Fine</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var utentePeriodo in Model.RichiestePeriodo)
+                {
+                    <tr>
+                        <td>@utentePeriodo.CodiceFiscale</td>
+                        <td>@utentePeriodo.Nome</td>
+                        <td>@utentePeriodo.Cognome</td>
+                        <td>@utentePeriodo.PartitaIva</td>
+                        <td>@utentePeriodo.DataInizio</td>
+                        <td>@utentePeriodo.DataFine</td>
+                        <td>
+                            <form method="post" asp-page-handler="ConfermaUtentePeriodo">
+                                <input type="hidden" class="form-control" id="codiceFiscale" name="codiceFiscale" value="@utentePeriodo.CodiceFiscale" readonly>
+                                <button type="submit" class="btn btn-primary">Conferma Periodo</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
@@ -96,7 +138,7 @@
                         <td>
                             <form method="post" asp-page-handler="ConfermaAzienda">
                                 <input type="hidden" class="form-control" id="partitaIva" name="partitaIva" value="@aziende.PartitaIva" readonly>
-                                <button type="submit" class="btn btn-primary">Conferma Registrazione</button>
+                                <button type="submit" class="btn btn-primary">Conferma Adesione</button>
                             </form>
                         </td>
                     </tr>

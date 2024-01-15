@@ -17,13 +17,13 @@ namespace frontend.Pages.auth
         {
             // Recupera i dati dell'utente dal contesto di autenticazione o da dove sono memorizzati
             // Ad esempio, potresti avere questi dati in un cookie o in una sessione
-            CodiceFiscale = "ABC123XYZ4567890";
+            //CodiceFiscale = "ABC123XYZ4567890";
             NomeUtente = "Mario";
             CognomeUtente = "Rossi";
 
         }
 
-        public async Task<IActionResult> OnPostIscriviti(string codiceFiscale, string partitaIva)
+        public async Task<IActionResult> OnPostIscriviti(string nome, string cognome, string codiceFiscale, string partitaIva)
         {
             string urlTask = ApiReq.urlGenerico + "registrazione/";
 
@@ -37,9 +37,10 @@ namespace frontend.Pages.auth
             // Creare il corpo della richiesta
             var requestBody = new
             {
+                Nome = nome,
+                Cognome = cognome,
                 CodiceFiscale = codiceFiscale,
-                PartitaIva = partitaIva,
-                AccessToken = Request.Cookies["AccessToken"]
+                PartitaIva = partitaIva
             };
             var jsonRequest = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
@@ -50,7 +51,7 @@ namespace frontend.Pages.auth
             if (response.IsSuccessStatusCode)
             {
                 // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Richiesta d'iscrizione all'azienda P.Iva "+ partitaIva +" effettuata con successo!";
+                TempData["Messaggio"] = "Richiesta d'iscrizione all'azienda P.Iva "+ partitaIva + nome +cognome +codiceFiscale +" effettuata con successo!";
             }
             else
             {
@@ -58,7 +59,7 @@ namespace frontend.Pages.auth
                 TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
             }
             */
-            //TempData["Messaggio"] = "Richiesta d'iscrizione all'azienda P.Iva " + partitaIva + " effettuata con successo!";
+            //TempData["Messaggio"] = "Richiesta d'iscrizione all'azienda P.Iva " + partitaIva + nome + cognome + codiceFiscale + " effettuata con successo!";
             TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
 
             return RedirectToPage();

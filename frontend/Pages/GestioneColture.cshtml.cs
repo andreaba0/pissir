@@ -21,7 +21,7 @@ namespace frontend.Pages
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
             // Chiamata alle API per ottenere i dati
             ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
@@ -47,7 +47,7 @@ namespace frontend.Pages
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
             // Creare il corpo della richiesta
             var requestBody = new
@@ -91,7 +91,7 @@ namespace frontend.Pages
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
             // Creare il corpo della richiesta
             var requestBody = new 
@@ -136,7 +136,7 @@ namespace frontend.Pages
             if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["AccessToken"]);
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
             // Esegue la chiamata DELETE per l'eliminazione della coltura
             HttpResponseMessage response = await ApiReq.httpClient.DeleteAsync(urlTask);

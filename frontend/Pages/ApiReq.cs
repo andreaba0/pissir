@@ -396,6 +396,32 @@ namespace frontend.Pages
             }
         }
 
+        // Richiesta dati sulle richieste di adesione per gli utenti
+        public static async Task<List<UtentePeriodo>> GetRichiestePeriodoFromApi(HttpContext context)
+        {
+            string urlTask = urlGenerico + "aziendaIdrica/richiesteUtentiPeriodi/";
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
+
+            // Esegue la chiamata POST
+            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Legge e deserializza i dati dalla risposta
+                string responseData = await response.Content.ReadAsStringAsync();
+                List<UtentePeriodo>? listaUtenti = JsonConvert.DeserializeObject<List<UtentePeriodo>>(responseData);
+                if (listaUtenti != null)
+                    return listaUtenti;
+                else
+                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaUtentePeriodo = null");
+            }
+            else
+            {
+                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+            }
+        }
+
         // Richiesta dati sulle richieste di adesione per le aziende agricole
         public static async Task<List<AziendaAgricolaModel>> GetRichiesteAziendeAgricoleFromApi(HttpContext context)
         {
@@ -503,6 +529,16 @@ namespace frontend.Pages
         }
 
 
+
+        // Controllo utente autenticato
+        private static bool IsUserAuth()
+        {
+            if (utente == null )
+            {
+                return false;
+            }
+            return true;
+        }
 
 
     }

@@ -13,9 +13,6 @@ paths:
       description: Get user profile info and company vat number that he belongs to
       responses:
         '200':
-          parameters:
-            in: header
-
           description: Returns user data
           content:
             application/json:
@@ -280,6 +277,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: JWT id_token provided by auth server
   schemas:
     Profile:
       type: object
@@ -308,11 +306,14 @@ components:
           description: Company vat number
     Apply:
       type: object
+      required:
+        - company_var_number
+        - tax_code
+        - company_category
       properties:
         company_var_number:
           type: string
           description: Company vat number
-          required: true
         given_name:
           type: string
           description: User name
@@ -322,12 +323,10 @@ components:
         tax_code:
           type: string
           description: User tax code
-          required: true
         company_category:
           type: string
           description: Company category
           enum: [GSI, FAR]
-          required: true
     Application:
       type: object
       properties:
@@ -374,14 +373,15 @@ components:
           enum: [GSI, FAR]
     ApiAccess:
       type: object
+      required:
+        - date_start
+        - date_end
       properties:
         date_start:
           type: string
           description: Date start
           format: date-time
-          required: true
         date_end:
           type: string
           description: Date end
           format: date-time
-          required: true

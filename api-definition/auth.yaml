@@ -1,0 +1,291 @@
+openapi: 3.1.0
+
+info:
+  title: Auth API
+  description: API definition for authorization and authentication server
+  version: 1.0.0
+
+paths:
+  /profile:
+    get:
+      summary: Returns profile info
+      description: Get user profile info and company vat number that he belongs to
+      responses:
+        '200':
+          description: Returns user data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '404':
+          description: User not found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: User not found
+  /service/apply:
+    post:
+      summary: Form to apply to use the service
+      description: Form to apply to use the service
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Apply'
+      responses:
+        '200':
+          description: Accept user apply request and returns OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+        '400':
+          description: User already applied
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: User already applied
+  /service/application:
+    get:
+      summary: Returns user application status
+      description: Returns user application status
+      responses:
+        '200':
+          description: Returns user application status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '404':
+          description: User application not found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: User application not found
+        '400':
+          description: User already accepted
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: User already accepted
+  /service/application/{id}/{action}:
+    post:
+      summary: Accept or reject user application
+      description: Accept or reject user application
+      parameters:
+        - name: id
+          in: path
+          description: User application id
+          required: true
+          schema:
+            type: string
+        - name: action
+          in: path
+          description: Action to perform
+          required: true
+          schema:
+            type: string
+            enum: [accept, reject]
+      responses:
+        '200':
+          description: Accept or reject user application
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+        '404':
+          description: User application not found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: User application not found
+  /company:
+    get:
+      summary: Returns company info
+      description: Returns company info
+      responses:
+        '200':
+          description: Returns company info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          description: Partial company info, some fields are missing
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Partial company info
+    patch:
+      summary: Update company info
+      description: Update company info
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Company'
+  /apiaccess:
+    post:
+      summary: Request access to API server
+      description: Request access to API server
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiAccess'
+      responses:
+        '202':
+          description: Request accepted from the server and is being processed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+  /apiaccess/{id}/{action}:
+    post:
+      summary: Accept or reject user api access request
+      description: Accept or reject user api access request
+      parameters:
+        - name: id
+          in: path
+          description: User api access request id
+          required: true
+          schema:
+            type: string
+        - name: action
+          in: path
+          description: Action to perform
+          required: true
+          schema:
+            type: string
+            enum: [accept, reject]
+      responses:
+        '200':
+          description: Accept or reject user api access request
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+        '404':
+          description: User api access request not found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: User api access request not found
+
+components:
+  schemas:
+    Profile:
+      type: object
+      properties:
+        id:
+          type: string
+          description: User id
+        given_name:
+          type: string
+          description: User name
+        family_name:
+          type: string
+          description: User surname
+        email:
+          type: string
+          description: User email
+        tax_code:
+          type: string
+          description: User tax code
+        role:
+          type: string
+          description: User role
+          enum: [GSI, FAR]
+        company:
+          type: string
+          description: Company vat number
+    Apply:
+      type: object
+      properties:
+        company_var_number:
+          type: string
+          description: Company vat number
+          required: true
+        given_name:
+          type: string
+          description: User name
+        family_name:
+          type: string
+          description: User surname
+        tax_code:
+          type: string
+          description: User tax code
+          required: true
+        company_category:
+          type: string
+          description: Company category
+          enum: [GSI, FAR]
+          required: true
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+          description: User application id
+        company_vat_number:
+          type: string
+          description: Company vat number
+        given_name:
+          type: string
+          description: User name
+        family_name:
+          type: string
+          description: User surname
+        tax_code:
+          type: string
+          description: User tax code
+        company_category:
+          type: string
+          description: Company category
+          enum: [GSI, FAR]
+    Company:
+      type: object
+      properties:
+        vat_number:
+          type: string
+          description: Company vat number
+        name:
+          type: string
+          description: Company name
+        address:
+          type: string
+          description: Company address
+        phone:
+          type: string
+          description: Company phone
+        email:
+          type: string
+          description: Company email
+        industry_sector:
+          type: string
+          description: Company industry sector
+          enum: [GSI, FAR]
+    ApiAccess:
+      type: object
+      properties:
+        date_start:
+          type: string
+          description: Date start
+          format: date-time
+          required: true
+        date_end:
+          type: string
+          description: Date end
+          format: date-time
+          required: true

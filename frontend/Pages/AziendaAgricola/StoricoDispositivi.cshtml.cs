@@ -18,11 +18,8 @@ namespace frontend.Pages.AziendaAgricola
         public async Task<IActionResult> OnGet()
         {
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
                         
             ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
             SensoriUmiditaLogs = await ApiReq.GetSensoriUmiditaFromApi(ApiReq.utente.PartitaIva, HttpContext);
@@ -30,7 +27,7 @@ namespace frontend.Pages.AziendaAgricola
             AttuatoriLogs = await ApiReq.GetAttuatoriFromApi(ApiReq.utente.PartitaIva, HttpContext);
             
             */
-            
+
             // Simulazione dati
             SensoriUmiditaLogs = GetSensoriUmiditaLogs();
             SensoriTemperaturaLogs = GetSensoriTemperaturaLogs();
@@ -38,20 +35,6 @@ namespace frontend.Pages.AziendaAgricola
 
             return Page();
         }
-
-
-        // Controllo utente autenticato
-        private bool IsUserAuth()
-        {
-            if (ApiReq.utente == null || User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return false;
-            }
-            return true;
-        }
-
-
-
 
 
 

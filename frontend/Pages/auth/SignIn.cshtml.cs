@@ -1,8 +1,10 @@
 using frontend.Pages;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
+using System.Net;
 
 public class SignInModel : PageModel
 {
@@ -29,7 +31,7 @@ public class SignInModel : PageModel
             string? provider = Request.Query["provider"];
             string? code = Request.Query["code"];
 
-            HttpContext.Response.Cookies.Delete("Provider");
+            //HttpContext.Response.Cookies.Delete("Provider");
             HttpContext.Response.Cookies.Delete("Code");
 
             // Se esiste il provider
@@ -121,13 +123,13 @@ public class SignInModel : PageModel
                 HttpContext.Response.Cookies.Delete("Code");
 
                 var tokenRequestData = new List<KeyValuePair<string, string>>
-            {
-            new KeyValuePair<string, string>("grant_type", "authorization_code"),
-            new KeyValuePair<string, string>("code", code),
-            new KeyValuePair<string, string>("redirect_uri", redirectUri),
-            new KeyValuePair<string, string>("client_id", clientId),
-            new KeyValuePair<string, string>("client_secret", clientSecret)
-            };
+                {
+                new KeyValuePair<string, string>("grant_type", "authorization_code"),
+                new KeyValuePair<string, string>("code", code),
+                new KeyValuePair<string, string>("redirect_uri", redirectUri),
+                new KeyValuePair<string, string>("client_id", clientId),
+                new KeyValuePair<string, string>("client_secret", clientSecret)
+                };
 
                 var tokenRequest = new FormUrlEncodedContent(tokenRequestData);
 
@@ -168,17 +170,38 @@ public class SignInModel : PageModel
                         }
 
 
-
+                        // Gestione redirect alle pagine dopo il login
                         if (accessToken != null)
                         {
-                            return RedirectToPage("/DatiAccount");
-                            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-
-                            // Se è stato accettato nel sistema
-                            if (!string.IsNullOrEmpty(ApiReq.utente.Role) && !string.IsNullOrEmpty(ApiReq.utente.PartitaIva))
+                            try
+                            {
+                                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+                                
                                 return RedirectToPage("/DatiAccount");
-                            else
-                                return RedirectToPage("/auth/SignToFarm");
+                            }
+                            catch (HttpRequestException ex)
+                            {
+                                string statusCode = ex.Message.ToString().ToLower();
+
+                                if (statusCode == "unauthorized")
+                                {
+                                    //TempData["MessaggioErrore"] = "Errore 400";
+                                    return RedirectToPage("/auth/AuthPeriod");
+
+                                }
+                                else if (statusCode == "notfound")
+                                {
+                                    //TempData["MessaggioErrore"] = "Errore 404";
+                                    return RedirectToPage("/auth/SignToFarm");
+                                }
+                                else
+                                {
+                                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                                }
+                                
+                                return RedirectToPage("/Error");
+                            }
+
                         }
 
 
@@ -199,9 +222,7 @@ public class SignInModel : PageModel
         }
         catch (Exception ex)
         {
-            // Log dell'errore (opzionale)
-            Console.Error.WriteLine(ex);
-            ViewData["ErrorMessage"] = "Si è verificato un errore durante l'accesso. " + ex.ToString();
+            ViewData["MessaggioErrore"] = "Si è verificato un errore durante l'accesso. " + ex.ToString();
             return RedirectToPage("/Error");
         }
         

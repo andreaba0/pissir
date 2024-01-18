@@ -1,6 +1,8 @@
 ﻿using frontend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using ServiceStack.Logging;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -10,7 +12,7 @@ namespace frontend.Pages
     public static class ApiReq
     {
         // Variabili comuni alle classi
-        public static readonly string urlGenerico = "http://tuo-api-url.com/api/";
+        public static readonly string urlGenerico = "http://localhost";
         public static readonly HttpClient httpClient = new();
         public static Utente? utente { get; set; }
 
@@ -38,11 +40,14 @@ namespace frontend.Pages
         // Richiesta dati utente
         public static async Task<Utente> GetUserDataFromApi(HttpContext context)
         {
-            // Stringa interpolata
-            string urlTask = $"{urlGenerico}user/?user_info=tax_code+name+surname+role";
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);           
-            
+            // Stringa interpolata
+            string urlTask = $"{urlGenerico}/profile";
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
+
             // Esegue la chiamata
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
 
@@ -51,22 +56,59 @@ namespace frontend.Pages
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
                 Utente? userData = JsonConvert.DeserializeObject<Utente>(responseData);
+
                 if (userData != null)
                     return userData;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - userData = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                string responseContent = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"{response.StatusCode}");
             }
-            
         }
+
+        // Richiesta dati adesione utente
+        public static async Task<UtenteAp> GetUserDataApplicationFromApi(HttpContext context)
+        {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            // Stringa interpolata
+            string urlTask = $"{urlGenerico}/service/application";
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
+
+            // Esegue la chiamata
+            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Legge e deserializza i dati dalla risposta
+                string responseData = await response.Content.ReadAsStringAsync();
+                UtenteAp? userData = JsonConvert.DeserializeObject<UtenteAp>(responseData);
+
+                if (userData != null)
+                    return userData;
+                else
+                    throw new HttpRequestException($"{response.StatusCode}");
+            }
+            else
+            {
+                string responseContent = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"{response.StatusCode}");
+            }
+        }
+
 
         // Richiesta dati azienda idrica
         public static async Task<AziendaIdricaModel> GetAziendaIdricaDataFromApi(HttpContext context)
         {
-            string urlTask = $"{urlGenerico}aziendaIdrica/?azienda_info=vat_number+name+address+phone_number+email+industry_sector+daily_limit";
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            string urlTask = $"{urlGenerico}/watercompany";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -81,11 +123,11 @@ namespace frontend.Pages
                 if (aziendaData != null)
                     return aziendaData;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - aziendaData = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
@@ -93,7 +135,10 @@ namespace frontend.Pages
         // Richiesta dati azienda agricola
         public static async Task<AziendaAgricolaModel> GetAziendaAgricolaDataFromApi(HttpContext context)
         {
-            string urlTask = $"{urlGenerico}aziendaAgricola/?azienda_info=vat_number+name+address+phone_number+email+industry_sector+buy_daily_limit";
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            string urlTask = $"{urlGenerico}/farmcompany";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -108,11 +153,11 @@ namespace frontend.Pages
                 if (aziendaData != null)
                     return aziendaData;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - aziendaData = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
@@ -124,6 +169,9 @@ namespace frontend.Pages
         // Richiesta dati sulle colture possedute dall'azienda
         public static async Task<List<Coltura>> GetColtureAziendaFromApi(string partitaIva, HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = $"{urlGenerico}aziendaAgricola/colture/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -139,17 +187,20 @@ namespace frontend.Pages
                 if (listaColture != null)
                     return listaColture;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaColture = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
         // Richiesta dati sulla lista di offerte delle aziende idriche
         public static async Task<List<Offerta>> GetOfferteIdricheFromApi(HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = $"{urlGenerico}aziendaAgricola/offerteIdriche";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -165,11 +216,11 @@ namespace frontend.Pages
                 if (listaOfferte != null)
                     return listaOfferte;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaOfferte = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
@@ -177,6 +228,9 @@ namespace frontend.Pages
         // Richiesta dati dello storico ordini d'acqua
         public static async Task<List<OrdineAcquisto>> GetStoricoOrdiniFromApi(string partitaIva, HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = $"{urlGenerico}aziendaAgricola/ordini/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -192,11 +246,11 @@ namespace frontend.Pages
                 if (listaOrdini != null)
                     return listaOrdini;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaOrdini = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
@@ -205,6 +259,9 @@ namespace frontend.Pages
         // Richiesta dati sui consumi delle colture possedute dall'azienda
         public static async Task<List<ConsumoAziendaleCampo>> GetStoricoConsumiFromApi(string partitaIva, HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = $"{urlGenerico}aziendaAgricola/consumiColture/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -220,11 +277,11 @@ namespace frontend.Pages
                 if (listaConsumi != null)
                     return listaConsumi;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaConsumi = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
@@ -233,6 +290,9 @@ namespace frontend.Pages
         // Richiesta dati storico sensori di umidità
         public static async Task<List<SensoreUmiditaLog>> GetSensoriUmiditaFromApi(string partitaIva, HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = $"{urlGenerico}aziendaAgricola/storicoSensoriUmidita/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -248,17 +308,20 @@ namespace frontend.Pages
                 if (lista != null)
                     return lista;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - lista = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
         // Richiesta dati storico sensori di temperatura
         public static async Task<List<SensoreTemperaturaLog>> GetSensoriTemperaturaFromApi(string partitaIva, HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = $"{urlGenerico}aziendaAgricola/storicoSensoriTemperatura/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -274,11 +337,11 @@ namespace frontend.Pages
                 if (lista != null)
                     return lista;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - lista = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
@@ -286,6 +349,9 @@ namespace frontend.Pages
         // Richiesta dati storico attuatori
         public static async Task<List<AttuatoreLog>> GetAttuatoriFromApi(string partitaIva, HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = $"{urlGenerico}aziendaAgricola/storicoAttuatori/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -301,11 +367,11 @@ namespace frontend.Pages
                 if (lista != null)
                     return lista;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - lista = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
@@ -320,6 +386,9 @@ namespace frontend.Pages
         // Richiesta dati per limite giornaliero
         public static async Task<float> GetLimiteGiornaliero(string partitaIva, HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = $"{urlGenerico}aziendaIdrica/limiteGiornaliero/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -335,70 +404,79 @@ namespace frontend.Pages
                 if (responseData!=null)
                     return limite;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - limite = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
+        
 
-
-        // Richiesta dati acqua disponibile
-        public static async Task<float> GetAcquaDisponibile(string partitaIva, HttpContext context)
+        // Richiesta dati acqua messa in vendita
+        public static async Task<List<Offerta>> GetOfferteInserite(string partitaIva, HttpContext context)
         {
-            string urlTask = $"{urlGenerico}aziendaIdrica/acquaDisponibile/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            string urlTask = $"{urlGenerico}aziendaIdrica/offerteInserite/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
-
-            if (response.IsSuccessStatusCode)
-            {
-                // Legge e deserializza i dati dalla risposta
-                string responseData = await response.Content.ReadAsStringAsync();
-                float acqua = JsonConvert.DeserializeObject<float>(responseData);
-                if (responseData != null)
-                    return acqua;
-                else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - acqua = null");
-            }
-            else
-            {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
-            }
-        }
-
-        // Richiesta dati sulle richieste di adesione per gli utenti
-        public static async Task<List<Utente>> GetRichiesteUtentiFromApi(HttpContext context)
-        {
-            string urlTask = urlGenerico + "aziendaIdrica/richiesteUtenti/";
-
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
-
-            // Esegue la chiamata POST
+            // Esegue la chiamata GET
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
 
             if (response.IsSuccessStatusCode)
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<Utente>? listaUtenti = JsonConvert.DeserializeObject<List<Utente>>(responseData);
-                if (listaUtenti != null)
-                    return listaUtenti;
+                List<Offerta>? offerteInserite = JsonConvert.DeserializeObject<List<Offerta>>(responseData);
+                if (offerteInserite != null)
+                    return offerteInserite;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaUtenti = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
+            }
+        }
+
+        // Richiesta dati sulle richieste di adesione per gli utenti
+        public static async Task<List<UtenteAp>> GetRichiesteUtentiFromApi(HttpContext context)
+        {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            string urlTask = urlGenerico + "/service/allapplication";
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
+
+            // Esegue la chiamata
+            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Legge e deserializza i dati dalla risposta
+                string responseData = await response.Content.ReadAsStringAsync();
+                List<UtenteAp>? listaUtenti = JsonConvert.DeserializeObject<List<UtenteAp>>(responseData);
+                if (listaUtenti != null)
+                    return listaUtenti;
+                else
+                    throw new HttpRequestException($"{response.StatusCode}");
+            }
+            else
+            {
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
         // Richiesta dati sulle richieste di adesione per gli utenti
         public static async Task<List<UtentePeriodo>> GetRichiestePeriodoFromApi(HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = urlGenerico + "aziendaIdrica/richiesteUtentiPeriodi/";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -414,17 +492,20 @@ namespace frontend.Pages
                 if (listaUtenti != null)
                     return listaUtenti;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaUtentePeriodo = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
         // Richiesta dati sulle richieste di adesione per le aziende agricole
         public static async Task<List<AziendaAgricolaModel>> GetRichiesteAziendeAgricoleFromApi(HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = urlGenerico + "aziendaIdrica/richiesteAziendeAgricole/";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -440,17 +521,20 @@ namespace frontend.Pages
                 if (listaAziende != null)
                     return listaAziende;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaAziende = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
         // Richiesta dati per limiti di vendita per ogni azienda agricola in base alla azienda idrica
         public static async Task<List<LimiteAcquistoAzienda>> GetLimitiPerAziendaFromApi(HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = urlGenerico + "aziendaIdrica/limitiPerAzienda/";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -466,11 +550,11 @@ namespace frontend.Pages
                 if (limiti != null)
                     return limiti;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - limiti = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
@@ -478,6 +562,9 @@ namespace frontend.Pages
         // Richiesta dati storico vendite azienda idrica
         public static async Task<List<OrdineAcquisto>> GetStoricoVenditeFromApi(string partitaIva, HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = $"{urlGenerico}aziendaIdrica/storicoVendite/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -493,11 +580,11 @@ namespace frontend.Pages
                 if (storicoVendite != null)
                     return storicoVendite;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - storicoVendite = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
@@ -505,6 +592,9 @@ namespace frontend.Pages
         // Richiesta dati consumo aziende agricole a cui l'azienda idrica ha venduto
         public static async Task<List<ConsumoAziendaleCampo>> GetConsumoAziendeFromApi(string partitaIva, HttpContext context)
         {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
             string urlTask = $"{urlGenerico}aziendaIdrica/consumiAziende/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -520,26 +610,44 @@ namespace frontend.Pages
                 if (listaConsumi != null)
                     return listaConsumi;
                 else
-                    throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode} - listaConsumi = null");
+                    throw new HttpRequestException($"{response.StatusCode}");
             }
             else
             {
-                throw new HttpRequestException($"Errore nella chiamata API: {response.StatusCode}");
+                throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
 
 
         // Controllo utente autenticato
-        private static bool IsUserAuth()
+        public static async Task<bool> IsUserAuth(HttpContext context)
         {
-            if (utente == null )
+            // Verifica l'esistenza del cookie
+            if (!context.Request.Cookies.TryGetValue("Token", out string token))
             {
                 return false;
             }
-            return true;
+
+            string urlTask = $"{urlGenerico}/profile";
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            // Esegue la chiamata
+            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Legge e deserializza i dati dalla risposta
+                string responseData = await response.Content.ReadAsStringAsync();
+                Utente? userData = JsonConvert.DeserializeObject<Utente>(responseData);
+
+                return userData != null;
+            }
+            else
+            {
+                return false;
+            }
         }
-
-
     }
 }

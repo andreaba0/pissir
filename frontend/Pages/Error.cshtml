@@ -17,19 +17,19 @@
 
 <body>
     <div style="margin: 1em;">
-        <h1 style="color: red">Error</h1>
-        <h2>An error occurred while processing your request.</h2>
+        <h1 style="color: red">Errore</h1>
+        <h2>Si è verificato un errore durante l'elaborazione della tua richiesta.</h2>
 
         <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
         @if (Model.ShowRequestId)
         {
             <p>
-                <strong>Request ID:</strong> <code>@Model.RequestId</code>
+                <strong>ID Richiesta:</strong> <code>@Model.RequestId</code>
             </p>
 
             <p>
-                <b>Error:</b> @ViewData["ErrorMessage"]
+                @TempData["MessaggioErrore"]
             </p>
         }
     </div>

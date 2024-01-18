@@ -9,68 +9,82 @@ namespace frontend.Pages.GestoreIdrico
 {
     public class RichiesteAdesioneModel : PageModel
     {
+        public List<UtenteAp>? RichiesteUtenti { get; set; }
+
         public List<UtentePeriodo> RichiestePeriodo { get; set; }
-        public List<Utente> RichiesteUtenti { get; set; }
         public List<AziendaAgricolaModel> RichiesteAziendeAgricole { get; set; }
 
         public async Task<IActionResult> OnGet()
         {
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            RichiestePeriodo = await ApiReq.GetRichiestePeriodoFromApi(HttpContext);
-            RichiesteUtenti = await ApiReq.GetRichiesteUtentiFromApi(HttpContext);
-            RichiesteAziendeAgricole = await ApiReq.GetRichiesteAziendeAgricoleFromApi(HttpContext);
+            try
+            {
+                RichiesteUtenti = await ApiReq.GetRichiesteUtentiFromApi(HttpContext);
+                //TODO queste due
+                RichiestePeriodo = await ApiReq.GetRichiestePeriodoFromApi(HttpContext);
+                RichiesteAziendeAgricole = await ApiReq.GetRichiesteAziendeAgricoleFromApi(HttpContext);
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
             */
 
-
             // Simula dati di richieste
-            RichiestePeriodo = GetSimulatedRichiestePeriodo();
             RichiesteUtenti = GetSimulatedRichiesteUtenti();
+
+            RichiestePeriodo = GetSimulatedRichiestePeriodo();
             RichiesteAziendeAgricole = GetSimulatedRichiesteAziendeAgricole();
 
             return Page();
         }
 
 
-        // Chiamata API per confermare un nuovo utente
-        public async Task<IActionResult> OnPostConfermaUtente(string codiceFiscale)
+        // Chiamata API per confermare o rifiutare un nuovo utente
+        public async Task<IActionResult> OnPostConfermaUtente(string id, string action)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/confermaUtente";
+            string urlTask = ApiReq.urlGenerico + $"/service/application/{id}/{action}";
 
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
             // Creare il corpo della richiesta
-            var requestBody = new { CodiceFiscale = codiceFiscale };
+            var requestBody = new { id = id, action = action };
             var jsonRequest = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
-            // Esegue la chiamata PUT
-            HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
+            try
+            {
+                // Esegue la chiamata
+                HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
 
-            if (response.IsSuccessStatusCode)
-            {
-                // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Conferma utente con codice fiscale: "+ codiceFiscale +" effettuata con successo!";
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = "Richiesta id: " + id + " impostata con stato: " + action;
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante la l'accettazione/rifiuto della richiesta. Riprova più tardi.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Imposta un messaggio di errore
-                TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
             }
             */
-
-            TempData["Messaggio"] = "Conferma utente con codice fiscale: " + codiceFiscale + " effettuata con successo!";
-            TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
+            TempData["Messaggio"] = "Richiesta id: " + id + " impostata con stato: " + action;
+            TempData["MessaggioErrore"] = "Errore durante la l'accettazione/rifiuto della richiesta. Riprova più tardi.";
 
             return RedirectToPage();
         }
@@ -81,8 +95,8 @@ namespace frontend.Pages.GestoreIdrico
             string urlTask = ApiReq.urlGenerico + "aziendaIdrica/confermaUtentePeriodo";
 
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -120,8 +134,8 @@ namespace frontend.Pages.GestoreIdrico
             string urlTask = ApiReq.urlGenerico + "aziendaIdrica/confermaAzienda";
 
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -155,32 +169,19 @@ namespace frontend.Pages.GestoreIdrico
 
 
 
-        // Controllo utente autenticato
-        private bool IsUserAuth()
-        {
-            if (ApiReq.utente == null || User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return false;
-            }
-            return true;
-        }
-
-
-
-
-
         // Simula dati di richieste utenti
-        private List<Utente> GetSimulatedRichiesteUtenti()
+        private List<UtenteAp> GetSimulatedRichiesteUtenti()
         {
-            return new List<Utente>
+            return new List<UtenteAp>
             {
-                new Utente { CodiceFiscale = "ABC123", Nome = "Giovanni", Cognome = "Bianchi", PartitaIva = "123456789"},
-                new Utente { CodiceFiscale = "XYZ456", Nome = "Maria", Cognome = "Rossi", PartitaIva = "888856789" },
-                new Utente { CodiceFiscale = "DEF789", Nome = "Luca", Cognome = "Verdi", PartitaIva = "999956789" },
+                new UtenteAp {Id="1", CodiceFiscale = "ABC123", Nome = "Giovanni", Cognome = "Bianchi", PartitaIva = "123456789", TipoAzienda="WSP"},
+                new UtenteAp {Id="2", CodiceFiscale = "XYZ456", Nome = "Maria", Cognome = "Rossi", PartitaIva = "888856789", TipoAzienda="FAR" },
+                new UtenteAp {Id="3", CodiceFiscale = "DEF789", Nome = "Luca", Cognome = "Verdi", PartitaIva = "999956789", TipoAzienda="FAR" },
             };
         }
 
-        // Simula dati di richieste utenti
+
+        // Simula dati di richieste utenti periodo accesso alle api
         private List<UtentePeriodo> GetSimulatedRichiestePeriodo()
         {
             return new List<UtentePeriodo>

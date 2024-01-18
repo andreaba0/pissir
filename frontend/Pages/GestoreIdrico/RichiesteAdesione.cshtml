@@ -36,25 +36,44 @@
         <table class="table">
             <thead>
                 <tr>
+                    <th>Id Richiesta</th>
                     <th>Codice Fiscale</th>
                     <th>Nome</th>
                     <th>Cognome</th>
                     <th>Partita Iva Azienda</th>
+                    <th>Tipo Azienda</th>
                     <th>Azioni</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var utente in Model.RichiesteUtenti)
+                @foreach (var utenteAp in Model.RichiesteUtenti)
                 {
                     <tr>
-                        <td>@utente.CodiceFiscale</td>
-                        <td>@utente.Nome</td>
-                        <td>@utente.Cognome</td>
-                        <td>@utente.PartitaIva</td>
+                        <td>@utenteAp.Id</td>
+                        <td>@utenteAp.CodiceFiscale</td>
+                        <td>@utenteAp.Nome</td>
+                        <td>@utenteAp.Cognome</td>
+                        <td>@utenteAp.PartitaIva</td>
+                        <td>
+
+                            @if (utenteAp.TipoAzienda == "WSP")
+                            {
+                                <text>Idrica</text>
+                            }
+                            else if (utenteAp.TipoAzienda == "FAR")
+                            {
+                                <text>Agricola</text>
+                            }
+                            else
+                            {
+                                <text>Errore</text>
+                            }
+                        </td>
                         <td>
                             <form method="post" asp-page-handler="ConfermaUtente">
-                                <input type="hidden" class="form-control" id="codiceFiscale" name="codiceFiscale" value="@utente.CodiceFiscale" readonly>
-                                <button type="submit" class="btn btn-primary">Conferma Adesione</button>
+                                <input type="hidden" class="form-control" id="id" name="id" value="@utenteAp.Id" readonly>
+                                <button type="submit" class="btn btn-primary" name="action" value="accept">Conferma Adesione</button>
+                                <button type="submit" class="btn btn-danger" name="action" value="reject">Rifiuta Adesione</button>
                             </form>
                         </td>
                     </tr>

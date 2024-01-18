@@ -1,3 +1,4 @@
+using frontend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
@@ -9,27 +10,89 @@ namespace frontend.Pages.auth
 {
     public class SignToFarmModel : PageModel
     {
-        public string CodiceFiscale { get; set; }
-        public string NomeUtente { get; set; }
-        public string CognomeUtente { get; set; }
+        public UtenteAp utenteAp {  get; set; }
 
-        public void OnGet()
+        public async Task<IActionResult> OnGet()
         {
-            // Recupera i dati dell'utente dal contesto di autenticazione o da dove sono memorizzati
-            // Ad esempio, potresti avere questi dati in un cookie o in una sessione
-            //CodiceFiscale = "ABC123XYZ4567890";
-            NomeUtente = "Mario";
-            CognomeUtente = "Rossi";
+            /*
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
+            // Imposta il token
+            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+
+            try
+            {
+                // Chiamata alle API per ottenere i dati
+                utenteAp = await ApiReq.GetUserDataApplicationFromApi(HttpContext);
+
+                if (utenteAp == null)
+                {
+                    ViewData["ErrorMessage"] = "Si è verificato un errore durante l'accesso. ";
+                    return RedirectToPage("/Error");
+                }
+
+            }
+            catch (HttpRequestException ex)
+            {
+                switch (ex.Message.ToString().ToLower())
+                {
+                    case "badrequest":
+                        TempData["MessaggioErrore"] = "Errore 400. Utente già accettato nel sistema.";
+                        break;
+                    case "unauthorized":
+                        TempData["MessaggioErrore"] = "Errore 401. Non autorizzato.";
+                        break;
+                    case "notfound":
+                        TempData["MessaggioErrore"] = "Errore 404. Richiesta d'adesione non trovata.";
+                        break;
+                    default:
+                        TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                        break;
+                }
+
+                return RedirectToPage("/Error");
+            }
+            */
+            DatiTest();
+            
+            return Page();
         }
 
-        public async Task<IActionResult> OnPostIscriviti(string nome, string cognome, string codiceFiscale, string partitaIva)
+        private void DatiTest()
         {
-            string urlTask = ApiReq.urlGenerico + "registrazione/";
+            utenteAp = new UtenteAp
+            {
+                //CodiceFiscale = "ABC123XYZ4567890",
+                //PartitaIva = "1234567890",
+                //TipoAzienda = "FAR",
+                //TipoAzienda = "WSP",
+                Nome = "Mario",
+                Cognome = "Rossi"
+            };
+        }
+
+        public async Task<IActionResult> OnPostIscriviti(string nome, string cognome, string codiceFiscale, string partitaIva, string tipoAzienda)
+        {
+            string urlTask = ApiReq.urlGenerico + "service/apply";
+
+            // Controllo dei parametri in input
+            if (string.IsNullOrEmpty(nome) || string.IsNullOrEmpty(cognome) || string.IsNullOrEmpty(codiceFiscale) || string.IsNullOrEmpty(partitaIva) || string.IsNullOrEmpty(tipoAzienda))
+            {
+                TempData["MessaggioErrore"] = "Tutti i campi devono essere compilati.";
+                return RedirectToPage();
+            }
+
+            if (tipoAzienda != "WSP" && tipoAzienda != "FAR")
+            {
+                TempData["MessaggioErrore"] = "Errore di compilazione del form.";
+                return RedirectToPage();
+            }
+
 
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -37,43 +100,52 @@ namespace frontend.Pages.auth
             // Creare il corpo della richiesta
             var requestBody = new
             {
-                Nome = nome,
-                Cognome = cognome,
-                CodiceFiscale = codiceFiscale,
-                PartitaIva = partitaIva
+                given_name = nome,
+                family_name = cognome,
+                tax_code = codiceFiscale,
+                company_var_number = partitaIva,
+                company_category = tipoAzienda
             };
             var jsonRequest = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
-            // Esegue la chiamata POST per l'aggiunta della coltura
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+            try
+            {
+                HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
 
-            if (response.IsSuccessStatusCode)
-            {
-                // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Richiesta d'iscrizione all'azienda P.Iva "+ partitaIva + nome +cognome +codiceFiscale +" effettuata con successo!";
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["Messaggio"] = "Richiesta d'iscrizione all'azienda P.Iva " + partitaIva + nome + cognome + codiceFiscale + tipoAzienda + " effettuata con successo!";
+                }
+                else
+                {
+                    switch ((int)response.StatusCode)
+                    {
+                        case StatusCodes.Status400BadRequest:
+                            TempData["MessaggioErrore"] = "Errore 400. Domanda di adesione per questo utente già eseguita.";
+                            break;
+                        case StatusCodes.Status401Unauthorized:
+                            TempData["MessaggioErrore"] = "Errore 401. Non autorizzato.";
+                            break;
+                        default:
+                            TempData["MessaggioErrore"] = "Errore: " + response.ReasonPhrase;
+                            break;                           
+                    }
+                    //return RedirectToPage("/Error");
+                }
             }
-            else
+            catch (HttpRequestException ex)
             {
-                // Imposta un messaggio di errore
-                TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
+                TempData["MessaggioErrore"] = "Errore nella richiesta HTTP: " + ex.Message;
+                return RedirectToPage("/Error");
             }
             */
-            //TempData["Messaggio"] = "Richiesta d'iscrizione all'azienda P.Iva " + partitaIva + nome + cognome + codiceFiscale + " effettuata con successo!";
+
+            TempData["Messaggio"] = "Richiesta d'iscrizione all'azienda P.Iva " + partitaIva + nome + cognome + codiceFiscale + tipoAzienda + " effettuata con successo!";
             TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
 
             return RedirectToPage();
         }
 
-
-        // Controllo utente autenticato
-        private bool IsUserAuth()
-        {
-            if (ApiReq.utente == null || User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return false;
-            }
-            return true;
-        }
     }
 }

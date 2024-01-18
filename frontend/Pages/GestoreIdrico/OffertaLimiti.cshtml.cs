@@ -5,11 +5,13 @@ using frontend.Models;
 using Newtonsoft.Json;
 using System.Text;
 using System.Net.Http.Headers;
+using System.Globalization;
 
 namespace frontend.Pages.GestoreIdrico
 {
     public class OffertaLimitiModel : PageModel
     {
+        public List<Offerta>? OfferteInserite { get; set; }
         public List<LimiteAcquistoAzienda>? LimitiAcquistoPerAzienda { get; set; }
         public float AcquaDisponibile { get; set; }
         public float LimiteGiornalieroVendita { get; set; }
@@ -17,18 +19,13 @@ namespace frontend.Pages.GestoreIdrico
         public async Task<IActionResult> OnGet()
         {
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
             
             ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-            AcquaDisponibile = await ApiReq.GetAcquaDisponibile(ApiReq.utente.PartitaIva, HttpContext);
-            LimiteGiornalieroVendita = await ApiReq.GetLimiteGiornaliero(ApiReq.utente.PartitaIva, HttpContext);
+            OfferteInserite = await ApiReq.GetOfferteInserite(ApiReq.utente.PartitaIva, HttpContext);
+            //LimiteGiornalieroVendita = await ApiReq.GetLimiteGiornaliero(ApiReq.utente.PartitaIva, HttpContext);
             LimitiAcquistoPerAzienda = await ApiReq.GetLimitiPerAziendaFromApi(HttpContext);
-            
             */
 
             // Simula i dati di esempio
@@ -39,13 +36,43 @@ namespace frontend.Pages.GestoreIdrico
 
         
         // Chiamata API per modificare l'offerta idrica
-        public async Task<IActionResult> OnPostModificaOfferta(string quantitaAcqua, string limiteGiornaliero)
+        public async Task<IActionResult> OnPostInserisciOfferta(string quantitaAcqua, string dataDisp, string prezzoAcqua)
         {
             string urlTask = ApiReq.urlGenerico + "aziendaIdrica/offertaLimiti";
 
+            // Controllo se le date sono nel formato corretto yyyy-MM-dd
+            if (!DateTime.TryParseExact(dataDisp, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
+            {
+                TempData["MessaggioErrore"] = "Formato data non valido. Utilizzare il formato gg/mm/aaaa. Ricevuto: " + dataDisp;
+                return RedirectToPage();
+            }
+
+            // Ottenere la data odierna
+            DateTime today = DateTime.Now.Date;
+
+            // Controllare se la data è posteriore a quella odierna
+            if (date < today)
+            {
+                TempData["MessaggioErrore"] = "La data di inizio non può essere posteriore a oggi.";
+                return RedirectToPage();
+            }
+
+            if (float.Parse(quantitaAcqua) <= 0.0f)
+            {
+                TempData["MessaggioErrore"] = "Quantità acqua erroneamente impostata.";
+                return RedirectToPage();
+            }
+
+            if (float.Parse(prezzoAcqua) <= 0.0f)
+            {
+                TempData["MessaggioErrore"] = "Quantità acqua erroneamente impostata.";
+                return RedirectToPage();
+            }
+
+
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -55,26 +82,28 @@ namespace frontend.Pages.GestoreIdrico
             {
                 PartitaIva = ApiReq.utente.PartitaIva,
                 QuantitaAcqua = quantitaAcqua,
-                LimiteGiornaliero = limiteGiornaliero
+                DataDisp = dataDisp,
+                PrezzoLitro = prezzoAcqua
             };
             var jsonRequest = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
             // Esegue la chiamata PUT
-            HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
+            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
 
             if (response.IsSuccessStatusCode)
             {
                 // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Modifica offerta e limite effettuata con successo!";
+                TempData["Messaggio"] = $"Inserimento offerta effettuato con successo! Quantità: {quantitaAcqua}L - Data disponibilità: {dataDisp} - Prezzo: {prezzoAcqua}€/L";
             }
             else
             {
                 // Imposta un messaggio di errore
-                TempData["MessaggioErrore"] = "Errore durante la modifica. Riprova più tardi.";
+                TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
             }
             */
-            TempData["MessaggioErrore"] = "Errore durante la modifica. Riprova più tardi.";
+            TempData["Messaggio"] = $"Inserimento offerta effettuato con successo! Quantità: {quantitaAcqua}L - Data disponibilità: {dataDisp} - Prezzo: {prezzoAcqua}€/L";
+            TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
 
             return RedirectToPage();
         }
@@ -85,8 +114,8 @@ namespace frontend.Pages.GestoreIdrico
             string urlTask = ApiReq.urlGenerico + "aziendaIdrica/limitiAziende";
 
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -121,24 +150,17 @@ namespace frontend.Pages.GestoreIdrico
             return RedirectToPage();
         }
 
-
-        // Controllo utente autenticato
-        private bool IsUserAuth()
-        {
-            if (ApiReq.utente == null || User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return false;
-            }
-            return true;
-        }
-
-
-
-
-
         // Metodo per simulare i dati di esempio
         private void SimulaDatiDiEsempio()
         {
+            OfferteInserite = new List<Offerta>
+            {
+                new Offerta { Id = "Offerta1", PartitaIva = "8989898989" , DataAnnuncio = "2024-02-10", PrezzoLitro = 15.9f, Quantita = 400.0f },
+                new Offerta { Id = "Offerta2", PartitaIva = "8989898989" , DataAnnuncio = "2024-02-11", PrezzoLitro = 14.9f, Quantita = 300.0f },
+                new Offerta { Id = "Offerta3", PartitaIva = "8989898989" , DataAnnuncio = "2024-02-12", PrezzoLitro = 13.9f, Quantita = 350.0f },
+                new Offerta { Id = "Offerta4", PartitaIva = "8989898989" , DataAnnuncio = "2024-02-13", PrezzoLitro = 14.9f, Quantita = 200.0f }
+            };
+
             LimitiAcquistoPerAzienda = new List<LimiteAcquistoAzienda>
             {
                 new LimiteAcquistoAzienda { PartitaIva = "12345678901", Nome = "Azienda1", LimiteAcquistoAziendale = 1000 },

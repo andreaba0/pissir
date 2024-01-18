@@ -14,22 +14,29 @@ namespace frontend.Pages
         public async Task<IActionResult> OnGet()
         {
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
 
-            // Chiamata alle API per ottenere i dati
-            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-            if (ApiReq.utente.Role == "WSP")
-                aziendaIdrica = await ApiReq.GetAziendaIdricaDataFromApi(HttpContext);
-            else if(ApiReq.utente.Role == "FAR")
-                aziendaAgricola = await ApiReq.GetAziendaAgricolaDataFromApi(HttpContext);
-            else
-                BadRequest();
+            try
+            {
+                // Chiamata alle API per ottenere i dati
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+                if (ApiReq.utente.Role == "WSP")
+                    aziendaIdrica = await ApiReq.GetAziendaIdricaDataFromApi(HttpContext);
+                else if (ApiReq.utente.Role == "FAR")
+                    aziendaAgricola = await ApiReq.GetAziendaAgricolaDataFromApi(HttpContext);
+                else
+                    throw new Exception("Errore nel prelevare i dati dell'account.");
+            }
+            catch (Exception ex) 
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
             */
+            
+            
 
 
             // Simulazione dati          
@@ -43,33 +50,21 @@ namespace frontend.Pages
         }
 
 
-
-        
-
         // Funzione per effettuare il logout
         public async Task<IActionResult> OnPostLogout()
         {
-            // Effettua il logout dell'utente
-            await HttpContext.SignOutAsync();
+            // Cancella il cookie del token
+            Response.Cookies.Delete("Token");
 
-            // Reindirizza all'azione di login o ad un'altra pagina di destinazione
+            // Reindirizza alla pagina di accesso
             return RedirectToPage("/auth/SignIn");
         }
 
-        // Controllo utente autenticato
-        private bool IsUserAuth()
-        {
-            if (ApiReq.utente == null || User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return false;
-            }
-            return true;
-        }
 
 
 
 
-     
+
         // Simula i dati di un'azienda agricola
         private AziendaAgricolaModel GetSimulatedAziendaAgricolaData()
         {

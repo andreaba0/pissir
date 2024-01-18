@@ -8,18 +8,18 @@
 
 <div style="margin: 1em;">
     <h4>Offerta e limiti</h4>
-    <small>• Gestione dell'offerta idrica (quantità di acqua da vendere), e gestione dei limiti di vendita giornalieri e per azienda.</small>
+    <small>• Inserimento e consultazione delle offerte idriche giornaliere dell'Azienda Idrica, e gestione dei limiti di vendita giornalieri e per Azienda Agricola.</small>
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
     
     <!-- Sezione Inserimento Offerta Idrica -->
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h5>Gestione Offerta Idrica</h5>
-        <button class="btn btn-primary" data-toggle="modal" data-target="#modalInserisciModificaOfferta">Inserisci/Modifica Offerta</button>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5em;">
+        <h5>Elenco Offerte Idriche</h5>
+        <button class="btn btn-primary" data-toggle="modal" data-target="#modalInserisciModificaOfferta">Inserisci Offerta</button>
     </div>
 
-    <label for="quantitaAcqua">Quantità di acqua disponibile da offrire: <b>@Model.AcquaDisponibile litro/i</b> </label><br />
-    <label for="limiteGiornaliero">Limite giornaliero di acqua erogabile: <b>@Model.LimiteGiornalieroVendita litro/i</b></label><br />
 
+
+    
     @if (TempData.ContainsKey("Messaggio"))
     {
         <div class="alert alert-info" role="alert">
@@ -34,37 +34,67 @@
         </div>
     }
 
-    <!-- Modale per l'inserimento/modifica dell'offerta -->
+    <!-- Modale per l'inserimento dell'offerta -->
     <div id="modalInserisciModificaOfferta" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalInserisciModificaOfferta" aria-hidden="true" data-backdrop="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="ModalLabelInserisciModificaOfferta">Inserisci/Modifica Offerta Idrica</h5>
+                    <h5 class="modal-title" id="ModalLabelInserisciModificaOfferta">Inserisci una nuova Offerta Idrica</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form method="post" asp-page-handler="ModificaOfferta" id="formInserimentoOfferta">
+                    <form method="post" asp-page-handler="InserisciOfferta" id="formInserimentoOfferta">
                         <div class="form-group">
-                            <label for="quantitaAcqua">Quantità di acqua disponibile da offrire (in litri):</label>
-                            <input type="number" class="form-control" id="quantitaAcqua" name="quantitaAcqua" step="0.01" min="0" value="@Model.AcquaDisponibile" required />
+                            <label for="quantitaAcqua">Quantità di acqua disponibile da offrire (Litri):</label>
+                            <input type="number" class="form-control" id="quantitaAcqua" name="quantitaAcqua" step="0.01" min="0" required placeholder="00,00" />
                         </div>
                         <div class="form-group">
-                            <label for="limiteGiornaliero">Limite giornaliero di acqua erogabile (in litri):</label>
-                            <input type="number" class="form-control" id="limiteGiornaliero" name="limiteGiornaliero" step="0.01" min="0" value="@Model.LimiteGiornalieroVendita" required />
+                            <label for="dataFine">Data disponibilità d'acqua</label>
+                            <input type="date" class="form-control" id="dataDisp" name="dataDisp" required />
                         </div>
-                        <button type="submit" class="btn btn-primary" id="confermaOffertaButton">Conferma Offerta</button>
+                        <div class="form-group">
+                            <label for="prezzoAcqua">Prezzo acqua al litro (Litro/€):</label>
+                            <input type="number" class="form-control" id="prezzoAcqua" name="prezzoAcqua" step="0.01" min="0" required placeholder="00,00€" />
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="confermaOffertaButton">Inserisci Nuova Offerta</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
     
-        
- 
-
-
+    @if (Model.OfferteInserite == null)
+    {
+        <h6>Nessuna offerta in elenco.</h6>
+    }
+    else
+    {
+        <table id="tabOfferteIdriche" class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Partita IVA</th>
+                    <th>Data Annuncio</th>
+                    <th>Prezzo al Litro</th>
+                    <th>Quantità (litri)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var offerta in Model.OfferteInserite)
+                {
+                    <tr>
+                        <td>@offerta.Id</td>
+                        <td>@offerta.PartitaIva</td>
+                        <td>@offerta.DataAnnuncio</td>
+                        <td>@offerta.PrezzoLitro</td>
+                        <td>@offerta.Quantita</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 
     <hr style="margin-top: 1em; margin-bottom: 1em;">
 
@@ -86,53 +116,64 @@
             </div>
         }
 
-        <table id="tabLimitiAzienda" class="table">
-            <thead>
-                <tr>
-                    <th>Partita IVA</th>
-                    <th>Nome Azienda</th>
-                    <th>Limite Azienda (litri)</th>
-                    <th>Azioni</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var azienda in Model.LimitiAcquistoPerAzienda)
-                {
+        @if (Model.LimitiAcquistoPerAzienda == null)
+        {
+            <h6>Nessuna azienda in elenco.</h6>
+        }
+        else
+        {
+            <table id="tabLimitiAzienda" class="table">
+                <thead>
                     <tr>
-                        <td>@azienda.PartitaIva</td>
-                        <td>@azienda.Nome</td>
-                        <td>@azienda.LimiteAcquistoAziendale</td>
-                        <td>
-                            <button class="btn btn-primary" data-toggle="modal" data-target="#modalModificaLimite\@azienda.PartitaIva">Modifica Limite</button>
-                        </td>
+                        <th>Partita IVA</th>
+                        <th>Nome Azienda</th>
+                        <th>Limite Azienda (litri)</th>
+                        <th>Azioni</th>
                     </tr>
+                </thead>
+                <tbody>
+                    @foreach (var azienda in Model.LimitiAcquistoPerAzienda)
+                    {
+                        <tr>
+                            <td>@azienda.PartitaIva</td>
+                            <td>@azienda.Nome</td>
+                            <td>@azienda.LimiteAcquistoAziendale</td>
+                            <td>
+                                <button class="btn btn-primary" data-toggle="modal" data-target="#modalModificaLimite\@azienda.PartitaIva">Modifica Limite</button>
+                            </td>
+                        </tr>
 
-                    <!-- Modale per la modifica del limite -->
-                    <div id="modalModificaLimite\@azienda.PartitaIva" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalModificaLimite\@azienda.PartitaIva"  data-backdrop="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="ModalModificaLimite\@azienda.PartitaIva">Modifica Limite Azienda #@azienda.Nome</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
-                                    <form method="post" asp-page-handler="ModificaLimiteAziendale">
-                                        <div class="form-group">
-                                            <label for="nuovoLimite">Nuovo Limite Azienda (in litri):</label>
-                                            <input type="number" class="form-control" id="nuovoLimite" name="nuovoLimite" step="0.01" min="0" value="@azienda.LimiteAcquistoAziendale" required />
-                                        </div>
-                                        <input type="hidden" id="partitaIvaAzienda" name="partitaIvaAzienda" value="@azienda.PartitaIva" readonly />
-                                        <button type="submit" class="btn btn-primary">Conferma Modifica</button>
-                                    </form>
+                        <!-- Modale per la modifica del limite -->
+                        <div id="modalModificaLimite\@azienda.PartitaIva" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalModificaLimite\@azienda.PartitaIva" data-backdrop="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="ModalModificaLimite\@azienda.PartitaIva">Modifica Limite Azienda #@azienda.Nome</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form method="post" asp-page-handler="ModificaLimiteAziendale">
+                                            <div class="form-group">
+                                                <label for="nuovoLimite">Nuovo Limite Azienda (in litri):</label>
+                                                <input type="number" class="form-control" id="nuovoLimite" name="nuovoLimite" step="0.01" min="0" value="@azienda.LimiteAcquistoAziendale" required />
+                                            </div>
+                                            <input type="hidden" id="partitaIvaAzienda" name="partitaIvaAzienda" value="@azienda.PartitaIva" readonly />
+                                            <button type="submit" class="btn btn-primary">Conferma Modifica</button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                }
-            </tbody>
-        </table>
+                    }
+
+
+
+                </tbody>
+            </table>
+        }
+        
     </div>
 
 

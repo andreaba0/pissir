@@ -11,8 +11,8 @@ namespace frontend.Pages.auth
     {
         public async Task<IActionResult> OnGet()
         {
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            //if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             return Page();
         }
@@ -22,8 +22,8 @@ namespace frontend.Pages.auth
         {
             string urlTask = ApiReq.urlGenerico + "registraAzienda/";
 
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -65,19 +65,6 @@ namespace frontend.Pages.auth
             
             return RedirectToPage();
         }
-
-
-        // Controllo utente autenticato
-        private bool IsUserAuth()
-        {
-            if (ApiReq.utente == null || User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return false;
-            }
-            return true;
-        }
-
-
 
     }
 }

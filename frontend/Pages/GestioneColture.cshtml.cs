@@ -17,11 +17,8 @@ namespace frontend.Pages
         public async Task<IActionResult> OnGet()
         {
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             // Chiamata alle API per ottenere i dati
             ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
@@ -43,8 +40,8 @@ namespace frontend.Pages
             string urlTask = ApiReq.urlGenerico + "aziendaAgricola/coltura";
 
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -87,8 +84,8 @@ namespace frontend.Pages
             string urlTask = ApiReq.urlGenerico + "aziendaAgricola/coltura";
 
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -132,8 +129,8 @@ namespace frontend.Pages
             string urlTask = $"{ApiReq.urlGenerico}aziendaAgricola/coltura/?IdColtura={Uri.EscapeDataString(colturaId)}";
 
             /*
-            // L'utente non è autenticato, reindirizzamento sulla pagina di login
-            if (!IsUserAuth()) return RedirectToPage("/auth/SignIn");
+            // Controllo utente autenticato
+            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
             // Imposta il token
             ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -157,15 +154,6 @@ namespace frontend.Pages
             return RedirectToPage();
         }
 
-        // Controllo utente autenticato
-        private bool IsUserAuth()
-        {
-            if (ApiReq.utente == null || User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return false;
-            }
-            return true;
-        }
 
 
 

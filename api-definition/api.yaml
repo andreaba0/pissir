@@ -162,6 +162,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   /water/offer:
+    get:
+      summary: Get water offers
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetWaterOffers'
+        '500':
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            plain/text:
+              schema:
+                type: string
     post:
       summary: Create water offer
       requestBody:
@@ -192,6 +213,209 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /water/offer/{offer_id}:
+    delete:
+      summary: Delete water offer
+      parameters:
+        - name: offer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            plain/text:
+              schema:
+                type: string
+        '500':
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      summary: Update water offer
+      parameters:
+        - name: offer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchWaterOfferBody'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            plain/text:
+              schema:
+                type: string
+        '500':
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /field/{field_id}:
+    get:
+      summary: Get field
+      parameters:
+        - name: field_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetField'
+        '404':
+          description: Not found
+          content:
+            plain/text:
+              schema:
+                type: string
+        '500':  
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            plain/text:
+              schema:
+                type: string
+    patch:
+      summary: Update field
+      parameters:
+        - name: field_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchFieldBody'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            plain/text:
+              schema:
+                type: string
+        '500':  
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            plain/text:
+              schema:
+                type: string
+  /field:
+    get:
+      summary: Get fields
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetFields'
+        '500':  
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            plain/text:
+              schema:
+                type: string
+    post:
+      summary: Create field
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostFieldBody'
+      responses:
+        '201':
+          description: OK
+        '200':
+          description: OK
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':  
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            plain/text:
+              schema:
+                type: string
+  /analytics/{company_id}/water_consumption:
 
 
 security:
@@ -231,6 +455,15 @@ components:
               type: array
               items:
                 type: string
+        reason:
+          type: object
+          properties:
+            header:
+              type: string
+            request_body:
+              type: string
+            generic:
+              type: string
     PostWaterLimitBody:
       type: object
       properties:
@@ -238,6 +471,9 @@ components:
           type: number
           format: float
         start_date:
+          type: string
+          format: date-time
+        end_date:
           type: string
           format: date-time
       required:
@@ -279,6 +515,23 @@ components:
         - amount
         - offer_id
         - date
+    GetWaterOffers:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          amount:
+            type: number
+            format: float
+          price:
+            type: number
+            format: float
+          date:
+            type: string
+            format: date-time
     PostWaterOfferBody:
       type: object
       properties:
@@ -295,3 +548,50 @@ components:
         - amount
         - price
         - date
+    PatchWaterOfferBody:
+      type: object
+      properties:
+        update_amount_to:
+          type: number
+          format: float
+    GetField:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        square_meters:
+          type: number
+          format: float
+        crop_type:
+          type: string
+        irrigation_type:
+          type: string
+    GetFields:
+      type: array
+      items:
+        $ref: '#/components/schemas/GetField'
+    PatchFieldBody:
+      type: object
+      properties:
+        square_meters:
+          type: number
+          format: float
+        crop_type:
+          type: string
+        irrigation_type:
+          type: string
+    PostFieldBody:
+      type: object
+      properties:
+        square_meters:
+          type: number
+          format: float
+        crop_type:
+          type: string
+        irrigation_type:
+          type: string
+      required:
+        - square_meters
+        - crop_type
+        - irrigation_type

@@ -63,7 +63,7 @@ paths:
               schema:
                 type: string
                 example: Unauthorized
-  /service/application:
+  /service/my_application:
     get:
       summary: Returns user application status
       description: Returns user application status
@@ -74,6 +74,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Application'
+        '404':
+          description: User application not found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: User application not found
+        '401':
+          description: Unauthorized
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Unauthorized
+  /service/application:
+    get:
+      summary: Returns user application status
+      description: Returns user application status
+      responses:
+        '200':
+          description: Returns user application status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Applications'
         '404':
           description: User application not found
           content:
@@ -327,6 +352,10 @@ components:
           type: string
           description: Company category
           enum: [GSI, FAR]
+    Applications:
+      type: array
+      items:
+        $ref: '#/components/schemas/Application'
     Application:
       type: object
       properties:
@@ -345,6 +374,9 @@ components:
         tax_code:
           type: string
           description: User tax code
+        email:
+          type: string
+          description: User email
         company_category:
           type: string
           description: Company category

@@ -76,7 +76,7 @@ namespace frontend.Pages
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
             // Stringa interpolata
-            string urlTask = $"{urlGenerico}/service/application";
+            string urlTask = $"{urlGenerico}/service/my_application";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -96,11 +96,38 @@ namespace frontend.Pages
             }
             else
             {
-                string responseContent = await response.Content.ReadAsStringAsync();
                 throw new HttpRequestException($"{response.StatusCode}");
             }
         }
 
+        // Richiesta dati azienda generica
+        public static async Task<Azienda> GetAziendaDataFromApi(HttpContext context)
+        {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            string urlTask = $"{urlGenerico}/company";
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
+
+            // Esegue la chiamata
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Legge e deserializza i dati dalla risposta
+                string responseData = await response.Content.ReadAsStringAsync();
+                Azienda? aziendaData = JsonConvert.DeserializeObject<Azienda>(responseData);
+                if (aziendaData != null)
+                    return aziendaData;
+                else
+                    throw new HttpRequestException($"{response.StatusCode}");
+            }
+            else
+            {
+                throw new HttpRequestException($"{response.StatusCode}");
+            }
+        }
 
         // Richiesta dati azienda idrica
         public static async Task<AziendaIdricaModel> GetAziendaIdricaDataFromApi(HttpContext context)
@@ -442,13 +469,14 @@ namespace frontend.Pages
             }
         }
 
+        
         // Richiesta dati sulle richieste di adesione per gli utenti
         public static async Task<List<UtenteAp>> GetRichiesteUtentiFromApi(HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
-            string urlTask = urlGenerico + "/service/allapplication";
+            string urlTask = urlGenerico + "/service/application";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -470,6 +498,7 @@ namespace frontend.Pages
                 throw new HttpRequestException($"{response.StatusCode}");
             }
         }
+        
 
         // Richiesta dati sulle richieste di adesione per gli utenti
         public static async Task<List<UtentePeriodo>> GetRichiestePeriodoFromApi(HttpContext context)
@@ -641,8 +670,10 @@ namespace frontend.Pages
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
                 Utente? userData = JsonConvert.DeserializeObject<Utente>(responseData);
-
-                return userData != null;
+                if (userData != null)
+                    return true;
+                else
+                    return false;
             }
             else
             {

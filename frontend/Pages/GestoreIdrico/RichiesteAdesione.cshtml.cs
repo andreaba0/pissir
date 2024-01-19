@@ -16,14 +16,14 @@ namespace frontend.Pages.GestoreIdrico
 
         public async Task<IActionResult> OnGet()
         {
+            
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
             try
             {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
                 RichiesteUtenti = await ApiReq.GetRichiesteUtentiFromApi(HttpContext);
-                //TODO queste due
                 RichiestePeriodo = await ApiReq.GetRichiestePeriodoFromApi(HttpContext);
                 RichiesteAziendeAgricole = await ApiReq.GetRichiesteAziendeAgricoleFromApi(HttpContext);
             }
@@ -50,19 +50,19 @@ namespace frontend.Pages.GestoreIdrico
             string urlTask = ApiReq.urlGenerico + $"/service/application/{id}/{action}";
 
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Creare il corpo della richiesta
-            var requestBody = new { id = id, action = action };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
             try
             {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+
+                // Creare il corpo della richiesta
+                var requestBody = new { id = id, action = action };
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
                 // Esegue la chiamata
                 HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
 
@@ -83,6 +83,7 @@ namespace frontend.Pages.GestoreIdrico
                 return RedirectToPage("/Error");
             }
             */
+
             TempData["Messaggio"] = "Richiesta id: " + id + " impostata con stato: " + action;
             TempData["MessaggioErrore"] = "Errore durante la l'accettazione/rifiuto della richiesta. Riprova più tardi.";
 
@@ -93,31 +94,39 @@ namespace frontend.Pages.GestoreIdrico
         public async Task<IActionResult> OnPostConfermaUtentePeriodo(string codiceFiscale)
         {
             string urlTask = ApiReq.urlGenerico + "aziendaIdrica/confermaUtentePeriodo";
-
+            
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Creare il corpo della richiesta
-            var requestBody = new { CodiceFiscale = codiceFiscale };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata PUT
-            HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
-
-            if (response.IsSuccessStatusCode)
+            try
             {
-                // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Conferma periodo di accesso utente con codice fiscale: "+ codiceFiscale +" effettuata con successo!";
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+
+                // Creare il corpo della richiesta
+                var requestBody = new { CodiceFiscale = codiceFiscale };
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                // Esegue la chiamata PUT
+                HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = "Conferma periodo di accesso utente con codice fiscale: " + codiceFiscale + " effettuata con successo!";
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Imposta un messaggio di errore
-                TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
             }
             */
 
@@ -132,33 +141,42 @@ namespace frontend.Pages.GestoreIdrico
         public async Task<IActionResult> OnPostConfermaAzienda(string partitaIva)
         {
             string urlTask = ApiReq.urlGenerico + "aziendaIdrica/confermaAzienda";
-
+            
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Creare il corpo della richiesta
-            var requestBody = new { PartitaIva = partitaIva };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata PUT
-            HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
-
-            if (response.IsSuccessStatusCode)
+            try
             {
-                // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Conferma azienda con partita iva: " + partitaIva + " effettuata con successo!";
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+
+                // Creare il corpo della richiesta
+                var requestBody = new { PartitaIva = partitaIva };
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                // Esegue la chiamata PUT
+                HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = "Conferma azienda con partita iva: " + partitaIva + " effettuata con successo!";
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Imposta un messaggio di errore
-                TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
             }
             */
+
             TempData["Messaggio"] = "Conferma azienda con partita iva: " + partitaIva + " effettuata con successo!";
             TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
 

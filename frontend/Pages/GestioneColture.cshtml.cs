@@ -17,13 +17,20 @@ namespace frontend.Pages
         public async Task<IActionResult> OnGet()
         {
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+            try
+            {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-            // Chiamata alle API per ottenere i dati
-            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-            Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva, HttpContext);
-
+                // Chiamata alle API per ottenere i dati
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+                Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
             */
 
             // Simulazione dati
@@ -40,35 +47,43 @@ namespace frontend.Pages
             string urlTask = ApiReq.urlGenerico + "aziendaAgricola/coltura";
 
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Creare il corpo della richiesta
-            var requestBody = new
+            try
             {
-                PartitaIva = partitaIva,
-                MetriQuadrati = metriQuadrati,
-                TipoColtura = tipoColtura,
-                TipoIrrigazione = tipoIrrigazione
-            };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-            // Esegue la chiamata PUT per l'aggiunta della coltura
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
-            if (response.IsSuccessStatusCode)
-            {
-                // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Aggiunta della coltura per l'azienda P.Iva "+ partitaIva +" effettuata con successo!";
+                // Creare il corpo della richiesta
+                var requestBody = new
+                {
+                    PartitaIva = partitaIva,
+                    MetriQuadrati = metriQuadrati,
+                    TipoColtura = tipoColtura,
+                    TipoIrrigazione = tipoIrrigazione
+                };
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                // Esegue la chiamata PUT per l'aggiunta della coltura
+                HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = "Aggiunta della coltura per l'azienda P.Iva " + partitaIva + " effettuata con successo!";
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova più tardi.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Imposta un messaggio di errore
-                TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova più tardi.";
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
             }
             */
 
@@ -84,38 +99,47 @@ namespace frontend.Pages
             string urlTask = ApiReq.urlGenerico + "aziendaAgricola/coltura";
 
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Creare il corpo della richiesta
-            var requestBody = new 
-            { 
-                PartitaIva = ApiReq.utente.PartitaIva,
-                ColturaId = colturaId,
-                MetriQuadrati = metriQuadrati,
-                TipoColtura = tipoColtura,
-                TipoIrrigazione = tipoIrrigazione
-            };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
-            
-            if (response.IsSuccessStatusCode)
+            try
             {
-                // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Modifica della coltura con ID = " + colturaId + " effettuata con successo!";
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+
+                // Creare il corpo della richiesta
+                var requestBody = new
+                {
+                    PartitaIva = ApiReq.utente.PartitaIva,
+                    ColturaId = colturaId,
+                    MetriQuadrati = metriQuadrati,
+                    TipoColtura = tipoColtura,
+                    TipoIrrigazione = tipoIrrigazione
+                };
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                // Esegue la chiamata POST
+                HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = "Modifica della coltura con ID = " + colturaId + " effettuata con successo!";
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante la modifica. Riprova più tardi.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Imposta un messaggio di errore
-                TempData["MessaggioErrore"] = "Errore durante la modifica. Riprova più tardi.";
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
             }
             */
+
             TempData["MessaggioErrore"] = "Errore durante la modifica. Riprova più tardi.";
 
             await OnGet();
@@ -129,26 +153,35 @@ namespace frontend.Pages
             string urlTask = $"{ApiReq.urlGenerico}aziendaAgricola/coltura/?IdColtura={Uri.EscapeDataString(colturaId)}";
 
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Esegue la chiamata DELETE per l'eliminazione della coltura
-            HttpResponseMessage response = await ApiReq.httpClient.DeleteAsync(urlTask);
-
-            if (response.IsSuccessStatusCode)
+            try
             {
-                // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Eliminazione della coltura con ID = "+ colturaId +" effettuata con successo!";
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+
+                // Esegue la chiamata DELETE per l'eliminazione della coltura
+                HttpResponseMessage response = await ApiReq.httpClient.DeleteAsync(urlTask);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = "Eliminazione della coltura con ID = " + colturaId + " effettuata con successo!";
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante l'eliminazione della coltura. Riprova più tardi.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Imposta un messaggio di errore
-                TempData["MessaggioErrore"] = "Errore durante l'eliminazione della coltura. Riprova più tardi.";
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
             }
             */
+
             TempData["MessaggioErrore"] = "Errore durante l'eliminazione della coltura. Riprova più tardi.";
 
             return RedirectToPage();

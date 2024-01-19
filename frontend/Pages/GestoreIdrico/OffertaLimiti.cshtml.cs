@@ -19,13 +19,21 @@ namespace frontend.Pages.GestoreIdrico
         public async Task<IActionResult> OnGet()
         {
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-            
-            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-            OfferteInserite = await ApiReq.GetOfferteInserite(ApiReq.utente.PartitaIva, HttpContext);
-            //LimiteGiornalieroVendita = await ApiReq.GetLimiteGiornaliero(ApiReq.utente.PartitaIva, HttpContext);
-            LimitiAcquistoPerAzienda = await ApiReq.GetLimitiPerAziendaFromApi(HttpContext);
+            try
+            {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+                OfferteInserite = await ApiReq.GetOfferteInserite(ApiReq.utente.PartitaIva, HttpContext);
+                //LimiteGiornalieroVendita = await ApiReq.GetLimiteGiornaliero(ApiReq.utente.PartitaIva, HttpContext);
+                LimitiAcquistoPerAzienda = await ApiReq.GetLimitiPerAziendaFromApi(HttpContext);
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
             */
 
             // Simula i dati di esempio
@@ -69,39 +77,47 @@ namespace frontend.Pages.GestoreIdrico
                 return RedirectToPage();
             }
 
-
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Creare il corpo della richiesta
-            var requestBody = new
+            try
             {
-                PartitaIva = ApiReq.utente.PartitaIva,
-                QuantitaAcqua = quantitaAcqua,
-                DataDisp = dataDisp,
-                PrezzoLitro = prezzoAcqua
-            };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-            // Esegue la chiamata PUT
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
-            if (response.IsSuccessStatusCode)
-            {
-                // Imposta un messaggio di successo
-                TempData["Messaggio"] = $"Inserimento offerta effettuato con successo! Quantità: {quantitaAcqua}L - Data disponibilità: {dataDisp} - Prezzo: {prezzoAcqua}€/L";
+                // Creare il corpo della richiesta
+                var requestBody = new
+                {
+                    PartitaIva = ApiReq.utente.PartitaIva,
+                    QuantitaAcqua = quantitaAcqua,
+                    DataDisp = dataDisp,
+                    PrezzoLitro = prezzoAcqua
+                };
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                // Esegue la chiamata PUT
+                HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = $"Inserimento offerta effettuato con successo! Quantità: {quantitaAcqua}L - Data disponibilità: {dataDisp} - Prezzo: {prezzoAcqua}€/L";
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Imposta un messaggio di errore
-                TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
             }
             */
+
             TempData["Messaggio"] = $"Inserimento offerta effettuato con successo! Quantità: {quantitaAcqua}L - Data disponibilità: {dataDisp} - Prezzo: {prezzoAcqua}€/L";
             TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
 
@@ -114,35 +130,45 @@ namespace frontend.Pages.GestoreIdrico
             string urlTask = ApiReq.urlGenerico + "aziendaIdrica/limitiAziende";
 
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Creare il corpo della richiesta
-            var requestBody = new
+            try
             {
-                PartitaIvaAziendaIdrica = ApiReq.utente.PartitaIva,
-                NuovoLimite = nuovoLimite,
-                PartitaIvaAziendaAgricola = partitaIvaAzienda
-            };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-            // Esegue la chiamata PUT
-            HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
-            if (response.IsSuccessStatusCode)
-            {
-                // Imposta un messaggio di successo
-                TempData["MessaggioLimite"] = "Modifica limite per l'azienda con P.Iva " + partitaIvaAzienda + " effettuata con successo!";
+                // Creare il corpo della richiesta
+                var requestBody = new
+                {
+                    PartitaIvaAziendaIdrica = ApiReq.utente.PartitaIva,
+                    NuovoLimite = nuovoLimite,
+                    PartitaIvaAziendaAgricola = partitaIvaAzienda
+                };
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                // Esegue la chiamata PUT
+                HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["MessaggioLimite"] = "Modifica limite per l'azienda con P.Iva " + partitaIvaAzienda + " effettuata con successo!";
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova più tardi.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Imposta un messaggio di errore
-                TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova più tardi.";
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
             }
+            
+            
             */
 
             TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova più tardi.";

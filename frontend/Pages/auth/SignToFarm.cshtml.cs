@@ -15,14 +15,11 @@ namespace frontend.Pages.auth
         public async Task<IActionResult> OnGet()
         {
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
             try
             {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
                 // Chiamata alle API per ottenere i dati
                 utenteAp = await ApiReq.GetUserDataApplicationFromApi(HttpContext);
 
@@ -54,23 +51,13 @@ namespace frontend.Pages.auth
                 return RedirectToPage("/Error");
             }
             */
+
             DatiTest();
             
             return Page();
         }
 
-        private void DatiTest()
-        {
-            utenteAp = new UtenteAp
-            {
-                //CodiceFiscale = "ABC123XYZ4567890",
-                //PartitaIva = "1234567890",
-                //TipoAzienda = "FAR",
-                //TipoAzienda = "WSP",
-                Nome = "Mario",
-                Cognome = "Rossi"
-            };
-        }
+        
 
         public async Task<IActionResult> OnPostIscriviti(string nome, string cognome, string codiceFiscale, string partitaIva, string tipoAzienda)
         {
@@ -89,28 +76,27 @@ namespace frontend.Pages.auth
                 return RedirectToPage();
             }
 
-
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Creare il corpo della richiesta
-            var requestBody = new
-            {
-                given_name = nome,
-                family_name = cognome,
-                tax_code = codiceFiscale,
-                company_var_number = partitaIva,
-                company_category = tipoAzienda
-            };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
             try
             {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+
+                // Creare il corpo della richiesta
+                var requestBody = new
+                {
+                    given_name = nome,
+                    family_name = cognome,
+                    tax_code = codiceFiscale,
+                    company_var_number = partitaIva,
+                    company_category = tipoAzienda
+                };
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
                 HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
 
                 if (response.IsSuccessStatusCode)
@@ -146,6 +132,24 @@ namespace frontend.Pages.auth
 
             return RedirectToPage();
         }
+
+
+
+        // TEST
+        private void DatiTest()
+        {
+            utenteAp = new UtenteAp
+            {
+                //CodiceFiscale = "ABC123XYZ4567890",
+                //PartitaIva = "1234567890",
+                //TipoAzienda = "FAR",
+                //TipoAzienda = "WSP",
+                Nome = "Mario",
+                Cognome = "Rossi"
+            };
+        }
+
+
 
     }
 }

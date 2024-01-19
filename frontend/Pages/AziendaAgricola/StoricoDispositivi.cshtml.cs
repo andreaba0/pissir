@@ -18,14 +18,21 @@ namespace frontend.Pages.AziendaAgricola
         public async Task<IActionResult> OnGet()
         {
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-                        
-            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-            SensoriUmiditaLogs = await ApiReq.GetSensoriUmiditaFromApi(ApiReq.utente.PartitaIva, HttpContext);
-            SensoriTemperaturaLogs = await ApiReq.GetSensoriTemperaturaFromApi(ApiReq.utente.PartitaIva, HttpContext);
-            AttuatoriLogs = await ApiReq.GetAttuatoriFromApi(ApiReq.utente.PartitaIva, HttpContext);
-            
+            try
+            {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+                SensoriUmiditaLogs = await ApiReq.GetSensoriUmiditaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+                SensoriTemperaturaLogs = await ApiReq.GetSensoriTemperaturaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+                AttuatoriLogs = await ApiReq.GetAttuatoriFromApi(ApiReq.utente.PartitaIva, HttpContext);
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
             */
 
             // Simulazione dati

@@ -17,18 +17,21 @@ namespace frontend.Pages.AziendaAgricola
         public async Task<IActionResult> OnGet()
         {
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+            try
+            {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            
-            Offerte = await ApiReq.GetOfferteIdricheFromApi(HttpContext);
-            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-            Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva, HttpContext);
-            Colture = GetListaColture();
-           
+                // Chiamate alle API
+                Offerte = await ApiReq.GetOfferteIdricheFromApi(HttpContext);
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+                Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
             */
 
             // Simulazione dati
@@ -45,35 +48,45 @@ namespace frontend.Pages.AziendaAgricola
             string urlTask = ApiReq.urlGenerico + "aziendaAgricola/offerteIdriche";
 
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Creare il corpo della richiesta
-            var requestBody = new
+            try
             {
-                OffertaId = offertaId,
-                QuantitaAcquisto = quantitaAcquisto
-            };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
-            if (response.IsSuccessStatusCode)
-            {
-                // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Risorse acquistate dall'offerta con ID = " + offertaId ;
+                // Creare il corpo della richiesta
+                var requestBody = new
+                {
+                    OffertaId = offertaId,
+                    QuantitaAcquisto = quantitaAcquisto
+                };
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                // Esegue la chiamata POST
+                HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = "Risorse acquistate dall'offerta con ID = " + offertaId;
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante l'acquisto. Riprova più tardi.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Imposta un messaggio di errore
-                TempData["MessaggioErrore"] = "Errore durante l'acquisto. Riprova più tardi.";
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
             }
             */
+
+            TempData["Messaggio"] = "Risorse acquistate dall'offerta con ID = " + offertaId;
             TempData["MessaggioErrore"] = "Errore durante l'acquisto. Riprova più tardi.";
 
             await OnGet();

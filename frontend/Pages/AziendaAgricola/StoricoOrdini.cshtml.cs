@@ -12,12 +12,19 @@ namespace frontend.Pages.AziendaAgricola
         public async Task<IActionResult> OnGet()
         {
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+            try
+            {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-            StoricoOrdini = await ApiReq.GetStoricoOrdiniFromApi(ApiReq.utente.PartitaIva, HttpContext);
-            
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+                StoricoOrdini = await ApiReq.GetStoricoOrdiniFromApi(ApiReq.utente.PartitaIva, HttpContext);
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }           
             */
 
             // Simulazione dati

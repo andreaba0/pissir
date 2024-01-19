@@ -14,21 +14,28 @@ namespace frontend.Pages.auth
         public async Task<IActionResult> OnGet()
         {
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Chiamata alle API per ottenere i dati
-            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-
-            if (ApiReq.utente == null) 
+            try
             {
-                ViewData["ErrorMessage"] = "Si è verificato un errore durante l'accesso. ";
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Chiamata alle API per ottenere i dati
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+
+                if (ApiReq.utente == null)
+                {
+                    ViewData["ErrorMessage"] = "Si è verificato un errore durante l'accesso. ";
+                    return RedirectToPage("/Error");
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
             */
+
+
             return Page();           
         }
 
@@ -62,40 +69,50 @@ namespace frontend.Pages.auth
                 return RedirectToPage();
             }
 
-            /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Creare il corpo della richiesta
-            var requestBody = new
+            try
             {
-                DataInizio = dataInizio,
-                DataFine = dataFine
-            };
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+                /*
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-            // Esegue la chiamata POST per l'aggiunta della coltura
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
-            if (response.IsSuccessStatusCode)
-            {
-                // Imposta un messaggio di successo
-                TempData["Messaggio"] = "Richiesta periodo di accesso al sistema da " + dataInizio + " a " + dataFine +" effettuata con successo!";
-            }
-            else
-            {
-                // Imposta un messaggio di errore
+                // Creare il corpo della richiesta
+                var requestBody = new
+                {
+                    DataInizio = dataInizio,
+                    DataFine = dataFine
+                };
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                // Esegue la chiamata POST per l'aggiunta della coltura
+                HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = "Richiesta periodo di accesso al sistema da " + dataInizio + " a " + dataFine + " effettuata con successo!";
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
+                }
+                */
+
+                //TempData["Messaggio"] = "Richiesta periodo di accesso al sistema da " + dataInizio + " a " + dataFine + " effettuata con successo!";
                 TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
-            }
-            */
-            //TempData["Messaggio"] = "Richiesta periodo di accesso al sistema da " + dataInizio + " a " + dataFine + " effettuata con successo!";
-            TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
 
-            return RedirectToPage();
+                return RedirectToPage();
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
+            
         }
 
     }

@@ -14,11 +14,19 @@ namespace frontend.Pages.GestoreIdrico
         public async Task<IActionResult> OnGet()
         {
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-            
-            ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-            Acquisti = await ApiReq.GetStoricoVenditeFromApi(ApiReq.utente.PartitaIva, HttpContext);
+            try
+            {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+                Acquisti = await ApiReq.GetStoricoVenditeFromApi(ApiReq.utente.PartitaIva, HttpContext);
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
             */
 
             // Simulazione dati

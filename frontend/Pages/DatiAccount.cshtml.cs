@@ -8,20 +8,22 @@ namespace frontend.Pages
 {
     public class DatiAccountModel : PageModel
     {
+        public Azienda azienda { get; set; }
         public AziendaAgricolaModel? aziendaAgricola { get; set; }
         public AziendaIdricaModel? aziendaIdrica { get; set; }
 
         public async Task<IActionResult> OnGet()
         {
             /*
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-
             try
             {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
                 // Chiamata alle API per ottenere i dati
                 ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+                azienda = await ApiReq.GetAziendaDataFromApi(HttpContext);
+
                 if (ApiReq.utente.Role == "WSP")
                     aziendaIdrica = await ApiReq.GetAziendaIdricaDataFromApi(HttpContext);
                 else if (ApiReq.utente.Role == "FAR")
@@ -35,9 +37,6 @@ namespace frontend.Pages
                 return RedirectToPage("/Error");
             }
             */
-            
-            
-
 
             // Simulazione dati          
             if (ApiReq.utente.Role == "WSP")
@@ -75,8 +74,7 @@ namespace frontend.Pages
                 Indirizzo = "Via delle Campagne, 123",
                 Telefono = "0123456789",
                 Email = "info@aziendaagricolarossi.com",
-                Categoria = "FA",
-                LimiteAcquistoAziendale = 5000.0f
+                Categoria = "FA"
             };
         }
 
@@ -91,8 +89,7 @@ namespace frontend.Pages
                 Indirizzo = "Via dell'Acqua, 456",
                 Telefono = "9876543210",
                 Email = "info@aziendaidricablu.com",
-                Categoria = "WA",
-                LimiteErogazioneGlobale = 100000.0f
+                Categoria = "WA"
             };
         }
 

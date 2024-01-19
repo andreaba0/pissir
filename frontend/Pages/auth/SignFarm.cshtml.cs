@@ -11,8 +11,17 @@ namespace frontend.Pages.auth
     {
         public async Task<IActionResult> OnGet()
         {
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+            try
+            {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
+            
 
             return Page();
         }
@@ -22,48 +31,58 @@ namespace frontend.Pages.auth
         {
             string urlTask = ApiReq.urlGenerico + "registraAzienda/";
 
-            // Controllo utente autenticato
-            if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-            // Imposta il token
-            ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-            // Creare il corpo della richiesta
-            var requestBody = new
+            try
             {
-                PartitaIva = PartitaIva,
-                Nome = Nome,
-                Indirizzo = Indirizzo,
-                Telefono = Telefono,
-                Email = Email,
-            };
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-            var jsonRequest = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
-            // Esegue la chiamata POST per l'aggiunta dell'azienda agricola
-            HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+                // Creare il corpo della richiesta
+                var requestBody = new
+                {
+                    company_vat_number = PartitaIva,
+                    name = Nome,
+                    address = Indirizzo,
+                    phone_number = Telefono,
+                    email = Email,
+                };
 
-            if (response.IsSuccessStatusCode)
-            {
-                // Imposta un messaggio di successo
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                // Esegue la chiamata POST per l'aggiunta dell'azienda agricola
+                HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = "Richiesta di registrazione dell'azienda con P.Iva " + PartitaIva + " effettuata con successo!";
+                    TempData["PartitaIva"] = PartitaIva;
+                    TempData["Nome"] = Nome;
+                    TempData["Indirizzo"] = Indirizzo;
+                    TempData["Telefono"] = Telefono;
+                    TempData["Email"] = Email;
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante la registrazione dell'azienda. Riprova più tardi.";
+                }
+
+
                 TempData["Messaggio"] = "Richiesta di registrazione dell'azienda con P.Iva " + PartitaIva + " effettuata con successo!";
-                TempData["PartitaIva"] = PartitaIva;
-                TempData["Nome"] = Nome;
-                TempData["Indirizzo"] = Indirizzo;
-                TempData["Telefono"] = Telefono;
-                TempData["Email"] = Email;
-            }
-            else
-            {
-                // Imposta un messaggio di errore
-                TempData["MessaggioErrore"] = "Errore durante la registrazione dell'azienda. Riprova più tardi.";
-            }
-            
 
-            TempData["Messaggio"] = "Richiesta di registrazione dell'azienda con P.Iva " + PartitaIva + " effettuata con successo!";
+                return RedirectToPage();
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
+
             
-            return RedirectToPage();
         }
 
     }

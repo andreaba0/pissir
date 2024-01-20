@@ -36,7 +36,8 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>Id Richiesta</th>
+                    <th>Id</th>
+                    <th>Email</th>
                     <th>Codice Fiscale</th>
                     <th>Nome</th>
                     <th>Cognome</th>
@@ -50,6 +51,7 @@
                 {
                     <tr>
                         <td>@utenteAp.Id</td>
+                        <td>@utenteAp.Email</td>
                         <td>@utenteAp.CodiceFiscale</td>
                         <td>@utenteAp.Nome</td>
                         <td>@utenteAp.Cognome</td>
@@ -94,6 +96,8 @@
         <table class="table">
             <thead>
                 <tr>
+                    <th>Id</th>
+                    <th>Email</th>
                     <th>Codice Fiscale</th>
                     <th>Nome</th>
                     <th>Cognome</th>
@@ -107,6 +111,8 @@
                 @foreach (var utentePeriodo in Model.RichiestePeriodo)
                 {
                     <tr>
+                        <td>@utentePeriodo.Id</td>
+                        <td>@utentePeriodo.Email</td>
                         <td>@utentePeriodo.CodiceFiscale</td>
                         <td>@utentePeriodo.Nome</td>
                         <td>@utentePeriodo.Cognome</td>
@@ -115,8 +121,9 @@
                         <td>@utentePeriodo.DataFine</td>
                         <td>
                             <form method="post" asp-page-handler="ConfermaUtentePeriodo">
-                                <input type="hidden" class="form-control" id="codiceFiscale" name="codiceFiscale" value="@utentePeriodo.CodiceFiscale" readonly>
-                                <button type="submit" class="btn btn-primary">Conferma Periodo</button>
+                                <input type="hidden" class="form-control" id="id" name="id" value="@utentePeriodo.Id" readonly>
+                                <button type="submit" class="btn btn-primary" name="action" value="accept">Conferma Periodo</button>
+                                <button type="submit" class="btn btn-danger" name="action" value="reject">Rifiuta Periodo</button>
                             </form>
                         </td>
                     </tr>

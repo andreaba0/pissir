@@ -30,6 +30,7 @@ namespace frontend.Pages
                 CodiceFiscale = "ABC123XYZ4567890",
                 Nome = "Mario",
                 Cognome = "Rossi",
+                Email = "mariorossi@mail.mail",
                 Role = "WSP" //WSP / FAR
             };
             

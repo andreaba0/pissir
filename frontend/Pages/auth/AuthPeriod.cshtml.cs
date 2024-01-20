@@ -42,7 +42,7 @@ namespace frontend.Pages.auth
 
         public async Task<IActionResult> OnPostInviaRichiesta(string dataInizio, string dataFine)
         {
-            string urlTask = ApiReq.urlGenerico + "richiestaPeriodo/";
+            string urlTask = ApiReq.urlGenerico + "/apiaccess";
 
             // Controllo se le date sono nel formato corretto yyyy-MM-dd
             if (!DateTime.TryParseExact(dataInizio, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime startDate) ||
@@ -69,6 +69,7 @@ namespace frontend.Pages.auth
                 return RedirectToPage();
             }
 
+            
             try
             {
                 /*
@@ -81,8 +82,8 @@ namespace frontend.Pages.auth
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
-                    DataInizio = dataInizio,
-                    DataFine = dataFine
+                    date_start = dataInizio,
+                    date_end = dataFine
                 };
                 var jsonRequest = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");

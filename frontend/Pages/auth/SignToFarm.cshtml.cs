@@ -145,7 +145,8 @@ namespace frontend.Pages.auth
                 //TipoAzienda = "FAR",
                 //TipoAzienda = "WSP",
                 Nome = "Mario",
-                Cognome = "Rossi"
+                Cognome = "Rossi",
+                Email = "mariorossi@mail.mail"
             };
         }
 

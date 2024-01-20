@@ -91,9 +91,9 @@ namespace frontend.Pages.GestoreIdrico
         }
 
         // Chiamata API per confermare un nuovo utente
-        public async Task<IActionResult> OnPostConfermaUtentePeriodo(string codiceFiscale)
+        public async Task<IActionResult> OnPostConfermaUtentePeriodo(string id, string action)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/confermaUtentePeriodo";
+            string urlTask = ApiReq.urlGenerico + $"/apiaccess/{id}/{action}";
             
             /*
             try
@@ -105,7 +105,7 @@ namespace frontend.Pages.GestoreIdrico
                 ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
                 // Creare il corpo della richiesta
-                var requestBody = new { CodiceFiscale = codiceFiscale };
+                var requestBody = new { id = id, action = action };
                 var jsonRequest = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
@@ -115,7 +115,7 @@ namespace frontend.Pages.GestoreIdrico
                 if (response.IsSuccessStatusCode)
                 {
                     // Imposta un messaggio di successo
-                    TempData["Messaggio"] = "Conferma periodo di accesso utente con codice fiscale: " + codiceFiscale + " effettuata con successo!";
+                    TempData["Messaggio"] = "Stato: " + action + " per periodo di accesso utente con id: " + id + " impostato con successo!";
                 }
                 else
                 {
@@ -130,7 +130,7 @@ namespace frontend.Pages.GestoreIdrico
             }
             */
 
-            TempData["Messaggio"] = "Conferma periodo di accesso utente con codice fiscale: " + codiceFiscale + " effettuata con successo!";
+            TempData["Messaggio"] = "Stato: " + action + " per periodo di accesso utente con id: " + id + " impostato con successo!";
             TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
 
             return RedirectToPage();
@@ -192,9 +192,9 @@ namespace frontend.Pages.GestoreIdrico
         {
             return new List<UtenteAp>
             {
-                new UtenteAp {Id="1", CodiceFiscale = "ABC123", Nome = "Giovanni", Cognome = "Bianchi", PartitaIva = "123456789", TipoAzienda="WSP"},
-                new UtenteAp {Id="2", CodiceFiscale = "XYZ456", Nome = "Maria", Cognome = "Rossi", PartitaIva = "888856789", TipoAzienda="FAR" },
-                new UtenteAp {Id="3", CodiceFiscale = "DEF789", Nome = "Luca", Cognome = "Verdi", PartitaIva = "999956789", TipoAzienda="FAR" },
+                new UtenteAp {Id="1", Email="giovanni@mail.mail", CodiceFiscale = "ABC123", Nome = "Giovanni", Cognome = "Bianchi", PartitaIva = "123456789", TipoAzienda="WSP"},
+                new UtenteAp {Id="2", Email="maria@mail.mail", CodiceFiscale = "XYZ456", Nome = "Maria", Cognome = "Rossi", PartitaIva = "888856789", TipoAzienda="FAR" },
+                new UtenteAp {Id="3", Email="luca@mail.mail", CodiceFiscale = "DEF789", Nome = "Luca", Cognome = "Verdi", PartitaIva = "999956789", TipoAzienda="FAR" },
             };
         }
 
@@ -204,9 +204,9 @@ namespace frontend.Pages.GestoreIdrico
         {
             return new List<UtentePeriodo>
             {
-                new UtentePeriodo { CodiceFiscale = "ABC123", Nome = "Giovanni", Cognome = "Bianchi", PartitaIva = "123456789", DataInizio = "2024-02-12", DataFine = "2024-03-12"},
-                new UtentePeriodo { CodiceFiscale = "XYZ456", Nome = "Maria", Cognome = "Rossi", PartitaIva = "888856789", DataInizio = "2024-03-22", DataFine = "2024-03-23" },
-                new UtentePeriodo { CodiceFiscale = "DEF789", Nome = "Luca", Cognome = "Verdi", PartitaIva = "999956789", DataInizio = "2024-01-29", DataFine = "2025-01-29" },
+                new UtentePeriodo { Id="4", Email="giovanni@mail.mail", CodiceFiscale = "CBC123", Nome = "Giovanni", Cognome = "Bianchi", PartitaIva = "123456789", DataInizio = "2024-02-12", DataFine = "2024-03-12"},
+                new UtentePeriodo { Id="5", Email="maria@mail.mail", CodiceFiscale = "CYZ456", Nome = "Maria", Cognome = "Rossi", PartitaIva = "888856789", DataInizio = "2024-03-22", DataFine = "2024-03-23" },
+                new UtentePeriodo { Id="6", Email="luca@mail.mail",CodiceFiscale = "CEF789", Nome = "Luca", Cognome = "Verdi", PartitaIva = "999956789", DataInizio = "2024-01-29", DataFine = "2025-01-29" },
             };
         }
 

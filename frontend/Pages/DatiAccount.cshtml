@@ -4,47 +4,112 @@
     ViewData["Page"] = "Dati Account";
 }
 
+<script>
+    var datiOriginaliUtente = {};
+    var datiOriginaliAzienda = {};
+
+    function abilitaModifica() {
+        salvaDatiOriginali();
+        var inputs = document.getElementsByClassName("editable-field");
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].disabled = false;
+        }
+        document.getElementById("btnModifica").style.display = "none";
+        document.getElementById("btnInviaModifiche").style.display = "inline-block";
+        document.getElementById("btnAnnullaModifica").style.display = "inline-block";
+    }
+
+    function annullaModifica() {
+        ripristinaDatiOriginali();
+        var inputs = document.getElementsByClassName("editable-field");
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].disabled = true;
+        }
+        document.getElementById("btnModifica").style.display = "inline-block";
+        document.getElementById("btnInviaModifiche").style.display = "none";
+        document.getElementById("btnAnnullaModifica").style.display = "none";
+    }
+
+    function salvaDatiOriginali() {
+        datiOriginaliUtente.codiceFiscale = document.getElementById("codiceFiscale").value;
+        datiOriginaliUtente.email = document.getElementById("email").value;
+        datiOriginaliUtente.nome = document.getElementById("nome").value;
+        datiOriginaliUtente.cognome = document.getElementById("cognome").value;
+        datiOriginaliUtente.ruolo = document.getElementById("ruolo").value;
+
+        datiOriginaliAzienda.partitaIva = document.getElementById("partitaIva").value;
+        datiOriginaliAzienda.nomeAzienda = document.getElementById("nomeAzienda").value;
+        datiOriginaliAzienda.indirizzo = document.getElementById("indirizzo").value;
+        datiOriginaliAzienda.telefono = document.getElementById("telefonoAzienda").value;
+        datiOriginaliAzienda.emailAzienda = document.getElementById("emailAzienda").value;
+        datiOriginaliAzienda.categoria = document.getElementById("categoria").value;
+    }
+
+    function ripristinaDatiOriginali() {
+        document.getElementById("codiceFiscale").value = datiOriginaliUtente.codiceFiscale;
+        document.getElementById("email").value = datiOriginaliUtente.email;
+        document.getElementById("nome").value = datiOriginaliUtente.nome;
+        document.getElementById("cognome").value = datiOriginaliUtente.cognome;
+        document.getElementById("ruolo").value = datiOriginaliUtente.ruolo;
+
+        document.getElementById("partitaIva").value = datiOriginaliAzienda.partitaIva;
+        document.getElementById("nomeAzienda").value = datiOriginaliAzienda.nomeAzienda;
+        document.getElementById("indirizzo").value = datiOriginaliAzienda.indirizzo;
+        document.getElementById("telefonoAzienda").value = datiOriginaliAzienda.telefono;
+        document.getElementById("emailAzienda").value = datiOriginaliAzienda.emailAzienda;
+        document.getElementById("categoria").value = datiOriginaliAzienda.categoria;
+    }
+</script>
+
 <div style="margin: 1em;">
-    <h4>Dati account</h4>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h4>Dati account</h4>
+        <div style="display: flex; justify-content: flex-end; margin-right:1.5em;">
+            <button id="btnModifica" class="btn btn-primary" onclick="abilitaModifica()">Modifica</button>
+            <button id="btnInviaModifiche" class="btn btn-primary" style="display: none; margin-right:0.5em;">Invia modifiche</button>
+            <button id="btnAnnullaModifica" class="btn btn-secondary" style="display: none;" onclick="annullaModifica()">Annulla Modifica</button>
+        </div>
+    </div>
+    
     <small>• Vengono visualizzati i dati sul profilo utente e sull'azienda di cui ne fa parte.</small>
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
-    <h6>Informazioni utente</h6>
-    <ul>
-        <li><strong>Codice Fiscale:</strong> @ApiReq.utente.CodiceFiscale</li>
-        <li><strong>Nome:</strong> @ApiReq.utente.Nome</li>
-        <li><strong>Cognome:</strong> @ApiReq.utente.Cognome</li>
-        <li><strong>Ruolo:</strong> @ApiReq.utente.Role</li>
-    </ul>
+    <div style="display: flex;">
+        <div style="width: 48%; padding-right: 2%; border-width: 0px 1px 0px 0px; border-style: solid; border-color:lightgray">
+            <h5>Informazioni utente</h5>
+            <label>Codice Fiscale:</label> <input id="codiceFiscale" name="codiceFiscale" type="text" class="form-control" disabled value="@ApiReq.utente.CodiceFiscale">
+            <br />
+            <label>Email:</label> <input id="email" name="email" type="text" class="form-control editable-field" disabled value="@ApiReq.utente.Email">
+            <br />
+            <label>Nome:</label> <input id="nome" name="nome" type="text" class="form-control editable-field" disabled value="@ApiReq.utente.Nome">
+            <br />
+            <label>Cognome:</label> <input id="cognome" name="cognome" type="text" class="form-control editable-field" disabled value="@ApiReq.utente.Cognome">
+            <br />
+            <label>Ruolo:</label> <input id="ruolo" name="ruolo" type="text" class="form-control" disabled value="@if(ApiReq.utente.Role=="WSP") {<text>Gestore Idrico</text>} else {<text>Gestore Agricolo</text>}">
+        </div>
 
+        <div style="width: 50%; padding-left:2%">
+            <h5>Informazioni azienda</h5>
+            <label>Partita Iva:</label> <input id="partitaIva" name="partitaIva" type="text" disabled value="@Model.aziendaIdrica?.PartitaIva" class="form-control">
+            <br />
+            <label>Nome azienda:</label> <input id="nomeAzienda" name="nomeAzienda" type="text" disabled value="@Model.aziendaIdrica?.Nome" class="editable-field form-control">
+            <br />
+            <label>Indirizzo:</label> <input id="indirizzo" name="indirizzo" type="text" disabled value="@Model.aziendaIdrica?.Indirizzo" class="editable-field form-control">
+            <br />
+            <label>Telefono:</label> <input id="telefonoAzienda" name="telefonoAzienda" type="text" disabled value="@Model.aziendaIdrica?.Telefono" class="editable-field form-control">
+            <br />
+            <label>Email:</label> <input id="emailAzienda" name="emailAzienda" type="text" disabled value="@Model.aziendaIdrica?.Email" class="editable-field form-control">
+            <br />
+            <label>Categoria:</label> <input id="categoria" name="categoria" type="text" disabled value="@if(Model.aziendaIdrica?.Categoria=="WA"){<text>Azienda Idrica</text>} else {<text>Azienda Agricola</text>}" class="form-control">
+        </div>
+    </div>
+    <br />
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
-    <h6>Informazioni azienda</h6>
-    <ul>
-        <li><strong>Partita Iva:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.PartitaIva : Model.aziendaAgricola?.PartitaIva)</li>
-        <li><strong>Nome azienda:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Nome : Model.aziendaAgricola?.Nome)</li>
-        <li><strong>Indirizzo:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Indirizzo : Model.aziendaAgricola?.Indirizzo)</li>
-        <li><strong>Telefono:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Telefono : Model.aziendaAgricola?.Telefono)</li>
-        <li><strong>Email:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Email : Model.aziendaAgricola?.Email)</li>
-        <li><strong>Categoria:</strong> @(Model.aziendaIdrica != null ? Model.aziendaIdrica.Categoria : Model.aziendaAgricola?.Categoria)</li>
-        <!--
-        @if (ApiReq.utente.Role == "WSP")
-        {
-                <li><strong>Limite Erogazione Globale:</strong> @Model.aziendaIdrica?.LimiteErogazioneGlobale</li>
-        }
-        else
-        {
-                <li><strong>Limite Acquisto Aziendale:</strong> @Model.aziendaAgricola?.LimiteAcquistoAziendale</li>
-        }
-        */
-        -->
-        
-    </ul>
-
-    <br />
     <form class="logout-form" method="post" asp-page-handler="Logout">
         <button type="submit">Logout</button>
     </form>
+        
+    
 
 </div>
-

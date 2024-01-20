@@ -16,6 +16,9 @@ namespace frontend.Models
         [JsonProperty("family_name")]
         public string? Cognome { get; set; }
 
+        [JsonProperty("email")]
+        public string? Email { get; set; }
+
         [JsonProperty("tax_code")]
         public string? CodiceFiscale { get; set; }
 

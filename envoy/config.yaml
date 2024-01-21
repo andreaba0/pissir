@@ -29,12 +29,18 @@ static_resources:
                   name: local_route
                   virtual_hosts:
                     - name: local_service
-                      domains: ["192.168.178.137"] # Web page cluster domain
+                      domains: ["*"] # Web page cluster domain
                       routes:
                         - match:
-                            prefix: "/api/"
+                            prefix: "/api/authorization/"
+                          route:
+                            cluster: auth
+                            prefix_rewrite: "/"
+                        - match:
+                            prefix: "/api/hydroservice/"
                           route:
                             cluster: api
+                            prefix_rewrite: "/"
                         - match:
                             prefix: "/"
                           route:
@@ -54,6 +60,18 @@ static_resources:
                     socket_address:
                       address: "127.0.0.1"
                       port_value: 5001
+    - name: "auth"
+      connect_timeout: 0.25s
+      type: STATIC
+      load_assignment:
+        cluster_name: "auth"
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: "127.0.0.1"
+                      port_value: 5002
     - name: "frontend"
       connect_timeout: 5s
       type: STATIC

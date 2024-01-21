@@ -45,6 +45,15 @@ public static class TestAuthentication
             Assert.AreEqual(jwt, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c");
             Assert.AreEqual(message, string.Empty);
         }
+
+        {
+            string jwt = string.Empty;
+            string message = string.Empty;
+            bool isAuthenticated = Authentication.IsAuthenticated(" Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c", out jwt, out message);
+            Assert.AreEqual(isAuthenticated, false);
+            Assert.AreEqual(jwt, string.Empty);
+            Assert.AreEqual(message, "Invalid Authorization header");
+        }
     }
 
     [Test]

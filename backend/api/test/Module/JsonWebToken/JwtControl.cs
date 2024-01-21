@@ -3,6 +3,7 @@ using Interface.Module.JsonWebToken;
 using Data;
 using System.Security.Claims;
 using Moq;
+using Middleware;
 
 namespace Module.JsonWebToken;
 
@@ -63,6 +64,12 @@ public class JwtControlTest
             (bool isOk, ClaimsPrincipal principal) = await jwtControl.GetClaims(presignedToken.getToken1());
             Assert.IsFalse(isOk);
             Assert.IsNull(principal);
+        }
+
+        {
+            clockMock.Setup(x => x.UtcNow()).Returns(DateTimeOffset.FromUnixTimeSeconds(1704080700).DateTime);
+            (bool isOk, ClaimsPrincipal principal) = await jwtControl.GetClaims(presignedToken.getToken1());
+            bool isOk2 = Authentication.CheckTokenClaim(principal, out string message);
         }
 
     }

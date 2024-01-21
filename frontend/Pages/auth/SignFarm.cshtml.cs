@@ -14,7 +14,7 @@ namespace frontend.Pages.auth
             try
             {
                 // Controllo utente autenticato
-                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+                //if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
             }
             catch (Exception ex)
             {
@@ -27,12 +27,13 @@ namespace frontend.Pages.auth
         }
 
         // Chiamata API per aggiunta azienda agricola
-        public async Task<IActionResult> OnPostRegistraAzienda(string PartitaIva, string Nome, string Indirizzo, string Telefono, string Email)
+        public async Task<IActionResult> OnPostRegistraAzienda(string PartitaIva, string Nome, string Indirizzo, string Telefono, string Email, string TipoAzienda)
         {
-            string urlTask = ApiReq.urlGenerico + "registraAzienda/";
+            string urlTask = ApiReq.urlGenerico + "/company";
 
             try
             {
+                /*
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
@@ -42,11 +43,12 @@ namespace frontend.Pages.auth
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
-                    company_vat_number = PartitaIva,
+                    vat_number = PartitaIva,
                     name = Nome,
                     address = Indirizzo,
-                    phone_number = Telefono,
+                    phone = Telefono,
                     email = Email,
+                    industry_sector = TipoAzienda
                 };
 
                 var jsonRequest = JsonConvert.SerializeObject(requestBody);
@@ -64,15 +66,23 @@ namespace frontend.Pages.auth
                     TempData["Indirizzo"] = Indirizzo;
                     TempData["Telefono"] = Telefono;
                     TempData["Email"] = Email;
+                    TempData["TipoAzienda"] = TipoAzienda;
                 }
                 else
                 {
                     // Imposta un messaggio di errore
                     TempData["MessaggioErrore"] = "Errore durante la registrazione dell'azienda. Riprova più tardi.";
                 }
-
+                */
 
                 TempData["Messaggio"] = "Richiesta di registrazione dell'azienda con P.Iva " + PartitaIva + " effettuata con successo!";
+                TempData["PartitaIva"] = PartitaIva;
+                TempData["Nome"] = Nome;
+                TempData["Indirizzo"] = Indirizzo;
+                TempData["Telefono"] = Telefono;
+                TempData["Email"] = Email;
+                TempData["TipoAzienda"] = TipoAzienda;
+                TempData["MessaggioErrore"] = "Errore durante la registrazione dell'azienda. Riprova più tardi.";
 
                 return RedirectToPage();
             }

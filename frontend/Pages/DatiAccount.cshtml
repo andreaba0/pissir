@@ -36,10 +36,10 @@
         datiOriginaliUtente.nome = document.getElementById("nome").value;
         datiOriginaliUtente.cognome = document.getElementById("cognome").value;
         datiOriginaliUtente.ruolo = document.getElementById("ruolo").value;
-
+        
         datiOriginaliAzienda.partitaIva = document.getElementById("partitaIva").value;
         datiOriginaliAzienda.nomeAzienda = document.getElementById("nomeAzienda").value;
-        datiOriginaliAzienda.indirizzo = document.getElementById("indirizzo").value;
+        datiOriginaliAzienda.indirizzo = document.getElementById("indirizzoAzienda").value;
         datiOriginaliAzienda.telefono = document.getElementById("telefonoAzienda").value;
         datiOriginaliAzienda.emailAzienda = document.getElementById("emailAzienda").value;
         datiOriginaliAzienda.categoria = document.getElementById("categoria").value;
@@ -54,7 +54,7 @@
 
         document.getElementById("partitaIva").value = datiOriginaliAzienda.partitaIva;
         document.getElementById("nomeAzienda").value = datiOriginaliAzienda.nomeAzienda;
-        document.getElementById("indirizzo").value = datiOriginaliAzienda.indirizzo;
+        document.getElementById("indirizzoAzienda").value = datiOriginaliAzienda.indirizzo;
         document.getElementById("telefonoAzienda").value = datiOriginaliAzienda.telefono;
         document.getElementById("emailAzienda").value = datiOriginaliAzienda.emailAzienda;
         document.getElementById("categoria").value = datiOriginaliAzienda.categoria;
@@ -62,48 +62,78 @@
 </script>
 
 <div style="margin: 1em;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h4>Dati account</h4>
-        <div style="display: flex; justify-content: flex-end; margin-right:1.5em;">
-            <button id="btnModifica" class="btn btn-primary" onclick="abilitaModifica()">Modifica</button>
-            <button id="btnInviaModifiche" class="btn btn-primary" style="display: none; margin-right:0.5em;">Invia modifiche</button>
-            <button id="btnAnnullaModifica" class="btn btn-secondary" style="display: none;" onclick="annullaModifica()">Annulla Modifica</button>
-        </div>
-    </div>
-    
+
+    <h4>Dati account</h4>
     <small>• Vengono visualizzati i dati sul profilo utente e sull'azienda di cui ne fa parte.</small>
+
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+    @if (TempData.ContainsKey("Messaggio"))
+    {
+        <div class="alert alert-info" role="alert">
+            @TempData["Messaggio"]
+        </div>
+    }
+
+    @if (TempData.ContainsKey("MessaggioErrore"))
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["MessaggioErrore"]
+        </div>
+    }
 
     <div style="display: flex;">
         <div style="width: 48%; padding-right: 2%; border-width: 0px 1px 0px 0px; border-style: solid; border-color:lightgray">
             <h5>Informazioni utente</h5>
-            <label>Codice Fiscale:</label> <input id="codiceFiscale" name="codiceFiscale" type="text" class="form-control" disabled value="@ApiReq.utente.CodiceFiscale">
+            <label>Codice Fiscale:</label> <input id="codiceFiscale" name="codiceFiscale" type="text" class="form-control" readonly value="@ApiReq.utente.CodiceFiscale">
             <br />
-            <label>Email:</label> <input id="email" name="email" type="text" class="form-control editable-field" disabled value="@ApiReq.utente.Email">
+            <label>Email:</label> <input id="email" name="email" type="text" class="form-control" readonly value="@ApiReq.utente.Email">
             <br />
-            <label>Nome:</label> <input id="nome" name="nome" type="text" class="form-control editable-field" disabled value="@ApiReq.utente.Nome">
+            <label>Nome:</label> <input id="nome" name="nome" type="text" class="form-control" readonly value="@ApiReq.utente.Nome">
             <br />
-            <label>Cognome:</label> <input id="cognome" name="cognome" type="text" class="form-control editable-field" disabled value="@ApiReq.utente.Cognome">
+            <label>Cognome:</label> <input id="cognome" name="cognome" type="text" class="form-control" readonly value="@ApiReq.utente.Cognome">
             <br />
-            <label>Ruolo:</label> <input id="ruolo" name="ruolo" type="text" class="form-control" disabled value="@if(ApiReq.utente.Role=="WSP") {<text>Gestore Idrico</text>} else {<text>Gestore Agricolo</text>}">
+            <label>Ruolo:</label> <input id="ruolo" name="ruolo" type="text" class="form-control" readonly 
+                value="@if(ApiReq.utente.Role=="WSP") 
+                        {
+                         <text>Gestore Idrico</text>
+}                       else {
+                        <text>Gestore Agricolo</text>
+                        }">
         </div>
+        <div style="width: 52%; padding-left:2%">
+            <form method="post" asp-page-handler="AggiornaDatiAzienda">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h5>Informazioni azienda</h5>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button type="button" id="btnModifica" class="btn btn-primary" onclick="abilitaModifica()">Modifica Azienda</button>
 
-        <div style="width: 50%; padding-left:2%">
-            <h5>Informazioni azienda</h5>
-            <label>Partita Iva:</label> <input id="partitaIva" name="partitaIva" type="text" disabled value="@Model.aziendaIdrica?.PartitaIva" class="form-control">
-            <br />
-            <label>Nome azienda:</label> <input id="nomeAzienda" name="nomeAzienda" type="text" disabled value="@Model.aziendaIdrica?.Nome" class="editable-field form-control">
-            <br />
-            <label>Indirizzo:</label> <input id="indirizzo" name="indirizzo" type="text" disabled value="@Model.aziendaIdrica?.Indirizzo" class="editable-field form-control">
-            <br />
-            <label>Telefono:</label> <input id="telefonoAzienda" name="telefonoAzienda" type="text" disabled value="@Model.aziendaIdrica?.Telefono" class="editable-field form-control">
-            <br />
-            <label>Email:</label> <input id="emailAzienda" name="emailAzienda" type="text" disabled value="@Model.aziendaIdrica?.Email" class="editable-field form-control">
-            <br />
-            <label>Categoria:</label> <input id="categoria" name="categoria" type="text" disabled value="@if(Model.aziendaIdrica?.Categoria=="WA"){<text>Azienda Idrica</text>} else {<text>Azienda Agricola</text>}" class="form-control">
+                        <button type="submit" id="btnInviaModifiche" class="btn btn-primary" style="display: none; margin-right:0.5em;">Invia modifiche</button>
+                        <button type="button" id="btnAnnullaModifica" class="btn btn-secondary" style="display: none;" onclick="annullaModifica()">Annulla Modifica</button>
+                    </div>
+                </div>
+                
+                <label>Partita Iva:</label> <input id="partitaIva" name="partitaIva" type="text" disabled value="@Model.aziendaIdrica?.PartitaIva" class="form-control">
+                <br />
+                <label>Nome azienda:</label> <input id="nomeAzienda" name="nomeAzienda" type="text" disabled value="@Model.aziendaIdrica?.Nome" class="editable-field form-control">
+                <br />
+                <label>Indirizzo:</label> <input id="indirizzoAzienda" name="indirizzoAzienda" type="text" disabled value="@Model.aziendaIdrica?.Indirizzo" class="editable-field form-control">
+                <br />
+                <label>Telefono:</label> <input id="telefonoAzienda" name="telefonoAzienda" type="text" disabled value="@Model.aziendaIdrica?.Telefono" class="editable-field form-control">
+                <br />
+                <label>Email:</label> <input id="emailAzienda" name="emailAzienda" type="text" disabled value="@Model.aziendaIdrica?.Email" class="editable-field form-control">
+                <br />
+                <label>Categoria:</label> <input id="categoria" name="categoria" type="text" disabled value="@if(Model.aziendaIdrica?.Categoria=="WA"){
+                <text>Azienda Idrica</text>
+                } else {
+                <text>Azienda Agricola</text>
+                }" class="form-control">
+            </form>
         </div>
+        
     </div>
     <br />
+
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
     <form class="logout-form" method="post" asp-page-handler="Logout">

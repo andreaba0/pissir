@@ -7,12 +7,11 @@ using System.Text;
 
 namespace frontend.Pages.GestoreIdrico
 {
-    public class RichiesteAdesioneModel : PageModel
+    public class AdesioneSistemaModel : PageModel
     {
         public List<UtenteAp>? RichiesteUtenti { get; set; }
 
         public List<UtentePeriodo> RichiestePeriodo { get; set; }
-        public List<AziendaAgricolaModel> RichiesteAziendeAgricole { get; set; }
 
         public async Task<IActionResult> OnGet()
         {
@@ -25,7 +24,6 @@ namespace frontend.Pages.GestoreIdrico
 
                 RichiesteUtenti = await ApiReq.GetRichiesteUtentiFromApi(HttpContext);
                 RichiestePeriodo = await ApiReq.GetRichiestePeriodoFromApi(HttpContext);
-                RichiesteAziendeAgricole = await ApiReq.GetRichiesteAziendeAgricoleFromApi(HttpContext);
             }
             catch (Exception ex)
             {
@@ -36,11 +34,66 @@ namespace frontend.Pages.GestoreIdrico
 
             // Simula dati di richieste
             RichiesteUtenti = GetSimulatedRichiesteUtenti();
-
             RichiestePeriodo = GetSimulatedRichiestePeriodo();
-            RichiesteAziendeAgricole = GetSimulatedRichiesteAziendeAgricole();
 
             return Page();
+        }
+
+        // Chiamata API per aggiunta azienda agricola
+        public async Task<IActionResult> OnPostCreaAzienda(string PartitaIva, string Nome, string Indirizzo, string Telefono, string Email, string TipoAzienda)
+        {
+            string urlTask = ApiReq.urlGenerico + "/company";
+
+            try
+            {
+                /*
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+
+                // Creare il corpo della richiesta
+                var requestBody = new
+                {
+                    vat_number = PartitaIva,
+                    name = Nome,
+                    address = Indirizzo,
+                    phone = Telefono,
+                    email = Email,
+                    industry_sector = TipoAzienda
+                };
+
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                // Esegue la chiamata POST per l'aggiunta dell'azienda agricola
+                HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = "Creazione dell'azienda con P.Iva " + PartitaIva + " effettuata con successo!";
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante la registrazione dell'azienda. Riprova più tardi.";
+                }
+                */
+
+                TempData["Messaggio"] = "Creazione dell'azienda con P.Iva " + PartitaIva + " effettuata con successo!";
+                TempData["MessaggioErrore"] = "Errore durante la registrazione dell'azienda. Riprova più tardi.";
+
+                return RedirectToPage();
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
+
+
         }
 
 
@@ -137,55 +190,6 @@ namespace frontend.Pages.GestoreIdrico
         }
 
 
-        // Chiamata API per confermare un nuovo utente
-        public async Task<IActionResult> OnPostConfermaAzienda(string partitaIva)
-        {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/confermaAzienda";
-            
-            /*
-            try
-            {
-                // Controllo utente autenticato
-                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-                // Imposta il token
-                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-                // Creare il corpo della richiesta
-                var requestBody = new { PartitaIva = partitaIva };
-                var jsonRequest = JsonConvert.SerializeObject(requestBody);
-                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-                // Esegue la chiamata PUT
-                HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    // Imposta un messaggio di successo
-                    TempData["Messaggio"] = "Conferma azienda con partita iva: " + partitaIva + " effettuata con successo!";
-                }
-                else
-                {
-                    // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
-                }
-            }
-            catch (Exception ex)
-            {
-                TempData["MessaggioErrore"] = ex.Message;
-                return RedirectToPage("/Error");
-            }
-            */
-
-            TempData["Messaggio"] = "Conferma azienda con partita iva: " + partitaIva + " effettuata con successo!";
-            TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
-
-            return RedirectToPage();
-        }
-
-
-
-
 
         // Simula dati di richieste utenti
         private List<UtenteAp> GetSimulatedRichiesteUtenti()
@@ -209,20 +213,6 @@ namespace frontend.Pages.GestoreIdrico
                 new UtentePeriodo { Id="6", Email="luca@mail.mail",CodiceFiscale = "CEF789", Nome = "Luca", Cognome = "Verdi", PartitaIva = "999956789", DataInizio = "2024-01-29", DataFine = "2025-01-29" },
             };
         }
-
-
-
-        // Simula dati di richieste aziende agricole
-        private List<AziendaAgricolaModel> GetSimulatedRichiesteAziendeAgricole()
-        {
-            return new List<AziendaAgricolaModel>
-            {
-                new AziendaAgricolaModel { PartitaIva = "123456789", Nome = "Azienda Agricola Verde", Indirizzo = "Via Agricola 1", Telefono = "0123456789", Email = "azienda1@example.com", Categoria = "AA", LimiteAcquistoAziendale = 5000.0f},
-                new AziendaAgricolaModel { PartitaIva = "987654321", Nome = "Azienda Agricola Sole", Indirizzo = "Via Agricola 2", Telefono = "9876543210", Email = "azienda2@example.com", Categoria = "AA", LimiteAcquistoAziendale = 8000.0f},
-                new AziendaAgricolaModel { PartitaIva = "456789012", Nome = "Azienda Agricola Blu", Indirizzo = "Via Agricola 3", Telefono = "5678901234", Email = "azienda3@example.com", Categoria = "AA", LimiteAcquistoAziendale = 6000.0f},
-            };
-        }
-
 
 
     }

@@ -1,14 +1,18 @@
 ﻿@page
-@model frontend.Pages.GestoreIdrico.RichiesteAdesioneModel
+@model frontend.Pages.GestoreIdrico.AdesioneSistemaModel
 @{
-    ViewData["Page"] = "Richieste Adesione";
+    ViewData["Page"] = "Adesione Sistema";
 }
 
 <link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
 
 <div style="margin: 1em;">
-    <h4>Richieste Adesione</h4>
-    <small>• Elenco delle richieste di adesione per utenti, aziende agricole e richieste del periodo di accesso ai servizi.</small>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h4>Adesione Sistema</h4>
+        <button class="btn btn-primary" data-toggle="modal" data-target="#modalNuovaAzienda">Crea Nuova Azienda</button>
+    </div>
+    
+    <small>• Creazione azienda, elenco delle richieste di adesione per utenti e richieste del periodo di accesso ai servizi.</small>
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
     @if (TempData.ContainsKey("Messaggio"))
@@ -25,6 +29,63 @@
         </div>
     }
 
+    <!-- Modale per l'aggiunta di una nuova azienda -->
+    <div id="modalNuovaAzienda" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalNuovaAzienda" data-backdrop="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalNuovaAziendaLabel">Creazione nuova Azienda</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" asp-page-handler="CreaAzienda">
+                        <div class="form-group">
+                            <label for="partitaIva">Partita Iva</label>
+                            <input type="text" class="form-control" id="partitaIva" name="PartitaIva" placeholder="Partita Iva dell'azienda" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nome">Nome</label>
+                            <input type="text" class="form-control" id="nome" name="Nome" placeholder="Nome dell'azienda" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="indirizzo">Indirizzo</label>
+                                    <input type="text" class="form-control" id="indirizzo" name="Indirizzo" placeholder="Indirizzo della sede aziendale" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="telefono">Telefono</label>
+                                    <input type="text" class="form-control" id="telefono" name="Telefono" placeholder="Contatto telefonico aziendale" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" class="form-control" id="email" name="Email" placeholder="Email aziendale" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="tipoAzienda">Tipo di Azienda</label>
+                                    <select class="form-control" id="tipoAzienda" name="TipoAzienda" required>
+                                        <option value="WSP">Idrica</option>
+                                        <option value="FAR">Agricola</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Crea azienda</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <h5>Richieste di adesione - Utenti</h5>
     @if (Model.RichiesteUtenti == null || Model.RichiesteUtenti.Count == 0)
@@ -124,47 +185,6 @@
                                 <input type="hidden" class="form-control" id="id" name="id" value="@utentePeriodo.Id" readonly>
                                 <button type="submit" class="btn btn-primary" name="action" value="accept">Conferma Periodo</button>
                                 <button type="submit" class="btn btn-danger" name="action" value="reject">Rifiuta Periodo</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-
-    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
-
-    <h5>Richieste di adesione - Aziende Agricole</h5>
-    @if (Model.RichiesteAziendeAgricole == null || Model.RichiesteAziendeAgricole.Count == 0)
-    {
-        <label>Nessuna richiesta in attesa.</label>
-    }
-    else
-    {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Partita Iva</th>
-                    <th>Nome</th>
-                    <th>Indirizzo</th>
-                    <th>Telefono</th>
-                    <th>Email</th>
-                    <th>Azioni</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var aziende in Model.RichiesteAziendeAgricole)
-                {
-                    <tr>
-                        <td>@aziende.PartitaIva</td>
-                        <td>@aziende.Nome</td>
-                        <td>@aziende.Indirizzo</td>
-                        <td>@aziende.Telefono</td>
-                        <td>@aziende.Email</td>
-                        <td>
-                            <form method="post" asp-page-handler="ConfermaAzienda">
-                                <input type="hidden" class="form-control" id="partitaIva" name="partitaIva" value="@aziende.PartitaIva" readonly>
-                                <button type="submit" class="btn btn-primary">Conferma Adesione</button>
                             </form>
                         </td>
                     </tr>

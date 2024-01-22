@@ -14,21 +14,37 @@ namespace frontend.Pages.auth
 
         public async Task<IActionResult> OnGet()
         {
-            /*
+            
             try
             {
+                /*
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Chiamata alle API per ottenere i dati
                 utenteAp = await ApiReq.GetUserDataApplicationFromApi(HttpContext);
-
+                
                 if (utenteAp == null)
                 {
                     ViewData["ErrorMessage"] = "Si è verificato un errore durante l'accesso. ";
                     return RedirectToPage("/Error");
                 }
+                */
+                DatiTest();
 
+
+                //TODO application status : accept, reject, pending
+                // Controllo per ogni campo di UtenteAp
+                if (!(string.IsNullOrEmpty(utenteAp.Id) ||
+                    string.IsNullOrEmpty(utenteAp.PartitaIva) ||
+                    string.IsNullOrEmpty(utenteAp.Nome) ||
+                    string.IsNullOrEmpty(utenteAp.Cognome) ||
+                    string.IsNullOrEmpty(utenteAp.Email) ||
+                    string.IsNullOrEmpty(utenteAp.CodiceFiscale) ||
+                    string.IsNullOrEmpty(utenteAp.TipoAzienda)))
+                {
+                    return RedirectToPage("/auth/AuthPeriod");
+                }
             }
             catch (HttpRequestException ex)
             {
@@ -50,7 +66,7 @@ namespace frontend.Pages.auth
 
                 return RedirectToPage("/Error");
             }
-            */
+            
 
             DatiTest();
             
@@ -140,10 +156,11 @@ namespace frontend.Pages.auth
         {
             utenteAp = new UtenteAp
             {
-                //CodiceFiscale = "ABC123XYZ4567890",
+                CodiceFiscale = "ABC123XYZ4567890",
                 //PartitaIva = "1234567890",
                 //TipoAzienda = "FAR",
                 //TipoAzienda = "WSP",
+                Id="1",
                 Nome = "Mario",
                 Cognome = "Rossi",
                 Email = "mariorossi@mail.mail"

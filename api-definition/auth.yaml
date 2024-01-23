@@ -185,35 +185,6 @@ paths:
               schema:
                 type: string
                 example: Unauthorized
-    post:
-      summary: Create a new company
-      description: Create a new company with the provided data
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Company'
-      responses:
-        '201':
-          description: Company created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Company'
-        '400':
-          description: Bad request, check your input data
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: Bad request
-        '401':
-          description: Unauthorized
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: Unauthorized
     patch:
       summary: Update company info
       description: Update company info
@@ -237,7 +208,6 @@ paths:
               schema:
                 type: string
                 example: Unauthorized
-    
   /apiaccess:
     get:
           summary: Get a list of all API access requests

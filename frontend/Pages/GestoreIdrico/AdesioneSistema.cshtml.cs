@@ -39,63 +39,6 @@ namespace frontend.Pages.GestoreIdrico
             return Page();
         }
 
-        // Chiamata API per aggiunta azienda agricola
-        public async Task<IActionResult> OnPostCreaAzienda(string PartitaIva, string Nome, string Indirizzo, string Telefono, string Email, string TipoAzienda)
-        {
-            string urlTask = ApiReq.urlGenerico + "/company";
-
-            try
-            {
-                /*
-                // Controllo utente autenticato
-                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
-                // Imposta il token
-                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
-
-                // Creare il corpo della richiesta
-                var requestBody = new
-                {
-                    vat_number = PartitaIva,
-                    name = Nome,
-                    address = Indirizzo,
-                    phone = Telefono,
-                    email = Email,
-                    industry_sector = TipoAzienda
-                };
-
-                var jsonRequest = JsonConvert.SerializeObject(requestBody);
-                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-                // Esegue la chiamata POST per l'aggiunta dell'azienda agricola
-                HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    // Imposta un messaggio di successo
-                    TempData["Messaggio"] = "Creazione dell'azienda con P.Iva " + PartitaIva + " effettuata con successo!";
-                }
-                else
-                {
-                    // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante la registrazione dell'azienda. Riprova più tardi.";
-                }
-                */
-
-                TempData["Messaggio"] = "Creazione dell'azienda con P.Iva " + PartitaIva + " effettuata con successo!";
-                TempData["MessaggioErrore"] = "Errore durante la registrazione dell'azienda. Riprova più tardi.";
-
-                return RedirectToPage();
-            }
-            catch (Exception ex)
-            {
-                TempData["MessaggioErrore"] = ex.Message;
-                return RedirectToPage("/Error");
-            }
-
-
-        }
-
 
         // Chiamata API per confermare o rifiutare un nuovo utente
         public async Task<IActionResult> OnPostConfermaUtente(string id, string action)

@@ -195,12 +195,12 @@ namespace frontend.Pages
         // Metodi Azienda Agricola -----------------------------------------------
 
         // Richiesta dati sulle colture possedute dall'azienda
-        public static async Task<List<Coltura>> GetColtureAziendaFromApi(string partitaIva, HttpContext context)
+        public static async Task<List<Coltura>> GetColtureAziendaFromApi(HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
-            string urlTask = $"{urlGenerico}aziendaAgricola/colture/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
+            string urlTask = $"{urlGenerico}/field";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -507,7 +507,7 @@ namespace frontend.Pages
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
-            string urlTask = urlGenerico + "aziendaIdrica/richiesteUtentiPeriodi/";
+            string urlTask = urlGenerico + "/apiaccess";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -530,34 +530,6 @@ namespace frontend.Pages
             }
         }
 
-        // Richiesta dati sulle richieste di adesione per le aziende agricole
-        public static async Task<List<AziendaAgricolaModel>> GetRichiesteAziendeAgricoleFromApi(HttpContext context)
-        {
-            // Controllo utente autenticato
-            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
-
-            string urlTask = urlGenerico + "aziendaIdrica/richiesteAziendeAgricole/";
-
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
-
-            // Esegue la chiamata POST
-            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
-
-            if (response.IsSuccessStatusCode)
-            {
-                // Legge e deserializza i dati dalla risposta
-                string responseData = await response.Content.ReadAsStringAsync();
-                List<AziendaAgricolaModel>? listaAziende = JsonConvert.DeserializeObject<List<AziendaAgricolaModel>>(responseData);
-                if (listaAziende != null)
-                    return listaAziende;
-                else
-                    throw new HttpRequestException($"{response.StatusCode}");
-            }
-            else
-            {
-                throw new HttpRequestException($"{response.StatusCode}");
-            }
-        }
 
         // Richiesta dati per limiti di vendita per ogni azienda agricola in base alla azienda idrica
         public static async Task<List<LimiteAcquistoAzienda>> GetLimitiPerAziendaFromApi(HttpContext context)

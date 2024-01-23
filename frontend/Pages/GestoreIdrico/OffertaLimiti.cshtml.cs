@@ -43,10 +43,10 @@ namespace frontend.Pages.GestoreIdrico
         }
 
         
-        // Chiamata API per modificare l'offerta idrica
+        // Chiamata API per inserire l'offerta idrica
         public async Task<IActionResult> OnPostInserisciOfferta(string quantitaAcqua, string dataDisp, string prezzoAcqua)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaIdrica/offertaLimiti";
+            string urlTask = ApiReq.urlGenerico + "/water/offer";
 
             // Controllo se le date sono nel formato corretto yyyy-MM-dd
             if (!DateTime.TryParseExact(dataDisp, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
@@ -89,10 +89,9 @@ namespace frontend.Pages.GestoreIdrico
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
-                    PartitaIva = ApiReq.utente.PartitaIva,
-                    QuantitaAcqua = quantitaAcqua,
-                    DataDisp = dataDisp,
-                    PrezzoLitro = prezzoAcqua
+                    amount = quantitaAcqua,
+                    price = prezzoAcqua,
+                    date = dataDisp
                 };
                 var jsonRequest = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
@@ -123,6 +122,106 @@ namespace frontend.Pages.GestoreIdrico
 
             return RedirectToPage();
         }
+
+        // Chiamata API per la modifica dell'offerta idrica
+        public async Task<IActionResult> OnPostModificaOfferta(string nuovaQuantita, string offertaId)
+        {
+            string urlTask = ApiReq.urlGenerico + $"/water/offer/{offertaId}";
+
+            if (float.Parse(nuovaQuantita) <= 0.0f)
+            {
+                TempData["MessaggioErrore"] = "Quantità acqua erroneamente impostata.";
+                return RedirectToPage();
+            }
+
+            /*            
+            try
+            {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+
+                // Creare il corpo della richiesta
+                var requestBody = new
+                {
+                    update_amount_to = nuovaQuantita
+                };
+                var jsonRequest = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                // Esegue la chiamata PATCH
+                HttpResponseMessage response = await ApiReq.httpClient.PatchAsync(urlTask, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = $"Modifica dell'offerta con ID: {offertaId} effettuata con successo! Quantità: {nuovaQuantita}L.";
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
+            */
+
+            TempData["Messaggio"] = $"Modifica dell'offerta con ID: {offertaId} effettuata con successo! Quantità: {nuovaQuantita}L.";
+            TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
+
+            return RedirectToPage();
+        }
+
+        // Chiamata API per eliminazione coltura
+        public async Task<IActionResult> OnPostEliminaOfferta(string offertaId)
+        {
+            string urlTask = ApiReq.urlGenerico + $"/water/offer/{offertaId}";
+
+            /*
+            try
+            {
+                // Controllo utente autenticato
+                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Imposta il token
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+
+                // Esegue la chiamata DELETE
+                HttpResponseMessage response = await ApiReq.httpClient.DeleteAsync(urlTask);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Imposta un messaggio di successo
+                    TempData["Messaggio"] = $"Eliminazione dell'offerta con ID: {offertaId} effettuata con successo!";
+                }
+                else
+                {
+                    // Imposta un messaggio di errore
+                    TempData["MessaggioErrore"] = "Errore durante l'eliminazione dell'offerta. Riprova più tardi.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["MessaggioErrore"] = ex.Message;
+                return RedirectToPage("/Error");
+            }
+            */
+
+            TempData["Messaggio"] = $"Eliminazione dell'offerta con ID: {offertaId} effettuata con successo!";
+            TempData["MessaggioErrore"] = "Errore durante l'eliminazione dell'offerta. Riprova più tardi.";
+
+            return RedirectToPage();
+        }
+
+
+
+
 
         // Chiamata API per modificare il limite di acquisto per le aziende agricole
         public async Task<IActionResult> OnPostModificaLimiteAziendale(string nuovoLimite, string partitaIvaAzienda)
@@ -181,10 +280,10 @@ namespace frontend.Pages.GestoreIdrico
         {
             OfferteInserite = new List<Offerta>
             {
-                new Offerta { Id = "Offerta1", PartitaIva = "8989898989" , DataAnnuncio = "2024-02-10", PrezzoLitro = 15.9f, Quantita = 400.0f },
-                new Offerta { Id = "Offerta2", PartitaIva = "8989898989" , DataAnnuncio = "2024-02-11", PrezzoLitro = 14.9f, Quantita = 300.0f },
-                new Offerta { Id = "Offerta3", PartitaIva = "8989898989" , DataAnnuncio = "2024-02-12", PrezzoLitro = 13.9f, Quantita = 350.0f },
-                new Offerta { Id = "Offerta4", PartitaIva = "8989898989" , DataAnnuncio = "2024-02-13", PrezzoLitro = 14.9f, Quantita = 200.0f }
+                new Offerta { Id = "Offerta1", DataAnnuncio = "2024-02-10", PrezzoLitro = 15.9f, Quantita = 400.0f },
+                new Offerta { Id = "Offerta2", DataAnnuncio = "2024-02-11", PrezzoLitro = 14.9f, Quantita = 300.0f },
+                new Offerta { Id = "Offerta3", DataAnnuncio = "2024-02-12", PrezzoLitro = 13.9f, Quantita = 350.0f },
+                new Offerta { Id = "Offerta4", DataAnnuncio = "2024-02-13", PrezzoLitro = 14.9f, Quantita = 200.0f }
             };
 
             LimitiAcquistoPerAzienda = new List<LimiteAcquistoAzienda>

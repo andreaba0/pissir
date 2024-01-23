@@ -1,11 +1,19 @@
-﻿namespace frontend.Models
+﻿using Newtonsoft.Json;
+
+namespace frontend.Models
 {
     public class Offerta
     {
+        [JsonProperty("id")]
         public string Id { get; set; }
-        public string PartitaIva { get; set; }
-        public string DataAnnuncio { get; set; }
-        public float PrezzoLitro { get; set; }
+
+        [JsonProperty("amount")]
         public float Quantita { get; set; }
+
+        [JsonProperty("price")]
+        public float PrezzoLitro { get; set; }
+
+        [JsonProperty("date")]
+        public string DataAnnuncio { get; set; }
     }
 }

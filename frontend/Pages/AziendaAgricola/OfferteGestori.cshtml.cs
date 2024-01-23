@@ -24,8 +24,7 @@ namespace frontend.Pages.AziendaAgricola
 
                 // Chiamate alle API
                 Offerte = await ApiReq.GetOfferteIdricheFromApi(HttpContext);
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-                Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+                Colture = await ApiReq.GetColtureAziendaFromApi(HttpContext);
             }
             catch (Exception ex)
             {
@@ -43,9 +42,9 @@ namespace frontend.Pages.AziendaAgricola
 
 
         // Chiamata API per acquisto risorse idriche
-        public async Task<IActionResult> OnPostOrdineAcquisto(string offertaId, string quantitaAcquisto)
+        public async Task<IActionResult> OnPostOrdineAcquisto(string colturaId, string offertaId, string quantitaAcquisto)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/offerteIdriche";
+            string urlTask = ApiReq.urlGenerico + "/water/buy";
 
             /*
             try
@@ -59,8 +58,10 @@ namespace frontend.Pages.AziendaAgricola
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
-                    OffertaId = offertaId,
-                    QuantitaAcquisto = quantitaAcquisto
+                    field_id = colturaId,
+                    amount = quantitaAcquisto,
+                    offer_id = offertaId,
+                    date = DateTime.Now,
                 };
                 var jsonRequest = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
@@ -71,7 +72,7 @@ namespace frontend.Pages.AziendaAgricola
                 if (response.IsSuccessStatusCode)
                 {
                     // Imposta un messaggio di successo
-                    TempData["Messaggio"] = "Risorse acquistate dall'offerta con ID = " + offertaId;
+                    TempData["Messaggio"] = $"Risorse idriche acquistate ( {quantitaAcquisto}L ) dall'offerta con ID: {offertaId} per il campo con ID: {colturaId}";
                 }
                 else
                 {
@@ -86,10 +87,10 @@ namespace frontend.Pages.AziendaAgricola
             }
             */
 
-            TempData["Messaggio"] = "Risorse acquistate dall'offerta con ID = " + offertaId;
+            TempData["Messaggio"] = $"Risorse idriche acquistate ( {quantitaAcquisto}L ) dall'offerta con ID: {offertaId} per il campo con ID: {colturaId}";
             TempData["MessaggioErrore"] = "Errore durante l'acquisto. Riprova più tardi.";
 
-            await OnGet();
+            
             return RedirectToPage();
         }
 
@@ -102,9 +103,9 @@ namespace frontend.Pages.AziendaAgricola
             // Simulazione di dati
             return new List<Offerta>
             {
-                new Offerta { Id = "1", PartitaIva = "12345678901", DataAnnuncio = "2023-11-03", PrezzoLitro = 1.5f, Quantita = 100 },
-                new Offerta { Id = "2", PartitaIva = "67895678901", DataAnnuncio = "2023-11-04", PrezzoLitro = 1.8f, Quantita = 150 },
-                new Offerta { Id = "3", PartitaIva = "98765432109", DataAnnuncio = "2023-11-05", PrezzoLitro = 2.0f, Quantita = 120 }
+                new Offerta { Id = "1", DataAnnuncio = "2023-11-03", PrezzoLitro = 1.5f, Quantita = 100 },
+                new Offerta { Id = "2", DataAnnuncio = "2023-11-04", PrezzoLitro = 1.8f, Quantita = 150 },
+                new Offerta { Id = "3", DataAnnuncio = "2023-11-05", PrezzoLitro = 2.0f, Quantita = 120 }
             };
         }
 
@@ -114,9 +115,9 @@ namespace frontend.Pages.AziendaAgricola
             // Simulazione di dati
             return new List<Coltura>
             {
-                new Coltura { Id = "1", PartitaIva = "12345678901", MetriQuadrati = 100, TipoColtura = "Grano", TipoIrrigazione = "Goccia" },
-                new Coltura { Id = "2", PartitaIva = "12345678901", MetriQuadrati = 200, TipoColtura = "Sorgo", TipoIrrigazione = "Goccia" },
-                new Coltura { Id = "3", PartitaIva = "12345678901", MetriQuadrati = 150, TipoColtura = "Mais", TipoIrrigazione = "Spruzzo" }
+                new Coltura { Id = "1", MetriQuadrati = 100, TipoColtura = "Grano", TipoIrrigazione = "Goccia" },
+                new Coltura { Id = "2", MetriQuadrati = 200, TipoColtura = "Sorgo", TipoIrrigazione = "Goccia" },
+                new Coltura { Id = "3", MetriQuadrati = 150, TipoColtura = "Mais", TipoIrrigazione = "Spruzzo" }
             };
         }
 

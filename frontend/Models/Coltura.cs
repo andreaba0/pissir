@@ -8,7 +8,7 @@ namespace frontend.Models
         public string Id { get; set; }
 
         [JsonProperty("company_vat_number")]
-        public string PartitaIva { get; set; }
+        public string? PartitaIva { get; set; }
 
         [JsonProperty("square_meters")]
         public float MetriQuadrati { get; set; }

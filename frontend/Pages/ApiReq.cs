@@ -229,7 +229,7 @@ namespace frontend.Pages
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
-            string urlTask = $"{urlGenerico}aziendaAgricola/offerteIdriche";
+            string urlTask = $"{urlGenerico}/water/offer";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 

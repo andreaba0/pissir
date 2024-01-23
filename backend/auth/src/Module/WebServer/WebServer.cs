@@ -6,6 +6,10 @@ using Npgsql;
 using NpgsqlTypes;
 
 using Utility;
+using Routes;
+
+using Module.KeyManager.Openid;
+using Module.Middleware;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -19,36 +23,74 @@ using Module.KeyManager;
 
 namespace Module.WebServer;
 
-internal class RSAParameterArray {
+internal class RSAParameterArray
+{
     public RSAParameters[] parameters { get; set; }
 }
 public class WebServer
 {
     private readonly DbDataSource _dbDataSource;
     private Manager _keyManager;
-    private RemoteManager _remoteGoogleManager;
-    private RemoteManager _remoteFacebookManager;
-    private int _port;
+    private readonly IRemoteJwksHub _remoteManager;
 
-    public WebServer(DbDataSource dbDataSource, int port)
+    public WebServer(DbDataSource dbDataSource, IRemoteJwksHub remoteManager)
     {
         _dbDataSource = dbDataSource;
-        _port = port;
+        _remoteManager = remoteManager;
         _keyManager = new LocalManager(
             _dbDataSource
         );
-        _remoteGoogleManager = new RemoteManager(
-            "https://www.googleapis.com/oauth2/v3/certs",
-            new Fetch()
-        );
-        _remoteFacebookManager = new RemoteManager(
-            "https://www.facebook.com/.well-known/oauth/openid/jwks",
-            new Fetch()
-        );
+    }
+
+    public async Task<List<ProviderInfo>> QueryJwksEndpointAsync()
+    {
+        //query list of jwks endpoint from database
+        try
+        {
+            await using var connection = await _dbDataSource.OpenConnectionAsync();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                select 
+                    provider_name, 
+                    configuration_uri, 
+                    to_json(
+                        array_agg(
+                            audience
+                        )
+                    ) as audicence_list 
+                from 
+                    registered_provider as rp, 
+                    allowed_audience as aa 
+                where 
+                    aa.registered_provider=rp.provider_name 
+                group by 
+                    rp.provider_name
+            ";
+            var reader = await command.ExecuteReaderAsync();
+            List<ProviderInfo> providers = new List<ProviderInfo>();
+            while (await reader.ReadAsync())
+            {
+                var name = reader.GetString(0);
+                var configurationUri = reader.GetString(1);
+                var audienceList = reader.GetString(2);
+                var audience = JsonSerializer.Deserialize<string[]>(audienceList);
+                providers.Add(new ProviderInfo(name, configurationUri, audience));
+            }
+            return providers;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            return new List<ProviderInfo>();
+        }
     }
 
     public async Task<int> RunAsync(CancellationToken cancellationToken = default)
     {
+
+        List<ProviderInfo> providers = await QueryJwksEndpointAsync();
+        await _remoteManager.SetupAsync(providers);
+
         //create a web server with WebApplication builder that listen on port wit manuel route handling
         var builder = WebApplication.CreateBuilder();
         var configuration = builder.Configuration;
@@ -59,24 +101,7 @@ public class WebServer
             await context.Response.WriteAsync("pong");
         });
 
-        app.MapGet("/oauth/google/jwks", async context => {
-            RSAArrayElement[] keys = _remoteGoogleManager.GetKeys();
-            //return the keys as json
-            //KeyArray keyArray = new KeyArray(keys);
-            var json = JsonSerializer.Serialize(keys);
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(json);
-        });
-        app.MapGet("/oauth/facebook/jwks", async context => {
-            RSAArrayElement[] keys = _remoteFacebookManager.GetKeys();
-            //return the keys as json
-            //KeyArray keyArray = new KeyArray(keys);
-            var json = JsonSerializer.Serialize(keys);
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(json);
-        });
-
-        app.MapPost("/api/key", async context =>
+        app.MapPost("/openid/key", async context =>
         {
             //create a new rsa key and insert the key parameters to database table rsa
             var rsa = RSA.Create();
@@ -128,33 +153,134 @@ public class WebServer
             }
         });
 
-        app.MapGet("/.well-known/oauth/openid/jwks", async context => {
+        app.MapGet("/profile", async context =>
+        {
+            try
+            {
+                Profile profile = Profile.GetMethod(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    new DateTimeProvider(),
+                    _remoteManager
+                );
+                var json = JsonSerializer.Serialize(profile);
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(json);
+            }
+            catch (AuthenticationException e)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync("Unauthorized");
+            }
+            catch (DbException e)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+            catch (Exception e)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+        });
+
+        app.MapGet("/.well-known/jwks.json", async context =>
+        {
             KeyJson[] keys = new KeyJson[3];
-            RSAArrayElement[]? _rsaParameters;
-            bool isOk = _keyManager.GetRsaParameters(out _rsaParameters);
-            if(!isOk) {
+            try
+            {
+                RSAKey[] _rsaParameters = _keyManager.GetRsaParameters();
+                for (int i = 0; i < 3; i++)
+                {
+                    keys[i] = new KeyJson(
+                        _rsaParameters[i].Id,
+                        _rsaParameters[i].Parameters
+                    );
+                }
+                KeyArray keyArray = new KeyArray(keys);
+                var json = JsonSerializer.Serialize(keyArray);
+                context.Response.ContentType = "application/json";
+                context.Response.Headers.Add("Cache-Control", "max-age=3600");
+                await context.Response.WriteAsync(json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync("Internal Server Error");
-                return;
             }
-            for(int i=0; i<3; i++) {
-                keys[i] = new KeyJson(
-                    _rsaParameters[i].Id,
-                    _rsaParameters[i].Parameters
-                );
-            }
-            KeyArray keyArray = new KeyArray(keys);
-            var json = JsonSerializer.Serialize(keyArray);
-            context.Response.ContentType = "application/json";
-            context.Response.Headers.Add("Cache-Control", "max-age=3600");
-            await context.Response.WriteAsync(json);
+        });
+
+        app.MapPost("/service/apply", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("OK");
+        });
+
+        app.MapGet("/service/application", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("OK");
+        });
+
+        app.MapPost("/service/application/{id}/accept", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("OK");
+        });
+
+        app.MapPost("/service/application/{id}/reject", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("OK");
+        });
+
+        app.MapPost("/service/application/{id}/cancel", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("OK");
+        });
+
+        app.MapPost("/apiaccess", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("OK");
+        });
+
+        app.MapGet("/apiaccess", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("OK");
+        });
+
+        app.MapGet("/apiaccess/{id}", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("OK");
+        });
+
+        app.MapPost("/apiaccess/{id}/accept", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("OK");
+        });
+
+        app.MapPost("/apiaccess/{id}/reject", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("OK");
+        });
+
+        app.MapGet("/company/{id}", async context =>
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync("OK");
         });
 
         Task[] tasks = new Task[] {
             _keyManager.RunAsync(cancellationToken),
             app.RunAsync(cancellationToken),
-            _remoteGoogleManager.RunAsync(cancellationToken),
-            _remoteFacebookManager.RunAsync(cancellationToken)
+            _remoteManager.RunAsync(cancellationToken)
         };
         await Task.WhenAll(tasks);
 

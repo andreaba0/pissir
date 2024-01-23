@@ -7,6 +7,8 @@ using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using System.Text;
 using Module.KeyManager;
+using System;
+using System.Text.RegularExpressions;
 
 namespace Module.Middleware;
 
@@ -19,6 +21,32 @@ public static class Authentication
         Anonymous
     }
 
+    public static bool TryParseBearerToken(string authorizationHeader, out string jwt) {
+        jwt = string.Empty;
+        if(authorizationHeader == null || authorizationHeader == string.Empty) {
+            return false;
+        }
+        Regex tokenRegex = new Regex(@"^(?<scheme>[A-Za-z-]+)\s(?<token>[A-Za-z0-9-_\.]+)$");
+        if(!tokenRegex.IsMatch(authorizationHeader)) {
+            return false;
+        }
+        string scheme = tokenRegex.Match(authorizationHeader).Groups["scheme"].Value;
+        if(scheme.ToLower() != "bearer") {
+            return false;
+        }
+        string token = tokenRegex.Match(authorizationHeader).Groups["token"].Value;
+        Regex jwtRegex = new Regex(@"^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$");
+        string jwtToken = jwtRegex.Match(token).Value;
+        if(jwtToken == string.Empty) {
+            return false;
+        }
+        if($"{scheme} {jwtToken}" != authorizationHeader) {
+            return false;
+        }
+        jwt = jwtToken;
+        return true;
+    }
+
     internal static string ToBase64Url(byte[] input)
     {
         return Convert.ToBase64String(input)
@@ -29,9 +57,10 @@ public static class Authentication
 
     internal static IDictionary<string, object> ToDictionary(object obj)
     {
-        return JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(obj), new JsonSerializerOptions
+        return JsonSerializer.Deserialize<IDictionary<string, object>>((string)obj, new JsonSerializerOptions
         {
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
         });
     }
 
@@ -50,18 +79,19 @@ public static class Authentication
 
     internal static Token ParseToken(
         string id_token,
-        IRemoteJwksHub remoteManager
+        IRemoteJwksHub remoteManager,
+        IDateTimeProvider dateTimeProvider
     )
     {
         try
         {
-            var parts = token.Split('.');
+            var parts = id_token.Split('.');
             if (parts.Length != 3)
             {
                 throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN);
             }
-            IDictionary<string, object> header = ToDictionary(Base64Url.Decode(parts[0]));
-            IDictionary<string, object> payload = ToDictionary(Base64Url.Decode(parts[1]));
+            IDictionary<string, object> header = Jose.JWT.Headers(id_token);
+            IDictionary<string, object> payload = ToDictionary(Encoding.UTF8.GetString(Base64Url.Decode(parts[1])));
             string signature = parts[2];
             string alg = Authentication.GetValue(header, "alg");
             string kid = Authentication.GetValue(header, "kid");
@@ -70,16 +100,19 @@ public static class Authentication
             string exp = Authentication.GetValue(payload, "exp");
             string iat = Authentication.GetValue(payload, "iat");
             bool isValidSignature = Authentication.VerifySignature(
+                kid,
+                alg,
+                iss,
                 remoteManager,
                 signature,
                 Encoding.UTF8.GetBytes($"{parts[0]}.{parts[1]}")
             );
-            if (!isValidSignature) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_SIGNATURE);
+            if (!isValidSignature) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_SIGNATURE, "Invalid signature");
             if (!Authentication.IsExpired(
                 int.Parse(exp),
                 int.Parse(iat),
-                new DateTimeProvider()
-            )) throw new AuthenticationException(AuthenticationException.ErrorCode.TOKEN_EXPIRED);
+                dateTimeProvider
+            )) throw new AuthenticationException(AuthenticationException.ErrorCode.TOKEN_EXPIRED, "Token expired");
             return JsonSerializer.Deserialize<Token>(JsonSerializer.Serialize(payload), new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
@@ -91,6 +124,7 @@ public static class Authentication
         }
         catch (Exception e)
         {
+            Console.WriteLine(e);
             throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token", e);
         }
     }
@@ -145,43 +179,10 @@ public static class Authentication
         IDateTimeProvider dateTimeProvider
     )
     {
-        DateTime now = dateTimeProvider.Now;
+        DateTime now = dateTimeProvider.UtcNow;
         DateTime expiration = dateTimeProvider.FromUnixTime(exp);
         DateTime issuedAt = dateTimeProvider.FromUnixTime(iat);
         return now >= issuedAt && now <= expiration;
-    }
-    public static Token ReturnValidatedUser(
-        string id_token,
-        IRemoteJwksHub remoteJwksHub,
-        IDateTimeProvider dateTimeProvider
-    )
-    {
-        try
-        {
-            Token token = Authentication.VerifySignature(
-                remoteJwksHub,
-                id_token
-            );
-            bool hasExpired = Authentication.ValidateExpiration(
-                token,
-                dateTimeProvider
-            );
-            if (hasExpired)
-            {
-                throw new AuthenticationException(AuthenticationException.ErrorCode.TOKEN_EXPIRED);
-            }
-            if ()
-                return token;
-        }
-        catch (AuthenticationException e)
-        {
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token", e);
-
-        }
     }
 }
 
@@ -201,7 +202,8 @@ public class AuthenticationException : Exception
         ISSUER_REQUIRED,
         EXPIRATION_REQUIRED,
         IAT_REQUIRED,
-        AUDIENCE_REQUIRED
+        AUDIENCE_REQUIRED,
+        CREDENTIALS_REQUIRED,
     }
 
     public ErrorCode Code { get; }

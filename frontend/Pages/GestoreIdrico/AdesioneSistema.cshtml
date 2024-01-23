@@ -74,8 +74,8 @@
                         <td>
                             <form method="post" asp-page-handler="ConfermaUtente">
                                 <input type="hidden" class="form-control" id="id" name="id" value="@utenteAp.Id" readonly>
-                                <button type="submit" class="btn btn-primary" name="action" value="accept">Conferma Adesione</button>
-                                <button type="submit" class="btn btn-danger" name="action" value="reject">Rifiuta Adesione</button>
+                                <button type="submit" class="btn btn-primary" name="action" value="accept">Accetta</button>
+                                <button type="submit" class="btn btn-danger" name="action" value="reject">Rifiuta</button>
                             </form>
                         </td>
                     </tr>
@@ -122,8 +122,8 @@
                         <td>
                             <form method="post" asp-page-handler="ConfermaUtentePeriodo">
                                 <input type="hidden" class="form-control" id="id" name="id" value="@utentePeriodo.Id" readonly>
-                                <button type="submit" class="btn btn-primary" name="action" value="accept">Conferma Periodo</button>
-                                <button type="submit" class="btn btn-danger" name="action" value="reject">Rifiuta Periodo</button>
+                                <button type="submit" class="btn btn-primary" name="action" value="accept">Accetta </button>
+                                <button type="submit" class="btn btn-danger" name="action" value="reject">Rifiuta</button>
                             </form>
                         </td>
                     </tr>

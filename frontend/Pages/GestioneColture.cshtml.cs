@@ -23,8 +23,7 @@ namespace frontend.Pages
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Chiamata alle API per ottenere i dati
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-                Colture = await ApiReq.GetColtureAziendaFromApi(ApiReq.utente.PartitaIva, HttpContext);
+                Colture = await ApiReq.GetColtureAziendaFromApi(HttpContext);
             }
             catch (Exception ex)
             {
@@ -42,9 +41,9 @@ namespace frontend.Pages
 
 
         // Chiamata API per aggiunta coltura
-        public async Task<IActionResult> OnPostAggiungiColtura(string partitaIva, string metriQuadrati, string tipoColtura, string tipoIrrigazione)
+        public async Task<IActionResult> OnPostAggiungiColtura(string metriQuadrati, string tipoColtura, string tipoIrrigazione)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/coltura";
+            string urlTask = ApiReq.urlGenerico + "/field";
 
             /*
             try
@@ -58,10 +57,9 @@ namespace frontend.Pages
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
-                    PartitaIva = partitaIva,
-                    MetriQuadrati = metriQuadrati,
-                    TipoColtura = tipoColtura,
-                    TipoIrrigazione = tipoIrrigazione
+                    square_meters = metriQuadrati,
+                    crop_type = tipoColtura,
+                    irrigation_type = tipoIrrigazione
                 };
                 var jsonRequest = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
@@ -72,7 +70,7 @@ namespace frontend.Pages
                 if (response.IsSuccessStatusCode)
                 {
                     // Imposta un messaggio di successo
-                    TempData["Messaggio"] = "Aggiunta della coltura per l'azienda P.Iva " + partitaIva + " effettuata con successo!";
+                    TempData["Messaggio"] = "Aggiunta della coltura effettuata con successo!";
                 }
                 else
                 {
@@ -96,7 +94,7 @@ namespace frontend.Pages
         // Chiamata API per modifica coltura
         public async Task<IActionResult> OnPostModificaColtura(string metriQuadrati, string tipoColtura, string tipoIrrigazione, string colturaId)
         {
-            string urlTask = ApiReq.urlGenerico + "aziendaAgricola/coltura";
+            string urlTask = ApiReq.urlGenerico + $"/field/{colturaId}";
 
             /*
             try
@@ -110,17 +108,15 @@ namespace frontend.Pages
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
-                    PartitaIva = ApiReq.utente.PartitaIva,
-                    ColturaId = colturaId,
-                    MetriQuadrati = metriQuadrati,
-                    TipoColtura = tipoColtura,
-                    TipoIrrigazione = tipoIrrigazione
+                    square_meters = metriQuadrati,
+                    crop_type = tipoColtura,
+                    irrigation_type = tipoIrrigazione
                 };
                 var jsonRequest = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
                 // Esegue la chiamata POST
-                HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
+                HttpResponseMessage response = await ApiReq.httpClient.PatchAsync(urlTask, content);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -150,7 +146,7 @@ namespace frontend.Pages
         // Chiamata API per eliminazione coltura
         public async Task<IActionResult> OnPostEliminaColtura(string colturaId)
         {
-            string urlTask = $"{ApiReq.urlGenerico}aziendaAgricola/coltura/?IdColtura={Uri.EscapeDataString(colturaId)}";
+            string urlTask = ApiReq.urlGenerico + $"/field/{colturaId}";
 
             /*
             try

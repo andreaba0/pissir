@@ -11,9 +11,7 @@ namespace frontend.Pages
     public class DatiAccountModel : PageModel
     {
         public Azienda azienda { get; set; }
-        public AziendaAgricolaModel? aziendaAgricola { get; set; }
-        public AziendaIdricaModel? aziendaIdrica { get; set; }
-
+        
         public async Task<IActionResult> OnGet()
         {
             /*
@@ -23,15 +21,8 @@ namespace frontend.Pages
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Chiamata alle API per ottenere i dati
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
                 azienda = await ApiReq.GetAziendaDataFromApi(HttpContext);
 
-                if (ApiReq.utente.Role == "WSP")
-                    aziendaIdrica = await ApiReq.GetAziendaIdricaDataFromApi(HttpContext);
-                else if (ApiReq.utente.Role == "FAR")
-                    aziendaAgricola = await ApiReq.GetAziendaAgricolaDataFromApi(HttpContext);
-                else
-                    throw new Exception("Errore nel prelevare i dati dell'account.");
             }
             catch (Exception ex) 
             {
@@ -40,11 +31,7 @@ namespace frontend.Pages
             }
             */
 
-            // Simulazione dati          
-            if (ApiReq.utente.Role == "WSP")
-                aziendaIdrica = GetSimulatedAziendaIdricaData();
-            else
-                aziendaAgricola = GetSimulatedAziendaAgricolaData();
+            azienda = GetAziendaTest();
             
             // Continua con la generazione della pagina
             return Page();
@@ -122,34 +109,20 @@ namespace frontend.Pages
 
 
 
-        // Simula i dati di un'azienda agricola
-        private AziendaAgricolaModel GetSimulatedAziendaAgricolaData()
+        // Simula i dati di un'azienda
+        private Azienda GetAziendaTest()
         {
-            return new AziendaAgricolaModel
+            return new Azienda
             {
                 PartitaIva = "1234567890",
-                Nome = "Azienda Agricola Rossi",
+                Nome = "Azienda Rossa",
                 Indirizzo = "Via delle Campagne, 123",
                 Telefono = "0123456789",
-                Email = "info@aziendaagricolarossi.com",
-                Categoria = "FA"
+                Email = "info@azienda.com",
+                Categoria = "FA" //FA, WA
             };
         }
 
-
-        // Simula i dati di un'azienda idrica
-        private AziendaIdricaModel GetSimulatedAziendaIdricaData()
-        {   
-            return new AziendaIdricaModel
-            {
-                PartitaIva = "9876543210",
-                Nome = "Azienda Idrica Blu",
-                Indirizzo = "Via dell'Acqua, 456",
-                Telefono = "9876543210",
-                Email = "info@aziendaidricablu.com",
-                Categoria = "WA"
-            };
-        }
 
 
 

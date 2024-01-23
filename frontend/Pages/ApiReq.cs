@@ -31,7 +31,7 @@ namespace frontend.Pages
                 Nome = "Mario",
                 Cognome = "Rossi",
                 Email = "mariorossi@mail.mail",
-                Role = "WSP" //WSP / FAR
+                Role = "FAR" //WSP / FAR
             };
             
         }
@@ -644,7 +644,11 @@ namespace frontend.Pages
                 string responseData = await response.Content.ReadAsStringAsync();
                 Utente? userData = JsonConvert.DeserializeObject<Utente>(responseData);
                 if (userData != null)
+                {
+                    utente = userData;
                     return true;
+                }
+                    
                 else
                     return false;
             }

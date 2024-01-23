@@ -65,7 +65,7 @@ namespace frontend.Pages.GestoreIdrico
                 if (response.IsSuccessStatusCode)
                 {
                     // Imposta un messaggio di successo
-                    TempData["Messaggio"] = "Richiesta id: " + id + " impostata con stato: " + action;
+                    TempData["Messaggio"] = "Richiesta adesione con id: " + id + " impostata con stato: " + action;
                 }
                 else
                 {
@@ -80,7 +80,7 @@ namespace frontend.Pages.GestoreIdrico
             }
             */
 
-            TempData["Messaggio"] = "Richiesta id: " + id + " impostata con stato: " + action;
+            TempData["Messaggio"] = "Richiesta adesione con id: " + id + " impostata con stato: " + action;
             TempData["MessaggioErrore"] = "Errore durante la l'accettazione/rifiuto della richiesta. Riprova più tardi.";
 
             return RedirectToPage();
@@ -90,7 +90,7 @@ namespace frontend.Pages.GestoreIdrico
         public async Task<IActionResult> OnPostConfermaUtentePeriodo(string id, string action)
         {
             string urlTask = ApiReq.urlGenerico + $"/apiaccess/{id}/{action}";
-            
+
             /*
             try
             {
@@ -111,12 +111,12 @@ namespace frontend.Pages.GestoreIdrico
                 if (response.IsSuccessStatusCode)
                 {
                     // Imposta un messaggio di successo
-                    TempData["Messaggio"] = "Stato: " + action + " per periodo di accesso utente con id: " + id + " impostato con successo!";
+                    TempData["Messaggio"] = "Richiesta periodo con id: " + id + " impostata con stato: " + action;
                 }
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante la conferma del periodo. Riprova più tardi.";
                 }
             }
             catch (Exception ex)
@@ -126,8 +126,8 @@ namespace frontend.Pages.GestoreIdrico
             }
             */
 
-            TempData["Messaggio"] = "Stato: " + action + " per periodo di accesso utente con id: " + id + " impostato con successo!";
-            TempData["MessaggioErrore"] = "Errore durante la conferma. Riprova più tardi.";
+            TempData["Messaggio"] = "Richiesta periodo con id: " + id + " impostata con stato: " + action;
+            TempData["MessaggioErrore"] = "Errore durante la conferma del periodo. Riprova più tardi.";
 
             return RedirectToPage();
         }

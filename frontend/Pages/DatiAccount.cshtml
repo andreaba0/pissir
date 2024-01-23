@@ -113,17 +113,17 @@
                     </div>
                 </div>
                 
-                <label>Partita Iva:</label> <input id="partitaIva" name="partitaIva" type="text" disabled value="@Model.aziendaIdrica?.PartitaIva" class="form-control">
+                <label>Partita Iva:</label> <input id="partitaIva" name="partitaIva" type="text" disabled value="@Model.azienda?.PartitaIva" class="form-control">
                 <br />
-                <label>Nome azienda:</label> <input id="nomeAzienda" name="nomeAzienda" type="text" disabled value="@Model.aziendaIdrica?.Nome" class="editable-field form-control">
+                <label>Nome azienda:</label> <input id="nomeAzienda" name="nomeAzienda" type="text" disabled value="@Model.azienda?.Nome" class="editable-field form-control">
                 <br />
-                <label>Indirizzo:</label> <input id="indirizzoAzienda" name="indirizzoAzienda" type="text" disabled value="@Model.aziendaIdrica?.Indirizzo" class="editable-field form-control">
+                <label>Indirizzo:</label> <input id="indirizzoAzienda" name="indirizzoAzienda" type="text" disabled value="@Model.azienda?.Indirizzo" class="editable-field form-control">
                 <br />
-                <label>Telefono:</label> <input id="telefonoAzienda" name="telefonoAzienda" type="text" disabled value="@Model.aziendaIdrica?.Telefono" class="editable-field form-control">
+                <label>Telefono:</label> <input id="telefonoAzienda" name="telefonoAzienda" type="text" disabled value="@Model.azienda?.Telefono" class="editable-field form-control">
                 <br />
-                <label>Email:</label> <input id="emailAzienda" name="emailAzienda" type="text" disabled value="@Model.aziendaIdrica?.Email" class="editable-field form-control">
+                <label>Email:</label> <input id="emailAzienda" name="emailAzienda" type="text" disabled value="@Model.azienda?.Email" class="editable-field form-control">
                 <br />
-                <label>Categoria:</label> <input id="categoria" name="categoria" type="text" disabled value="@if(Model.aziendaIdrica?.Categoria=="WA"){
+                <label>Categoria:</label> <input id="categoria" name="categoria" type="text" disabled value="@if(Model.azienda?.Categoria=="WA"){
                 <text>Azienda Idrica</text>
                 } else {
                 <text>Azienda Agricola</text>

@@ -68,11 +68,11 @@ public static class Authentication
     {
         return key switch
         {
-            "iss" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.ISSUER_REQUIRED),
-            "aud" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.AUDIENCE_REQUIRED),
-            "exp" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.EXPIRATION_REQUIRED),
-            "iat" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.IAT_REQUIRED),
-            "alg" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.ALGORITHM_REQUIRED),
+            "iss" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.ISSUER_REQUIRED, "Issuer required"),
+            "aud" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.AUDIENCE_REQUIRED, "Audience required"),
+            "exp" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.EXPIRATION_REQUIRED, "Expiration required"),
+            "iat" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.IAT_REQUIRED, "Issued at required"),
+            "alg" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.ALGORITHM_REQUIRED, "Algorithm required"),
             _ => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, $"Unknown key {key} in token")
         };
     }
@@ -88,7 +88,7 @@ public static class Authentication
             var parts = id_token.Split('.');
             if (parts.Length != 3)
             {
-                throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN);
+                throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Malformed token");
             }
             IDictionary<string, object> header = Jose.JWT.Headers(id_token);
             IDictionary<string, object> payload = ToDictionary(Encoding.UTF8.GetString(Base64Url.Decode(parts[1])));
@@ -120,7 +120,11 @@ public static class Authentication
         }
         catch (AuthenticationException e)
         {
-            throw e;
+            throw;
+        }
+        catch(JsonException e)
+        {
+            throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token", e);
         }
         catch (Exception e)
         {
@@ -153,7 +157,7 @@ public static class Authentication
         }
         catch (AuthenticationException e)
         {
-            throw e;
+            throw;
         }
         catch (RemoteJwksHubException e)
         {
@@ -190,27 +194,24 @@ public class AuthenticationException : Exception
 {
     public enum ErrorCode
     {
-        INVALID_TOKEN,
-        TOKEN_EXPIRED,
-        INVALID_AUDIENCE,
-        INVALID_ISSUER,
-        INVALID_KID,
-        KID_REQUIRED,
-        UNSUPPORTED_ALGORITHM,
-        INVALID_SIGNATURE,
-        ALGORITHM_REQUIRED,
-        ISSUER_REQUIRED,
-        EXPIRATION_REQUIRED,
-        IAT_REQUIRED,
-        AUDIENCE_REQUIRED,
-        CREDENTIALS_REQUIRED,
+        INVALID_TOKEN = 1,
+        TOKEN_EXPIRED = 2,
+        INVALID_AUDIENCE = 3,
+        INVALID_ISSUER = 4,
+        INVALID_KID = 5,
+        KID_REQUIRED = 6,
+        UNSUPPORTED_ALGORITHM = 7,
+        INVALID_SIGNATURE = 8,
+        ALGORITHM_REQUIRED = 9,
+        ISSUER_REQUIRED = 10,
+        EXPIRATION_REQUIRED = 11,
+        IAT_REQUIRED = 12,
+        AUDIENCE_REQUIRED = 13,
+        CREDENTIALS_REQUIRED = 14,
+        GENERIC_ERROR = 0
     }
 
-    public ErrorCode Code { get; }
-    public AuthenticationException(ErrorCode code)
-    {
-        this.Code = code;
-    }
+    public ErrorCode Code { get; } = default(ErrorCode);
     public AuthenticationException(ErrorCode code, string message) : base(message)
     {
         this.Code = code;

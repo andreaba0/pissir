@@ -25,65 +25,103 @@
         </div>
     }
 
-    <table id="tabOfferte" class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Data Annuncio</th>
-                <th>Prezzo Litro</th>
-                <th>Quantità d'Acqua Disponibile (litri)</th>
-                <th>Azioni</th>
-            </tr>
-        </thead>
-        <tbody>
+    <!-- Limite di acquisto per la data odierna -->
+    <h6>Limite di acquisto giornaliero impostato a
+    @if(Model.LimiteAcquistoAzienda==null)
+    {
+            <text>
+                <label style="background-color:indianred; padding: 0px 10px 0px 10px; border-radius: 15px; color:white">
+                    Nessun limite presente.
+                </label>
+            </text>
+    }
+    else
+    {
+            <text>
+                <label style="background-color:cornflowerblue; padding: 0px 10px 0px 10px; border-radius: 15px; color:white">
+                    @Model.LimiteAcquistoAzienda litri
+                </label>
+                
+            </text>
+    }
+    </h6>
 
-            @foreach (var offerta in Model.Offerte)
-            {
+    <!-- Tabella offerte -->
+    @if(Model.Offerte==null)
+    {
+        <label>Nessuna offerta presente.</label>
+    }
+    else
+    {
+        <table id="tabOfferte" class="table">
+            <thead>
                 <tr>
-                    <td>@offerta.Id</td>
-                    <td>@offerta.DataAnnuncio</td>
-                    <td>@offerta.PrezzoLitro</td>
-                    <td>@offerta.Quantita</td>
-                    <td>
-                        <button class="btn btn-primary" data-toggle="modal" data-target="#modalOrdine\@offerta.Id">Acquista</button>
-                    </td>
+                    <th>Id</th>
+                    <th>Data Annuncio</th>
+                    <th>Prezzo Litro</th>
+                    <th>Quantità d'Acqua Disponibile (litri)</th>
+                    <th>Azioni</th>
                 </tr>
+            </thead>
+            <tbody>
 
-                <!-- Modale per l'ordine di acquisto -->
-                <div id="modalOrdine\@offerta.Id" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalOrdine\@offerta.Id" aria-hidden="true" data-backdrop="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="ModalLabelOrdine\@offerta.Id">Acquista acqua dall'offerta #@offerta.Id</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <form method="post" asp-page-handler="OrdineAcquisto">
-                                    <div class="form-group">
-                                        <label for="colturaId">Seleziona la Coltura</label>
-                                        <select class="form-control" id="colturaId" name="colturaId" required>
-                                            @foreach (var coltura in Model.Colture)
-                                            {
-                                                <option value="@coltura.Id">Id @coltura.Id - @coltura.TipoColtura - @coltura.MetriQuadrati mq - @coltura.TipoIrrigazione</option>
-                                            }
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="quantitaAcquisto">Quantità d'acqua da acquistare per la coltura selezionata</label>
-                                        <input type="number" class="form-control" id="quantitaAcquisto" name="quantitaAcquisto" step="0.01" min="1" max="@offerta.Quantita" required>
-                                    </div>
-                                    <input type="hidden" id="offertaId" name="offertaId" value="@offerta.Id" readonly />
-                                    <button type="submit" class="btn btn-primary">Conferma Acquisto</button>
-                                </form>
+                @foreach (var offerta in Model.Offerte)
+                {
+                    <tr>
+                        <td>@offerta.Id</td>
+                        <td>@offerta.DataAnnuncio</td>
+                        <td>@offerta.PrezzoLitro</td>
+                        <td>@offerta.Quantita</td>
+                        <td>
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#modalOrdine\@offerta.Id">Acquista</button>
+                        </td>
+                    </tr>
+
+                    <!-- Modale per l'ordine di acquisto -->
+                    <div id="modalOrdine\@offerta.Id" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalOrdine\@offerta.Id" aria-hidden="true" data-backdrop="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="ModalLabelOrdine\@offerta.Id">Acquista acqua dall'offerta ID @offerta.Id</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form method="post" asp-page-handler="OrdineAcquisto">
+                                        <div class="form-group">
+                                            <label for="colturaId">Seleziona la Coltura</label>
+                                            <select class="form-control" id="colturaId" name="colturaId" required>
+                                                @foreach (var coltura in Model.Colture)
+                                                {
+                                                    @foreach (var stima in Model.CampiAcquaStimata)
+                                                    {
+                                                        if(coltura.Id == stima.CampoId)
+                                                        {
+                                                            <option value="@coltura.Id">Id @coltura.Id - @coltura.TipoColtura - @coltura.MetriQuadrati mq - Totale giornaliero stimato da acquistare: @stima.TotaleStimato - Totale rimanente da acquistare: @stima.TotaleRimanente</option>
+                                                        }
+
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="quantitaAcquisto">Quantità d'acqua da acquistare per la coltura selezionata</label>
+                                            <input type="number" class="form-control" id="quantitaAcquisto" name="quantitaAcquisto" step="0.01" min="1" max="@offerta.Quantita" placeholder="00,00" required>
+                                        </div>
+
+                                        <input type="hidden" id="offertaId" name="offertaId" value="@offerta.Id" readonly />
+                                        <button type="submit" class="btn btn-primary">Conferma Acquisto</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-            }
+                }
 
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    }
+    
 </div>

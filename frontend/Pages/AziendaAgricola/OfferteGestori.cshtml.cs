@@ -12,7 +12,8 @@ namespace frontend.Pages.AziendaAgricola
     {
         public List<Offerta>? Offerte { get; set; }
         public List<Coltura>? Colture { get; set; }
-
+        public float? LimiteAcquistoAzienda { get; set; }
+        public List<AcquaStimata>? CampiAcquaStimata {  get; set; }
 
         public async Task<IActionResult> OnGet()
         {
@@ -22,9 +23,14 @@ namespace frontend.Pages.AziendaAgricola
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
+                // Controllo utente autorizzato
+                if (ApiReq.utente.Role != "FAR") { throw new Exception("Unauthorized"); }
+
                 // Chiamate alle API
                 Offerte = await ApiReq.GetOfferteIdricheFromApi(HttpContext);
                 Colture = await ApiReq.GetColtureAziendaFromApi(HttpContext);
+                LimiteAcquistoAzienda = await ApiReq.GetLimiteAcquistoAziendaFromApi(HttpContext);
+                CampiAcquaStimata = await ApiReq.GetStimeCampiPerAziendaFromApi(HttpContext);
             }
             catch (Exception ex)
             {
@@ -36,9 +42,13 @@ namespace frontend.Pages.AziendaAgricola
             // Simulazione dati
             Offerte = GetListaOfferte();
             Colture = GetListaColture();
+            CampiAcquaStimata = GetAcquaSitmata();
+            LimiteAcquistoAzienda = 500.0f;
 
             return Page();
         }
+
+        
 
 
         // Chiamata API per acquisto risorse idriche
@@ -51,7 +61,10 @@ namespace frontend.Pages.AziendaAgricola
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
+                
+                // Controllo utente autorizzato
+                if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }
+                
                 // Imposta il token
                 ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
@@ -121,6 +134,16 @@ namespace frontend.Pages.AziendaAgricola
             };
         }
 
+        private List<AcquaStimata> GetAcquaSitmata()
+        {
+            // Simulazione di dati
+            return new List<AcquaStimata>
+            {
+                new AcquaStimata { CampoId = "1", TotaleStimato= 200.0f, TotaleRimanente=150.0f },
+                new AcquaStimata { CampoId = "2", TotaleStimato= 400.0f, TotaleRimanente=300.0f },
+                new AcquaStimata { CampoId = "3", TotaleStimato= 300.0f, TotaleRimanente=300.0f }
+            };
+        }
 
     }
 }

@@ -19,15 +19,16 @@ namespace frontend.Pages.GestoreIdrico
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-                consumiAziende = await ApiReq.GetConsumoAziendeFromApi(ApiReq.utente.PartitaIva, HttpContext);
+                // Controllo utente autorizzato
+                if (ApiReq.utente.Role!="WSP") { throw new Exception("Unauthorized"); }
+
+                consumiAziende = await ApiReq.GetConsumoAziendeFromApi(HttpContext);
             }
             catch (Exception ex)
             {
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            
             */
 
             // Simulazione Dati

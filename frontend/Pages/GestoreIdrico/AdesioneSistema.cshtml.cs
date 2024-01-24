@@ -15,12 +15,15 @@ namespace frontend.Pages.GestoreIdrico
 
         public async Task<IActionResult> OnGet()
         {
-            
+
             /*
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Controllo utente autorizzato
+                if (ApiReq.utente.Role!="WSP") { throw new Exception("Unauthorized"); }
 
                 RichiesteUtenti = await ApiReq.GetRichiesteUtentiFromApi(HttpContext);
                 RichiestePeriodo = await ApiReq.GetRichiestePeriodoFromApi(HttpContext);
@@ -50,6 +53,9 @@ namespace frontend.Pages.GestoreIdrico
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Controllo utente autorizzato
+                if (ApiReq.utente.Role!="WSP") { throw new Exception("Unauthorized"); }
 
                 // Imposta il token
                 ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -96,6 +102,9 @@ namespace frontend.Pages.GestoreIdrico
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Controllo utente autorizzato
+                if (ApiReq.utente.Role!="WSP") { throw new Exception("Unauthorized"); }
 
                 // Imposta il token
                 ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);

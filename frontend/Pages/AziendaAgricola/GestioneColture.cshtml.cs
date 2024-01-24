@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
 
-namespace frontend.Pages
+namespace frontend.Pages.AziendaAgricola
 {
     public class GestioneColtureModel : PageModel
     {
@@ -21,6 +21,9 @@ namespace frontend.Pages
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Controllo utente autorizzato
+                if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }
 
                 // Chiamata alle API per ottenere i dati
                 Colture = await ApiReq.GetColtureAziendaFromApi(HttpContext);
@@ -50,6 +53,9 @@ namespace frontend.Pages
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+
+                // Controllo utente autorizzato
+                if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }
 
                 // Imposta il token
                 ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -102,6 +108,9 @@ namespace frontend.Pages
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
+                // Controllo utente autorizzato
+                if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }    
+
                 // Imposta il token
                 ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
@@ -153,7 +162,10 @@ namespace frontend.Pages
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-
+                
+                // Controllo utente autorizzato
+                if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }
+                
                 // Imposta il token
                 ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 

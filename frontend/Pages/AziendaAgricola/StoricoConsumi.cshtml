@@ -15,13 +15,15 @@
     <canvas id="consumiChart" height="0" margin="0"></canvas>
     <div id="graphics"></div>
     
+    <br />
+    <h5>Tabella generale</h5>
     <table id="tabStoricoConsumi" class="table">
         <thead>
             <tr>
                 <th>Campo</th>
                 <th>Data</th>
-                <th>Litri Consumati</th>
                 <th>Quantità Prenotata (litri)</th>
+                <th>Quantità Consumata (litri)</th>
             </tr>
         </thead>
         <tbody>
@@ -32,8 +34,8 @@
                     <tr>
                         <td>@consumo.Campo</td>
                         <td>@consumo.Data</td>
-                        <td>@consumo.LitriConsumati</td>
                         <td>@consumo.QuantitaPrenotata</td>
+                        <td>@consumo.LitriConsumati</td>
                     </tr>
                 }
             }
@@ -56,67 +58,89 @@
         var consumiPerCampo = {};
         consumiData.forEach(function (consumo) {
             if (!consumiPerCampo[consumo.Campo]) {
-                consumiPerCampo[consumo.Campo] = {
-                    litriConsumati: [],
-                    quantitaPrenotata: []
-                };
+                consumiPerCampo[consumo.Campo] = [];
             }
-            consumiPerCampo[consumo.Campo].litriConsumati.push(consumo.LitriConsumati);
-            consumiPerCampo[consumo.Campo].quantitaPrenotata.push(consumo.QuantitaPrenotata);
+            consumiPerCampo[consumo.Campo].push(consumo);
         });
 
-        // Inizializzazione canvas per il grafico
-        var ctx = document.getElementById('consumiChart').getContext('2d');
+        // Inizializzazione div per i grafici e le tabelle
+        var mainDiv = document.getElementById('graphics');
 
         // Configurazione del grafico
         var charts = {};
-        var mainDiv = document.getElementById('graphics');
         Object.keys(consumiPerCampo).forEach(function (campo) {
-            // Creazione di un div per ogni grafico
-            var chartDiv = document.createElement('div');
-            chartDiv.className = 'chart-container';
-            mainDiv.appendChild(chartDiv);
+            // Ordina gli elementi per data
+            consumiPerCampo[campo].sort(function (a, b) {
+                return new Date(a.Data) - new Date(b.Data);
+            });
 
-            // Aggiunta del titolo del campo sopra il grafico
-            var campoTitle = document.createElement('h5');
-            campoTitle.innerHTML = 'Campo ID: ' + campo;
-            chartDiv.appendChild(campoTitle);
+            // Creazione del titolo della sezione (grafico + tabella)
+            var sectionTitle = document.createElement('h5');
+            sectionTitle.innerHTML = 'Campo: ' + campo;
+            mainDiv.appendChild(sectionTitle);
 
             // Creazione del canvas per il grafico
             var canvasId = 'consumiChart_' + campo.replace(/\s+/g, ''); // ID unico per ogni grafico
             var newCanvas = document.createElement('canvas');
             newCanvas.id = canvasId;
             newCanvas.height = 40;
-            chartDiv.appendChild(newCanvas); // Aggiungi il canvas al div del grafico
+            mainDiv.appendChild(newCanvas);
 
             var newCtx = newCanvas.getContext('2d');
 
             charts[campo] = new Chart(newCtx, {
                 type: 'line',
-                //bar, line, pie, doughnut, radar, bubble, scatter, area, heatmap, funnel
                 data: {
-                    labels: consumiData.filter(consumo => consumo.Campo === campo).map(consumo => consumo.Data),
+                    labels: consumiPerCampo[campo].map(consumo => consumo.Data),
                     datasets: [
                         {
                             label: 'Quantità Prenotata',
-                            data: consumiPerCampo[campo].quantitaPrenotata,
+                            data: consumiPerCampo[campo].map(consumo => consumo.QuantitaPrenotata),
                             backgroundColor: 'rgba(75, 192, 192, 0.2)',
                             borderColor: 'rgba(75, 192, 192, 1)',
                             borderWidth: 2
                         },
                         {
                             label: 'Litri Consumati',
-                            data: consumiPerCampo[campo].litriConsumati,
+                            data: consumiPerCampo[campo].map(consumo => consumo.LitriConsumati),
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
                             borderColor: 'rgba(255, 99, 132, 1)',
                             borderWidth: 2
                         }
                     ]
                 },
-                options: {
-                    
-                }
+                options: {}
             });
+
+            
+            // Aggiunta di uno spazio tra il titolo della sezione e la tabella
+            var br = document.createElement('br');
+            mainDiv.appendChild(br);
+
+            // Creazione della tabella per il campo
+            var tableId = 'tabStoricoConsumi_' + campo.replace(/\s+/g, ''); // ID unico per ogni tabella
+            var newTable = document.createElement('table');
+            newTable.id = tableId;
+            newTable.className = 'table';
+            mainDiv.appendChild(newTable);
+
+            // Intestazione della tabella
+            var tableHeader = document.createElement('thead');
+            tableHeader.innerHTML = '<tr><th>Data</th><th>Quantità Prenotata (litri)</th><th>Quantità Consumata (litri)</th></tr>';
+            newTable.appendChild(tableHeader);
+
+            // Corpo della tabella
+            var tableBody = document.createElement('tbody');
+            consumiPerCampo[campo].forEach(function (consumo) {
+                var row = document.createElement('tr');
+                row.innerHTML = '<td>' + consumo.Data + '</td><td>' + consumo.QuantitaPrenotata + '</td><td>' + consumo.LitriConsumati + '</td>';
+                tableBody.appendChild(row);
+            });
+            newTable.appendChild(tableBody);
+
+            // Aggiunta di uno spazio tra il titolo della sezione e la tabella
+            var br = document.createElement('br');
+            mainDiv.appendChild(br);
 
             // Aggiunta della linea dopo il grafico
             var hrLine = document.createElement('hr');
@@ -125,9 +149,6 @@
             mainDiv.appendChild(hrLine);
 
         });
-
-
     });
-
-
 </script>
+

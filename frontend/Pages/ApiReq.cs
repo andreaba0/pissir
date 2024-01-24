@@ -76,6 +76,9 @@ namespace frontend.Pages
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
+            // Controllo utente autorizzato
+            if (utente.Role != "WSP") { throw new Exception("Unauthorized"); }
+
             // Stringa interpolata
             string urlTask = $"{urlGenerico}/service/my_application";
 
@@ -200,6 +203,9 @@ namespace frontend.Pages
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
+            // Controllo utente autorizzato
+            if (utente.Role != "FAR") { throw new Exception("Unauthorized"); }
+
             string urlTask = $"{urlGenerico}/field";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -214,6 +220,64 @@ namespace frontend.Pages
                 List<Coltura>? listaColture = JsonConvert.DeserializeObject<List<Coltura>>(responseData);
                 if (listaColture != null)
                     return listaColture;
+                else
+                    throw new HttpRequestException($"{response.StatusCode}");
+            }
+            else
+            {
+                throw new HttpRequestException($"{response.StatusCode}");
+            }
+        }
+
+        // Richiesta dati per limite giornaliero di acquisto della singola azienda
+        public static async Task<float> GetLimiteAcquistoAziendaFromApi(HttpContext context)
+        {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            string urlTask = $"{urlGenerico}/water/limit";
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
+
+            // Esegue la chiamata POST
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Legge e deserializza i dati dalla risposta
+                string responseData = await response.Content.ReadAsStringAsync();
+                float limite = JsonConvert.DeserializeObject<float>(responseData);
+                if (responseData != null)
+                    return limite;
+                else
+                    throw new HttpRequestException($"{response.StatusCode}");
+            }
+            else
+            {
+                throw new HttpRequestException($"{response.StatusCode}");
+            }
+        }
+
+        // Richiesta dati per la stima di risorse idriche per quel campo
+        public static async Task<List<AcquaStimata>> GetStimeCampiPerAziendaFromApi(HttpContext context)
+        {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            string urlTask = $"{urlGenerico}/water/reccomendation";
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
+
+            // Esegue la chiamata POST
+            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Legge e deserializza i dati dalla risposta
+                string responseData = await response.Content.ReadAsStringAsync();
+                List<AcquaStimata>? rec = JsonConvert.DeserializeObject<List<AcquaStimata>>(responseData);
+                if (rec != null)
+                    return rec;
                 else
                     throw new HttpRequestException($"{response.StatusCode}");
             }
@@ -252,12 +316,15 @@ namespace frontend.Pages
             }
         }
 
-
+        //TODO
         // Richiesta dati dello storico ordini d'acqua
         public static async Task<List<OrdineAcquisto>> GetStoricoOrdiniFromApi(string partitaIva, HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            // Controllo utente autorizzato
+            if (utente.Role != "FAR") { throw new Exception("Unauthorized"); }
 
             string urlTask = $"{urlGenerico}aziendaAgricola/ordini/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
@@ -283,12 +350,15 @@ namespace frontend.Pages
         }
 
 
-
+        //TODO
         // Richiesta dati sui consumi delle colture possedute dall'azienda
         public static async Task<List<ConsumoAziendaleCampo>> GetStoricoConsumiFromApi(string partitaIva, HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            // Controllo utente autorizzato
+            if (utente.Role != "FAR") { throw new Exception("Unauthorized"); }
 
             string urlTask = $"{urlGenerico}aziendaAgricola/consumiColture/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
 
@@ -314,7 +384,7 @@ namespace frontend.Pages
         }
 
 
-
+        //TODO
         // Richiesta dati storico sensori di umidità
         public static async Task<List<SensoreUmiditaLog>> GetSensoriUmiditaFromApi(string partitaIva, HttpContext context)
         {
@@ -344,6 +414,7 @@ namespace frontend.Pages
             }
         }
 
+        //TODO
         // Richiesta dati storico sensori di temperatura
         public static async Task<List<SensoreTemperaturaLog>> GetSensoriTemperaturaFromApi(string partitaIva, HttpContext context)
         {
@@ -373,7 +444,7 @@ namespace frontend.Pages
             }
         }
 
-
+        //TODO
         // Richiesta dati storico attuatori
         public static async Task<List<AttuatoreLog>> GetAttuatoriFromApi(string partitaIva, HttpContext context)
         {
@@ -411,7 +482,8 @@ namespace frontend.Pages
 
         // Metodi Azienda Idrica ---------------------------------------------------------
 
-        // Richiesta dati per limite giornaliero
+        /*
+        // Richiesta dati per limite giornaliero di vendita
         public static async Task<float> GetLimiteGiornaliero(string partitaIva, HttpContext context)
         {
             // Controllo utente autenticato
@@ -439,43 +511,16 @@ namespace frontend.Pages
                 throw new HttpRequestException($"{response.StatusCode}");
             }
         }
-        
-
-        // Richiesta dati acqua messa in vendita
-        public static async Task<List<Offerta>> GetOfferteInserite(string partitaIva, HttpContext context)
-        {
-            // Controllo utente autenticato
-            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
-
-            string urlTask = $"{urlGenerico}aziendaIdrica/offerteInserite/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
-
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
-
-            // Esegue la chiamata GET
-            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
-
-            if (response.IsSuccessStatusCode)
-            {
-                // Legge e deserializza i dati dalla risposta
-                string responseData = await response.Content.ReadAsStringAsync();
-                List<Offerta>? offerteInserite = JsonConvert.DeserializeObject<List<Offerta>>(responseData);
-                if (offerteInserite != null)
-                    return offerteInserite;
-                else
-                    throw new HttpRequestException($"{response.StatusCode}");
-            }
-            else
-            {
-                throw new HttpRequestException($"{response.StatusCode}");
-            }
-        }
-
+        */
         
         // Richiesta dati sulle richieste di adesione per gli utenti
         public static async Task<List<UtenteAp>> GetRichiesteUtentiFromApi(HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            // Controllo utente autorizzato
+            if (utente.Role != "WSP") { throw new Exception("Unauthorized"); }
 
             string urlTask = urlGenerico + "/service/application";
 
@@ -507,6 +552,9 @@ namespace frontend.Pages
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
+            // Controllo utente autorizzato
+            if (utente.Role != "WSP") { throw new Exception("Unauthorized"); }
+
             string urlTask = urlGenerico + "/apiaccess";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
@@ -530,14 +578,14 @@ namespace frontend.Pages
             }
         }
 
-
+        //TODO
         // Richiesta dati per limiti di vendita per ogni azienda agricola in base alla azienda idrica
         public static async Task<List<LimiteAcquistoAzienda>> GetLimitiPerAziendaFromApi(HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
-            string urlTask = urlGenerico + "aziendaIdrica/limitiPerAzienda/";
+            string urlTask = urlGenerico + "/water/limitall";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -560,14 +608,17 @@ namespace frontend.Pages
             }
         }
 
-
+        //TODO
         // Richiesta dati storico vendite azienda idrica
-        public static async Task<List<OrdineAcquisto>> GetStoricoVenditeFromApi(string partitaIva, HttpContext context)
+        public static async Task<List<OrdineAcquisto>> GetStoricoVenditeFromApi(HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
-            string urlTask = $"{urlGenerico}aziendaIdrica/storicoVendite/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
+            // Controllo utente autorizzato
+            if (utente.Role != "WSP") { throw new Exception("Unauthorized"); }
+
+            string urlTask = $"{urlGenerico}/aziendaIdrica/storicoVendite";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -590,14 +641,17 @@ namespace frontend.Pages
             }
         }
 
-
+        //TODO
         // Richiesta dati consumo aziende agricole a cui l'azienda idrica ha venduto
-        public static async Task<List<ConsumoAziendaleCampo>> GetConsumoAziendeFromApi(string partitaIva, HttpContext context)
+        public static async Task<List<ConsumoAziendaleCampo>> GetConsumoAziendeFromApi(HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
-            string urlTask = $"{urlGenerico}aziendaIdrica/consumiAziende/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
+            // Controllo utente autorizzato
+            if (utente.Role != "WSP") { throw new Exception("Unauthorized"); }
+
+            string urlTask = $"{urlGenerico}/aziendaIdrica/consumiAziende";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -648,9 +702,10 @@ namespace frontend.Pages
                     utente = userData;
                     return true;
                 }
-                    
                 else
+                {
                     return false;
+                }
             }
             else
             {

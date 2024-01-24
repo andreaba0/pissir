@@ -17,6 +17,9 @@ namespace frontend.Pages.AziendaAgricola
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
+                // Controllo utente autorizzato
+                if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }
+
                 ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
                 StoricoOrdini = await ApiReq.GetStoricoOrdiniFromApi(ApiReq.utente.PartitaIva, HttpContext);
             }

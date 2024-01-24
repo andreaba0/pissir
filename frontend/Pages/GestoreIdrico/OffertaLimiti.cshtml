@@ -8,18 +8,9 @@
 
 <div style="margin: 1em;">
     <h4>Offerta e limiti</h4>
-    <small>• Inserimento e consultazione delle offerte idriche giornaliere dell'Azienda Idrica, e gestione dei limiti di vendita giornalieri e per Azienda Agricola.</small>
+    <small>• Inserimento e consultazione delle offerte idriche giornaliere dell'Azienda Idrica, e gestione dei limiti di acquisto per le Aziende Agricole.</small>
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
-    
-    <!-- Sezione Inserimento Offerta Idrica -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5em;">
-        <h5>Elenco Offerte Idriche</h5>
-        <button class="btn btn-primary" data-toggle="modal" data-target="#modalInserisciModificaOfferta">Inserisci Offerta</button>
-    </div>
 
-
-
-    
     @if (TempData.ContainsKey("Messaggio"))
     {
         <div class="alert alert-info" role="alert">
@@ -33,6 +24,14 @@
             @TempData["MessaggioErrore"]
         </div>
     }
+
+    <!-- Sezione Inserimento Offerta Idrica -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5em;">
+        <h5>Elenco Offerte Idriche</h5>
+        <button class="btn btn-primary" data-toggle="modal" data-target="#modalInserisciModificaOfferta">Inserisci Offerta</button>
+    </div>
+    
+    
 
     <!-- Modale per l'inserimento dell'offerta -->
     <div id="modalInserisciModificaOfferta" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalInserisciModificaOfferta" aria-hidden="true" data-backdrop="true">
@@ -146,25 +145,72 @@
         </table>
     }
 
+
+    
+    
+    <!-- Sezione Inserimento Limite 
     <hr style="margin-top: 1em; margin-bottom: 1em;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5em;">
+        <div>
+            <h5>Gestione Limite di vendita giornaliero</h5>
+            <label>Imposta il limite globale d'acqua giornaliero vendibile dalla tua azienda.</label>
+        </div>
+        <button class="btn btn-primary" data-toggle="modal" data-target="#modalImpostaLimite">Imposta Limite</button>
+    </div>-->
+
+    @if (TempData.ContainsKey("MessaggioLimite"))
+    {
+        <div class="alert alert-info" role="alert">
+            @TempData["MessaggioLimite"]
+        </div>
+    }
+
+    @if (TempData.ContainsKey("MessaggioErroreLimite"))
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["MessaggioErroreLimite"]
+        </div>
+    }
+
+    <!-- Modale per l'inserimento del limite di vendita giornaliero 
+    <div id="modalImpostaLimite" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalImpostaLimite" aria-hidden="true" data-backdrop="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ModalLabelImpostaLimite">Imposta un limite di vendita giornaliero</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" asp-page-handler="ImpostaLimiteGiornaliero" id="formImpostaLimite">
+                        <div class="form-group">
+                            <label for="quantitaAcqua">Limite di acqua da offrire giornaliero (Litri):</label>
+                            <input type="number" class="form-control" id="limiteAcqua" name="limiteAcqua" step="0.01" min="0" required placeholder="00,00" />
+                        </div>
+                        <div class="form-group">
+                            <label>Data di inizio</label>
+                            <input type="date" class="form-control" name="dataInizio" placeholder="Data di inizio del limite" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Data di fine</label>
+                            <input type="date" class="form-control" name="dataFine" placeholder="Data di fine del limite" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="confermaImpostaLimite">Conferma limite</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    
+    -->
+    
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
     <!-- Sezione Gestione Limiti Giornalieri per Azienda -->
     <div>
-        <h5>Gestione Limiti Giornalieri per Azienda</h5>
-
-        @if (TempData.ContainsKey("MessaggioLimite"))
-        {
-            <div class="alert alert-info" role="alert">
-                @TempData["MessaggioLimite"]
-            </div>
-        }
-
-        @if (TempData.ContainsKey("MessaggioErroreLimite"))
-        {
-            <div class="alert alert-danger" role="alert">
-                @TempData["MessaggioErroreLimite"]
-            </div>
-        }
+        <h5>Gestione limiti giornalieri di acquisto per Azienda Agricola</h5>
 
         @if (Model.LimitiAcquistoPerAzienda == null)
         {
@@ -176,8 +222,9 @@
                 <thead>
                     <tr>
                         <th>Partita IVA</th>
-                        <th>Nome Azienda</th>
                         <th>Limite Azienda (litri)</th>
+                        <th>Data inizo</th>
+                        <th>Data fine</th>
                         <th>Azioni</th>
                     </tr>
                 </thead>
@@ -186,10 +233,11 @@
                     {
                         <tr>
                             <td>@azienda.PartitaIva</td>
-                            <td>@azienda.Nome</td>
                             <td>@azienda.LimiteAcquistoAziendale</td>
+                            <td>@azienda.DataInizio</td>
+                            <td>@azienda.DataFine</td>
                             <td>
-                                <button class="btn btn-primary" data-toggle="modal" data-target="#modalModificaLimite\@azienda.PartitaIva">Modifica Limite</button>
+                                <button class="btn btn-primary" data-toggle="modal" data-target="#modalModificaLimite\@azienda.PartitaIva">Modifica</button>
                             </td>
                         </tr>
 
@@ -198,7 +246,7 @@
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="ModalModificaLimite\@azienda.PartitaIva">Modifica Limite Azienda #@azienda.Nome</h5>
+                                        <h5 class="modal-title" id="ModalModificaLimite\@azienda.PartitaIva">Modifica Limite Azienda P.Iva @azienda.PartitaIva</h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
                                         </button>
@@ -208,6 +256,14 @@
                                             <div class="form-group">
                                                 <label for="nuovoLimite">Nuovo Limite Azienda (in litri):</label>
                                                 <input type="number" class="form-control" id="nuovoLimite" name="nuovoLimite" step="0.01" min="0" value="@azienda.LimiteAcquistoAziendale" required />
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Data di inizio</label>
+                                                <input type="date" class="form-control" name="dataInizio" placeholder="Data di inizio del limite" value="@azienda.DataInizio" required />
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Data di fine</label>
+                                                <input type="date" class="form-control" name="dataFine" placeholder="Data di fine del limite" value="@azienda.DataFine" required />
                                             </div>
                                             <input type="hidden" id="partitaIvaAzienda" name="partitaIvaAzienda" value="@azienda.PartitaIva" readonly />
                                             <button type="submit" class="btn btn-primary">Conferma Modifica</button>

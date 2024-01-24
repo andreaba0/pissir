@@ -9,6 +9,34 @@ servers:
   - url: http://localhost
 
 paths:
+  /water/recommendation/{field_id}:
+    get:
+      parameters:
+        - name: field_id
+          in: path
+          required: true
+          schema:
+            type: string
+      summary: Get water recommendation
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetWaterRecommendation'
+        '500':
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            plain/text:
+              schema:
+                type: string
   /water/limit:
     get:
       summary: Get water limit
@@ -430,6 +458,15 @@ components:
       bearerFormat: JWT
       description: JWT id_token provided by auth server
   schemas:
+    GetWaterRecommendation:
+      type: object
+      properties:
+        total_estimated:
+          type: number
+          format: float
+        total_remaining:
+          type: number
+          format: float
     ErrorResponse:
       type: object
       properties:
@@ -467,6 +504,8 @@ components:
     PostWaterLimitBody:
       type: object
       properties:
+        vat_number:
+          type: string
         limit:
           type: number
           format: float

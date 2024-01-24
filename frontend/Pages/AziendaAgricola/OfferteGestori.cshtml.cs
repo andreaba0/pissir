@@ -61,7 +61,7 @@ namespace frontend.Pages.AziendaAgricola
                     field_id = colturaId,
                     amount = quantitaAcquisto,
                     offer_id = offertaId,
-                    date = DateTime.Now,
+                    date = DateTime.Now
                 };
                 var jsonRequest = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");

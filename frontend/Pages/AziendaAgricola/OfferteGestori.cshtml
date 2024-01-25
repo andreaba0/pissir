@@ -90,25 +90,71 @@
                                 <div class="modal-body">
                                     <form method="post" asp-page-handler="OrdineAcquisto">
                                         <div class="form-group">
-                                            <label for="colturaId">Seleziona la Coltura</label>
-                                            <select class="form-control" id="colturaId" name="colturaId" required>
+                                            <label for="colturaSelect">Seleziona la coltura per la quale acquistare le risorse</label>
+                                            <select class="form-control" id="colturaSelect" name="colturaId" required>
+                                                <option value="null">Seleziona la coltura</option>
                                                 @foreach (var coltura in Model.Colture)
                                                 {
                                                     @foreach (var stima in Model.CampiAcquaStimata)
                                                     {
-                                                        if(coltura.Id == stima.CampoId)
+                                                        if (coltura.Id == stima.CampoId)
                                                         {
-                                                            <option value="@coltura.Id">Id @coltura.Id - @coltura.TipoColtura - @coltura.MetriQuadrati mq - Totale giornaliero stimato da acquistare: @stima.TotaleStimato - Totale rimanente da acquistare: @stima.TotaleRimanente</option>
+                                                            <option value="@coltura.Id-@coltura.TipoColtura-@coltura.MetriQuadrati-@stima.TotaleStimato-@stima.TotaleRimanente">
+                                                                Id @coltura.Id - @coltura.TipoColtura - @coltura.MetriQuadrati mq
+                                                            </option>
                                                         }
-
                                                     }
                                                 }
                                             </select>
+
                                         </div>
+
                                         <div class="form-group">
                                             <label for="quantitaAcquisto">Quantità d'acqua da acquistare per la coltura selezionata</label>
                                             <input type="number" class="form-control" id="quantitaAcquisto" name="quantitaAcquisto" step="0.01" min="1" max="@offerta.Quantita" placeholder="00,00" required>
                                         </div>
+                                        <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+                                        <h5>Stime campo</h5>
+                                        <small>• Vengono visualizzate le stime dei fabbisogni idrici del campo selezionato.</small>
+                                        <div class="coltura-info">
+                                        </div>
+                                        <script>
+                                            $(document).ready(function () {
+                                                // Aggiungi questo script alla tua pagina
+                                                document.getElementById("colturaSelect").addEventListener("change", function () {
+                                                    var selectedOption = this.options[this.selectedIndex];
+                                                    updateColturaInfo(selectedOption);
+                                                });
+
+                                                $('#modalOrdine\@offerta.Id').on('shown.bs.modal', function () {
+                                                    // Ottieni l'opzione attualmente selezionata
+                                                    var selectedOption = document.getElementById("colturaSelect").options[document.getElementById("colturaSelect").selectedIndex];
+                                                    // Aggiorna le stime quando la modale viene aperta
+                                                    updateColturaInfo(selectedOption);
+                                                });
+
+                                                function updateColturaInfo(selectedOption) {
+                                                    var colturaInfoDiv = document.querySelector('.coltura-info');
+                                                    var values = selectedOption.value.split('-').map(function (item) {
+                                                        return item.trim();
+                                                    });
+
+                                                    if (values.length >= 5) {
+                                                        colturaInfoDiv.innerHTML = `
+                                                                Totale giornaliero stimato da acquistare per il campo: ${values[3]} litri<br>
+                                                                Risorse rimanenti da acquistare per soddisfare le stime:
+                                                                <label style="background-color:cornflowerblue; padding: 0px 10px 0px 10px; border-radius: 15px; color:white">
+                                                                    ${values[4]} litri
+                                                                </label>
+                                                            `;
+                                                    } else {
+                                                        colturaInfoDiv.innerHTML = "Impossibile recuperare le informazioni sulla coltura selezionata.";
+                                                    }
+                                                }
+                                            });
+                                        </script>
+                                        <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
                                         <input type="hidden" id="offertaId" name="offertaId" value="@offerta.Id" readonly />
                                         <button type="submit" class="btn btn-primary">Conferma Acquisto</button>
@@ -117,7 +163,6 @@
                             </div>
                         </div>
                     </div>
-
                 }
 
             </tbody>

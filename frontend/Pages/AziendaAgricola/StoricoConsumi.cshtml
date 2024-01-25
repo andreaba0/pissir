@@ -7,6 +7,15 @@
 <link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#tabStoricoConsumi').DataTable();
+    });
+</script>
+
 <div style="margin: 1em;">
     <h4>Storico consumi</h4>
     <small>• Viene visualizzato tutto lo storico dei consumi idrici dell'azienda agricola.</small>

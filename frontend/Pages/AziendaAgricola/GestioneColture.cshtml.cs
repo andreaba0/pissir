@@ -11,7 +11,7 @@ namespace frontend.Pages.AziendaAgricola
     public class GestioneColtureModel : PageModel
     {
         public List<Coltura>? Colture { get; set; }
-
+        public List<ColturaStock>? ColtureStock { get; set; }
 
         // Chiamata API per lista colture
         public async Task<IActionResult> OnGet()
@@ -27,6 +27,7 @@ namespace frontend.Pages.AziendaAgricola
 
                 // Chiamata alle API per ottenere i dati
                 Colture = await ApiReq.GetColtureAziendaFromApi(HttpContext);
+                ColtureStock = await ApiReq.GetStockColtureAziendaFromApi(HttpContext);
             }
             catch (Exception ex)
             {
@@ -37,9 +38,12 @@ namespace frontend.Pages.AziendaAgricola
 
             // Simulazione dati
             Colture = GetListaColture();
+            ColtureStock = GetStockColture();
 
             return Page();
         }
+
+        
 
 
 
@@ -210,6 +214,17 @@ namespace frontend.Pages.AziendaAgricola
                 new Coltura { Id = "2", PartitaIva = "12345678901", MetriQuadrati = 200, TipoColtura = "Sorgo", TipoIrrigazione = "Goccia" },
                 new Coltura { Id = "3", PartitaIva = "12345678901", MetriQuadrati = 150, TipoColtura = "Mais", TipoIrrigazione = "Spruzzo" },
                 new Coltura { Id = "4", PartitaIva = "12345678901", MetriQuadrati = 10, TipoColtura = "Cotone", TipoIrrigazione = "Goccia" }
+            };
+        }
+
+        private List<ColturaStock>? GetStockColture()
+        {
+            return new List<ColturaStock>
+            {
+                new ColturaStock {  Id = "1", AmountRemaining= 10.0f},
+                new ColturaStock {  Id = "2", AmountRemaining= 190.0f},
+                new ColturaStock {  Id = "3", AmountRemaining= 100.0f},
+                new ColturaStock {  Id = "4", AmountRemaining= 10.0f}
             };
         }
     }

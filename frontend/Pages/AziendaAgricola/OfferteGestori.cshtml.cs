@@ -56,6 +56,19 @@ namespace frontend.Pages.AziendaAgricola
         {
             string urlTask = ApiReq.urlGenerico + "/water/buy";
 
+            // Estrai il colturaId dal formato "Id-TipoColtura-MetriQuadrati-TotaleStimato-TotaleRimanente"
+            string[] colturaIdParts = colturaId.Split('-');
+            if (colturaIdParts.Length >= 1)
+            {
+                colturaId = colturaIdParts[0];
+            }
+            // Nessuna coltura selezionata
+            if(colturaId == "null")
+            {
+                TempData["MessaggioErrore"] = "Selezionare una coltura prima di acquistare le risorse.";
+                return RedirectToPage();
+            }
+
             /*
             try
             {

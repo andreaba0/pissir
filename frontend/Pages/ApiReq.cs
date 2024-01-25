@@ -229,6 +229,38 @@ namespace frontend.Pages
             }
         }
 
+        // Richiesta dati sulle quantità d'acqua rimanenti per i campi posseduti dall'azienda
+        public static async Task<List<ColturaStock>> GetStockColtureAziendaFromApi(HttpContext context)
+        {
+            // Controllo utente autenticato
+            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
+
+            // Controllo utente autorizzato
+            if (utente.Role != "FAR") { throw new Exception("Unauthorized"); }
+
+            string urlTask = $"{urlGenerico}/water/stock";
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
+
+            // Esegue la chiamata
+            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Legge e deserializza i dati dalla risposta
+                string responseData = await response.Content.ReadAsStringAsync();
+                List<ColturaStock>? lista = JsonConvert.DeserializeObject<List<ColturaStock>>(responseData);
+                if (lista != null)
+                    return lista;
+                else
+                    throw new HttpRequestException($"{response.StatusCode}");
+            }
+            else
+            {
+                throw new HttpRequestException($"{response.StatusCode}");
+            }
+        }
+
         // Richiesta dati per limite giornaliero di acquisto della singola azienda
         public static async Task<float> GetLimiteAcquistoAziendaFromApi(HttpContext context)
         {

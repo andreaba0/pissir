@@ -48,7 +48,7 @@
                                 <label for="tipoIrrigazione">Tipo Irrigazione</label>
                                 <input type="text" class="form-control" id="tipoIrrigazione" name="tipoIrrigazione" required>
                             </div>
-                            <button type="submit" class="btn btn-primary">Conferma</button>
+                            <button type="submit" class="btn btn-primary">Crea nuova coltura</button>
                         </form>
                     </div>
                 </div>
@@ -75,10 +75,11 @@
     <table id="tabColtivazioni" class="table">
         <thead>
             <tr>
-                <th>Id</th>
+                <th>Id Coltura</th>
                 <th>Metri Quadrati</th>
-                <th>Coltura</th>
+                <th>Tipo Coltura</th>
                 <th>Tipo Irrigazione</th>
+                <th>Risorse Idriche Rimanenti (litri)</th>
                 <th>Azioni</th>
             </tr>
         </thead>
@@ -87,11 +88,13 @@
             {
                 @foreach (var coltura in Model.Colture)
                 {
+                    var colturaStockCorrispondente = Model.ColtureStock.FirstOrDefault(cs => cs.Id == coltura.Id);
                     <tr>
                         <td>@coltura.Id</td>
                         <td>@coltura.MetriQuadrati</td>
                         <td>@coltura.TipoColtura</td>
                         <td>@coltura.TipoIrrigazione</td>
+                        <td>@(colturaStockCorrispondente != null ? colturaStockCorrispondente.AmountRemaining.ToString() : "N/A")</td>
                         <td>
                             <button class="btn btn-primary" data-toggle="modal" data-target="#modalModifica\@coltura.Id">Modifica</button>
                             <button class="btn btn-danger" data-toggle="modal" data-target="#modalElimina\@coltura.Id">Elimina</button>
@@ -123,7 +126,7 @@
                                             <input type="text" class="form-control" id="tipoIrrigazione" name="tipoIrrigazione" value="@coltura.TipoIrrigazione">
                                         </div>
                                         <input type="hidden" id="colturaId" name="colturaId" value="@coltura.Id" readonly />
-                                        <button type="submit" class="btn btn-primary">Conferma</button>
+                                        <button type="submit" class="btn btn-primary">Conferma modifiche</button>
                                     </form>
                                 </div>
                             </div>
@@ -159,4 +162,5 @@
 
         </tbody>
     </table>
+
 </div>

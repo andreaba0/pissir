@@ -1,42 +1,40 @@
-create table registered_provider_iss (
-    provider_uri text primary key, -- corresponds to the iss field in the (openid standard) id_token
-    registered_provider text not null
+create table allowed_audience (
+    registered_provider text not null,
+    audience text not null,
+    primary key (registered_provider, audience)
 );
 
 create table registered_provider (
-    name text primary key
+    provider_name text primary key,
+    configuration_uri text not null unique
 );
 
 create table user_account (
     id bigserial primary key,
     registered_provider text not null,
-    unique (registered_provider, id)
+    sub text not null,
+    unique (registered_provider, sub)
 );
 
-create table user_role (
-    role_name varchar(3) primary key check(role_name in ('WSP', 'FAR'))
-);
 create table industry_sector (
     sector_name varchar(2) primary key check(sector_name in ('WA', 'FA'))
 );
 
+
+/*
+    User role is automatically assigned based on the company he works for.
+    So, no specific table column is needed to store the user role.
+    A user can work for 1 company only.
+*/
 create table person(
     global_id uuid unique not null default gen_random_uuid(),
-    account_id bigint primary key,
     tax_code varchar(16) not null unique,
+    account_id bigint primary key,
     given_name text not null,
     family_name text not null,
     email text not null,
-    person_role varchar(3) not null,
-    unique (tax_code, person_role)
-);
-create table user_wsp(
-    person_id bigint primary key,
-    person_role varchar(3) not null check(person_role = 'WSP')
-);
-create table farmer(
-    person_id bigint primary key,
-    person_role varchar(3) not null check(person_role = 'FAR')
+    company_vat_number varchar(11) not null,
+    unique (account_id, company_vat_number)
 );
 
 create table company(
@@ -45,29 +43,33 @@ create table company(
     unique (vat_number, industry_sector)
 );
 
-create table water_company(
+create table profile_company(
     vat_number varchar(11) primary key,
-    industry_sector varchar(2) not null check(industry_sector = 'WA')
+    industry_sector varchar(2) not null,
+    company_name text not null,
+    working_email_address text not null,
+    working_phone_number varchar(10) not null,
+    working_address text not null,
+    unique (vat_number, industry_sector)
 );
-create table farm(
-    vat_number varchar(11) primary key,
-    industry_sector varchar(2) not null check(industry_sector = 'FA')
-);
-
 
 create table presentation_letter (
     user_account bigint not null,
-    name text not null,
-    surname text not null,
+    presentation_id uuid not null unique default gen_random_uuid(),
+    given_name text not null,
+    family_name text not null,
     email text not null,
     tax_code varchar(16) not null,
     company_vat_number varchar(11) not null,
     company_industry_sector varchar(2) not null,
-    primary key (user_account, company_vat_number, company_industry_sector)
+    created_at timestamptz not null default now(),
+    primary key (user_account)
 );
 
 create table api_acl (
     person_id bigint not null,
+    company_vat_number varchar(11) not null,
+    company_industry_sector varchar(2) not null check(company_industry_sector = 'FA'),
     date_start timestamptz not null,
     date_end timestamptz not null check(date_end > date_start),
     primary key (person_id, date_start, date_end)
@@ -75,6 +77,8 @@ create table api_acl (
 
 create table api_acl_request (
     person_id bigint not null,
+    company_vat_number varchar(11) not null,
+    company_industry_sector varchar(2) not null check(company_industry_sector = 'FA'),
     date_start timestamptz not null,
     date_end timestamptz not null check(date_end > date_start),
     primary key (person_id, date_start, date_end)
@@ -91,17 +95,4 @@ create table rsa (
     p bytea not null,
     q bytea not null,
     created_at timestamptz not null
-);
-
-create table pending_transaction (
-    id uuid primary key,
-    body_data jsonb not null,
-    data_type text not null,
-    created_at timestamptz not null,
-    updated_at timestamptz not null
-);
-
-create table transaction_round_trip_time (
-    date_span timestamptz not null primary key,
-    round_trip_time numeric not null
 );

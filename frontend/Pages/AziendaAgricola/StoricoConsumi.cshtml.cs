@@ -23,8 +23,7 @@ namespace frontend.Pages.AziendaAgricola
                 // Controllo utente autorizzato
                 if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }
 
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-                StoricoConsumi = await ApiReq.GetStoricoConsumiFromApi(ApiReq.utente.PartitaIva, HttpContext);
+                StoricoConsumi = await ApiReq.GetStoricoConsumiFromApi(HttpContext);
             }
             catch (Exception ex)
             {

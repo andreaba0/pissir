@@ -192,7 +192,18 @@ namespace frontend.Pages
             }
         }
 
+        /*
+            Richiesta dati dello storico ordini d'acqua per azienda agricola  /water/order
+            Richiesta dati sui consumi delle colture possedute dall'azienda agricola   /water/consumption
+            Richiesta dati storico sensori di umidità    /object/sensor
+            Richiesta dati storico sensori di temperatura   /object/sensor
+            Richiesta dati storico attuatori    /object/actuator
+            Richiesta dati per limiti di vendita di ogni azienda agricola   /water/limit/all
+            Richiesta dati storico vendite azienda idrica     /water/order
+            Richiesta dati consumo aziende agricole a cui l'azienda idrica ha venduto   /water/consumption
 
+
+         */
 
 
         // Metodi Azienda Agricola -----------------------------------------------
@@ -349,8 +360,8 @@ namespace frontend.Pages
         }
 
         //TODO
-        // Richiesta dati dello storico ordini d'acqua
-        public static async Task<List<OrdineAcquisto>> GetStoricoOrdiniFromApi(string partitaIva, HttpContext context)
+        // Richiesta dati dello storico ordini d'acqua per azienda agricola
+        public static async Task<List<OrdineAcquisto>> GetStoricoOrdiniFromApi(HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
@@ -358,7 +369,7 @@ namespace frontend.Pages
             // Controllo utente autorizzato
             if (utente.Role != "FAR") { throw new Exception("Unauthorized"); }
 
-            string urlTask = $"{urlGenerico}aziendaAgricola/ordini/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
+            string urlTask = $"{urlGenerico}/water/order";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -383,8 +394,8 @@ namespace frontend.Pages
 
 
         //TODO
-        // Richiesta dati sui consumi delle colture possedute dall'azienda
-        public static async Task<List<ConsumoAziendaleCampo>> GetStoricoConsumiFromApi(string partitaIva, HttpContext context)
+        // Richiesta dati sui consumi delle colture possedute dall'azienda agricola
+        public static async Task<List<ConsumoAziendaleCampo>> GetStoricoConsumiFromApi(HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
@@ -392,7 +403,7 @@ namespace frontend.Pages
             // Controllo utente autorizzato
             if (utente.Role != "FAR") { throw new Exception("Unauthorized"); }
 
-            string urlTask = $"{urlGenerico}aziendaAgricola/consumiColture/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
+            string urlTask = $"{urlGenerico}/water/consumption";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -415,45 +426,14 @@ namespace frontend.Pages
             }
         }
 
-
         //TODO
-        // Richiesta dati storico sensori di umidità
-        public static async Task<List<SensoreUmiditaLog>> GetSensoriUmiditaFromApi(string partitaIva, HttpContext context)
+        // Richiesta dati storico sensori
+        public static async Task<List<SensoreLog>> GetSensoriFromApi(HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
-            string urlTask = $"{urlGenerico}aziendaAgricola/storicoSensoriUmidita/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
-
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
-
-            // Esegue la chiamata 
-            HttpResponseMessage response = await ApiReq.httpClient.GetAsync(urlTask);
-
-            if (response.IsSuccessStatusCode)
-            {
-                // Legge e deserializza i dati dalla risposta
-                string responseData = await response.Content.ReadAsStringAsync();
-                List<SensoreUmiditaLog>? lista = JsonConvert.DeserializeObject<List<SensoreUmiditaLog>>(responseData);
-                if (lista != null)
-                    return lista;
-                else
-                    throw new HttpRequestException($"{response.StatusCode}");
-            }
-            else
-            {
-                throw new HttpRequestException($"{response.StatusCode}");
-            }
-        }
-
-        //TODO
-        // Richiesta dati storico sensori di temperatura
-        public static async Task<List<SensoreTemperaturaLog>> GetSensoriTemperaturaFromApi(string partitaIva, HttpContext context)
-        {
-            // Controllo utente autenticato
-            if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
-
-            string urlTask = $"{urlGenerico}aziendaAgricola/storicoSensoriTemperatura/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
+            string urlTask = $"{urlGenerico}/object/sensor";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -464,7 +444,7 @@ namespace frontend.Pages
             {
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
-                List<SensoreTemperaturaLog>? lista = JsonConvert.DeserializeObject<List<SensoreTemperaturaLog>>(responseData);
+                List<SensoreLog>? lista = JsonConvert.DeserializeObject<List<SensoreLog>>(responseData);
                 if (lista != null)
                     return lista;
                 else
@@ -478,12 +458,12 @@ namespace frontend.Pages
 
         //TODO
         // Richiesta dati storico attuatori
-        public static async Task<List<AttuatoreLog>> GetAttuatoriFromApi(string partitaIva, HttpContext context)
+        public static async Task<List<AttuatoreLog>> GetAttuatoriFromApi(HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
-            string urlTask = $"{urlGenerico}aziendaAgricola/storicoAttuatori/?PartitaIva={Uri.EscapeDataString(partitaIva)}";
+            string urlTask = $"{urlGenerico}/object/actuator";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -611,13 +591,13 @@ namespace frontend.Pages
         }
 
         //TODO
-        // Richiesta dati per limiti di vendita per ogni azienda agricola in base alla azienda idrica
+        // Richiesta dati per limiti di vendita di ogni azienda agricola
         public static async Task<List<LimiteAcquistoAzienda>> GetLimitiPerAziendaFromApi(HttpContext context)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
-            string urlTask = urlGenerico + "/water/limitall";
+            string urlTask = urlGenerico + "/water/limit/all";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -650,7 +630,7 @@ namespace frontend.Pages
             // Controllo utente autorizzato
             if (utente.Role != "WSP") { throw new Exception("Unauthorized"); }
 
-            string urlTask = $"{urlGenerico}/aziendaIdrica/storicoVendite";
+            string urlTask = $"{urlGenerico}/water/order";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
@@ -683,7 +663,7 @@ namespace frontend.Pages
             // Controllo utente autorizzato
             if (utente.Role != "WSP") { throw new Exception("Unauthorized"); }
 
-            string urlTask = $"{urlGenerico}/aziendaIdrica/consumiAziende";
+            string urlTask = $"{urlGenerico}/water/consumption";
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 

@@ -11,8 +11,7 @@ namespace frontend.Pages.AziendaAgricola
 {
     public class StoricoDispositiviModel : PageModel
     {
-        public List<SensoreUmiditaLog>? SensoriUmiditaLogs { get; set; }
-        public List<SensoreTemperaturaLog>? SensoriTemperaturaLogs { get; set; }
+        public List<SensoreLog>? SensoriLogs { get; set; }
         public List<AttuatoreLog>? AttuatoriLogs { get; set; }
 
         public async Task<IActionResult> OnGet()
@@ -26,10 +25,8 @@ namespace frontend.Pages.AziendaAgricola
                 // Controllo utente autorizzato
                 if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }
 
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-                SensoriUmiditaLogs = await ApiReq.GetSensoriUmiditaFromApi(ApiReq.utente.PartitaIva, HttpContext);
-                SensoriTemperaturaLogs = await ApiReq.GetSensoriTemperaturaFromApi(ApiReq.utente.PartitaIva, HttpContext);
-                AttuatoriLogs = await ApiReq.GetAttuatoriFromApi(ApiReq.utente.PartitaIva, HttpContext);
+                SensoriLogs = await ApiReq.GetSensoriFromApi(HttpContext);
+                AttuatoriLogs = await ApiReq.GetAttuatoriFromApi(HttpContext);
             }
             catch (Exception ex)
             {
@@ -39,8 +36,7 @@ namespace frontend.Pages.AziendaAgricola
             */
 
             // Simulazione dati
-            SensoriUmiditaLogs = GetSensoriUmiditaLogs();
-            SensoriTemperaturaLogs = GetSensoriTemperaturaLogs();
+            SensoriLogs = GetSensoriLogs();
             AttuatoriLogs = GetAttuatoriLogs();
 
             return Page();
@@ -51,24 +47,17 @@ namespace frontend.Pages.AziendaAgricola
 
 
         // Simulazione dati
-        private List<SensoreUmiditaLog> GetSensoriUmiditaLogs()
+        private List<SensoreLog> GetSensoriLogs()
         {
-            return new List<SensoreUmiditaLog>
-        {
-            new SensoreUmiditaLog { Id = "1", Tipo = "Tipo1", Time = DateTime.Now.ToString(), Umidita = 60.5f },
-            new SensoreUmiditaLog { Id = "2", Tipo = "Tipo2", Time = DateTime.Now.AddHours(-1).ToString(), Umidita = 55.2f },
-            new SensoreUmiditaLog { Id = "3", Tipo = "Tipo3", Time = DateTime.Now.AddHours(-2).ToString(), Umidita = 70.1f }
-        };
-        }
-
-        private List<SensoreTemperaturaLog> GetSensoriTemperaturaLogs()
-        {
-            return new List<SensoreTemperaturaLog>
-        {
-            new SensoreTemperaturaLog { Id = "1", Tipo = "Tipo1", Time = DateTime.Now.ToString(), Temperatura = 25.3f },
-            new SensoreTemperaturaLog { Id = "2", Tipo = "Tipo2", Time = DateTime.Now.AddHours(-1).ToString(), Temperatura = 22.1f },
-            new SensoreTemperaturaLog { Id = "3", Tipo = "Tipo3", Time = DateTime.Now.AddHours(-2).ToString(), Temperatura = 27.8f }
-        };
+            return new List<SensoreLog>
+            {
+                new SensoreLog { Id = "1", Tipo = "humidity", Time = DateTime.Now.ToString(), Misura = 60.5f },
+                new SensoreLog { Id = "2", Tipo = "humidity", Time = DateTime.Now.AddHours(-1).ToString(), Misura = 55.2f },
+                new SensoreLog { Id = "3", Tipo = "humidity", Time = DateTime.Now.AddHours(-2).ToString(), Misura = 70.1f },
+                new SensoreLog { Id = "4", Tipo = "temperature", Time = DateTime.Now.ToString(), Misura = 25.3f },
+                new SensoreLog { Id = "5", Tipo = "temperature", Time = DateTime.Now.AddHours(-1).ToString(), Misura = 22.1f },
+                new SensoreLog { Id = "6", Tipo = "temperature", Time = DateTime.Now.AddHours(-2).ToString(), Misura = 27.8f }
+            };
         }
 
         private List<AttuatoreLog> GetAttuatoriLogs()

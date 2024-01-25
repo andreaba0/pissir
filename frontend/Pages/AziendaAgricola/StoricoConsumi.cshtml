@@ -66,10 +66,10 @@
         // Raggruppa i dati per campo
         var consumiPerCampo = {};
         consumiData.forEach(function (consumo) {
-            if (!consumiPerCampo[consumo.Campo]) {
-                consumiPerCampo[consumo.Campo] = [];
+            if (!consumiPerCampo[consumo.field_id]) { // Change from consumo.Campo to consumo.field_id
+                consumiPerCampo[consumo.field_id] = [];
             }
-            consumiPerCampo[consumo.Campo].push(consumo);
+            consumiPerCampo[consumo.field_id].push(consumo);
         });
 
         // Inizializzazione div per i grafici e le tabelle
@@ -80,7 +80,7 @@
         Object.keys(consumiPerCampo).forEach(function (campo) {
             // Ordina gli elementi per data
             consumiPerCampo[campo].sort(function (a, b) {
-                return new Date(a.Data) - new Date(b.Data);
+                return new Date(a.data) - new Date(b.data);
             });
 
             // Creazione del titolo della sezione (grafico + tabella)
@@ -89,7 +89,7 @@
             mainDiv.appendChild(sectionTitle);
 
             // Creazione del canvas per il grafico
-            var canvasId = 'consumiChart_' + campo.replace(/\s+/g, ''); // ID unico per ogni grafico
+            var canvasId = 'consumiChart_' + campo.replace(/\s+/g, '');
             var newCanvas = document.createElement('canvas');
             newCanvas.id = canvasId;
             newCanvas.height = 40;
@@ -100,18 +100,18 @@
             charts[campo] = new Chart(newCtx, {
                 type: 'line',
                 data: {
-                    labels: consumiPerCampo[campo].map(consumo => consumo.Data),
+                    labels: consumiPerCampo[campo].map(consumo => consumo.data),
                     datasets: [
                         {
                             label: 'Quantità Prenotata',
-                            data: consumiPerCampo[campo].map(consumo => consumo.QuantitaPrenotata),
+                            data: consumiPerCampo[campo].map(consumo => consumo.amount_ordered),
                             backgroundColor: 'rgba(75, 192, 192, 0.2)',
                             borderColor: 'rgba(75, 192, 192, 1)',
                             borderWidth: 2
                         },
                         {
                             label: 'Litri Consumati',
-                            data: consumiPerCampo[campo].map(consumo => consumo.LitriConsumati),
+                            data: consumiPerCampo[campo].map(consumo => consumo.amount_used),
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
                             borderColor: 'rgba(255, 99, 132, 1)',
                             borderWidth: 2
@@ -121,7 +121,6 @@
                 options: {}
             });
 
-            
             // Aggiunta di uno spazio tra il titolo della sezione e la tabella
             var br = document.createElement('br');
             mainDiv.appendChild(br);
@@ -142,7 +141,7 @@
             var tableBody = document.createElement('tbody');
             consumiPerCampo[campo].forEach(function (consumo) {
                 var row = document.createElement('tr');
-                row.innerHTML = '<td>' + consumo.Data + '</td><td>' + consumo.QuantitaPrenotata + '</td><td>' + consumo.LitriConsumati + '</td>';
+                row.innerHTML = '<td>' + consumo.data + '</td><td>' + consumo.amount_ordered + '</td><td>' + consumo.amount_used + '</td>';
                 tableBody.appendChild(row);
             });
             newTable.appendChild(tableBody);
@@ -156,7 +155,6 @@
             hrLine.style.marginTop = '0.5em';
             hrLine.style.marginBottom = '0.5em';
             mainDiv.appendChild(hrLine);
-
         });
     });
 </script>

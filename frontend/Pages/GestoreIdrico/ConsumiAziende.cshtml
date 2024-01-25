@@ -7,6 +7,15 @@
 <link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#tabConsumiAziende').DataTable();
+    });
+</script>
+
 <div style="margin: 1em;">
     <h4>Consumi aziende</h4>
     <small>• Vengono visualizzati tutti i consumi idrici delle aziende agricole a cui si è venduto l'acqua.</small>
@@ -15,6 +24,8 @@
     <canvas id="consumiAziendeChart" height="1"></canvas><br />
     <div id="graphics"></div>
 
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+    <h5>Tabella Generale</h5>
     <table id="tabConsumiAziende" class="table">
         <thead>
             <tr>
@@ -54,15 +65,15 @@
 
         var consumiPerAzienda = {};
         consumiData.forEach(function (consumo) {
-            var aziendaKey = consumo.PartitaIva;
+            var aziendaKey = consumo.company_vat_number; // Change from consumo.PartitaIva to consumo.company_vat_number
             if (!consumiPerAzienda[aziendaKey]) {
                 consumiPerAzienda[aziendaKey] = [];
             }
             consumiPerAzienda[aziendaKey].push({
-                data: consumo.Data,
-                quantitaPrenotata: consumo.QuantitaPrenotata,
-                litriConsumati: consumo.LitriConsumati,
-                campo: consumo.Campo
+                data: consumo.data,
+                quantitaPrenotata: consumo.amount_ordered,
+                litriConsumati: consumo.amount_used,
+                campo: consumo.field_id // Change from consumo.Campo to consumo.field_id
             });
         });
 
@@ -82,12 +93,12 @@
             var canvasId = 'consumiAziendeChart_' + aziendaKey;
             var newCanvas = document.createElement('canvas');
             newCanvas.id = canvasId;
-            newCanvas.height = 60; // Imposta l'altezza desiderata per il grafico
+            newCanvas.height = 60;
             chartDiv.appendChild(newCanvas);
 
             // Sezione per la quantità prenotata e usata giornaliera
             var labels = aziendaData.map(function (consumo) {
-                return 'Data: '+consumo.data + ' - Campo: ' + consumo.campo;
+                return 'Data: ' + consumo.data + ' - Campo: ' + consumo.campo;
             });
 
             var datasetPrenotato = {
@@ -148,7 +159,7 @@
             var totalCanvasId = 'consumiTotaliChart_' + aziendaKey;
             var totalCanvas = document.createElement('canvas');
             totalCanvas.id = totalCanvasId;
-            totalCanvas.height = 40; // Altezza desiderata per il grafico totale
+            totalCanvas.height = 40;
             chartDiv.appendChild(totalCanvas);
 
             var totalCtx = totalCanvas.getContext('2d');
@@ -169,6 +180,12 @@
 
             // Spazio a capo dopo ogni sezione di un'azienda
             graphicsDiv.appendChild(document.createElement('br'));
+
+            // Aggiunta della linea dopo il grafico
+            var hrLine = document.createElement('hr');
+            hrLine.style.marginTop = '0.5em';
+            hrLine.style.marginBottom = '1em';
+            graphicsDiv.appendChild(hrLine);
         });
     });
 
@@ -176,7 +193,6 @@
         return startDate + ' - ' + endDate;
     }
 </script>
-
 
 
 

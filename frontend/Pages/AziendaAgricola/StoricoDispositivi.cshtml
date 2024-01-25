@@ -11,57 +11,68 @@
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
     <div style="display:flex;">
         <div style="display:block; padding-right:1em;">
-            <h4>Sensori di Umidità</h4>
+            <h4>Misure Sensori</h4>
             <table class="table">
                 <thead>
                     <tr>
                         <th>ID sensore</th>
                         <th>Tipo sensore</th>
                         <th>Data/Ora misurazione</th>
-                        <th>Umidità</th>
+                        <th>Misura</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var log in Model.SensoriUmiditaLogs)
+                    @foreach (var log in Model.SensoriLogs)
                     {
                         <tr>
                             <td>@log.Id</td>
-                            <td>@log.Tipo</td>
+                            <td>
+                                @if (log.Tipo == "temperature")
+                                {
+                                    <text>
+                                        Temperatura
+                                    </text>
+                                }
+                                else if (log.Tipo == "humidity")
+                                {
+                                    <text>
+                                        Umidità
+                                    </text>
+                                }
+                                else
+                                {
+                                    <text>
+                                        ERROR
+                                    </text>
+                                }
+                            </td>
                             <td>@log.Time</td>
-                            <td>@log.Umidita</td>
+                            <td>
+                                @if(log.Tipo == "temperature")
+                                {
+                                    <text>
+                                        @log.Misura °C
+                                    </text>
+                                }
+                                else if(log.Tipo == "humidity")
+                                {
+                                    <text>
+                                        @log.Misura %
+                                    </text>
+                                }
+                                else
+                                {
+                                    <text>
+                                        ERROR
+                                    </text>
+                                }
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
         </div>
         
-
-        <div style="display:block; padding-right:1em;">
-            <h4>Sensori di Temperatura</h4>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID sensore</th>
-                        <th>Tipo sensore</th>
-                        <th>Data/Ora misurazione</th>
-                        <th>Temperatura (C°)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var log in Model.SensoriTemperaturaLogs)
-                    {
-                        <tr>
-                            <td>@log.Id</td>
-                            <td>@log.Tipo</td>
-                            <td>@log.Time</td>
-                            <td>@log.Temperatura</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-        
-
         <div style="display:block; padding-right:1em;">
             <h4>Azioni Attuatori</h4>
             <table class="table">

@@ -208,7 +208,8 @@ public class AuthenticationException : Exception
         IAT_REQUIRED = 12,
         AUDIENCE_REQUIRED = 13,
         CREDENTIALS_REQUIRED = 14,
-        GENERIC_ERROR = 0
+        GENERIC_ERROR = 0,
+        USER_UNAUTHORIZED = 15,
     }
 
     public ErrorCode Code { get; } = default(ErrorCode);

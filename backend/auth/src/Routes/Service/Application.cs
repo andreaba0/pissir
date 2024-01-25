@@ -121,7 +121,7 @@ public class Application
             {
                 using (DbDataReader dbReader = command.ExecuteReader())
                 {
-                    if (!dbReader.HasRows) 
+                    if (!dbReader.HasRows)
                         throw new ApplicationException(ApplicationException.ErrorCode.APPLICATION_ALREADY_EXISTS, "Application already exists");
                     if (dbReader.Read())
                     {
@@ -192,7 +192,7 @@ public class Application
             string id_token = default(string);
             bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
             if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
-            if (id_token == null) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
+            if (id_token == default(string)) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
             Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
             string providerName = remoteJwksHub.GetIssuerName(token.iss);
             using (DbConnection connection = dataSource.OpenConnection())
@@ -232,36 +232,49 @@ public class Application
     {
         try
         {
-            string id_token = headers["Authorization"];
-            if (id_token == null) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
+            string bearer_token = headers["Authorization"];
+            string id_token = default(string);
+            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
+            if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
+            if (id_token == default(string)) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
             Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
-            DbConnection connection = dataSource.OpenConnection();
+            string providerName = remoteJwksHub.GetIssuerName(token.iss);
+            using DbConnection connection = dataSource.OpenConnection();
             DbCommand command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT user_id, company_vat_number, given_name, family_name, email, tax_code, company_category
-                FROM presentation_letter
-                WHERE account_id = (SELECT id FROM user_account WHERE sub=$1 and registered_provider=$2)
+                SELECT 
+                    presentation_id, 
+                    company_vat_number, 
+                    company_industry_sector, 
+                    given_name, 
+                    family_name, 
+                    email, 
+                    tax_code 
+                FROM 
+                    presentation_letter
+                WHERE 
+                    user_account = (SELECT id FROM user_account WHERE sub=$1 and registered_provider=$2)
             ";
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, token.sub));
-            string providerName = remoteJwksHub.GetIssuerName(token.iss);
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, providerName));
             command.Prepare();
+            Application application = new Application();
             using (DbDataReader reader = command.ExecuteReader())
             {
+                if (!reader.HasRows) throw new ApplicationException(ApplicationException.ErrorCode.APPLICATION_NOT_FOUND, "Application not found");
                 if (reader.Read())
                 {
-                    Application application = new Application();
-                    application.id = reader.GetString(0);
+                    application.id = reader.GetGuid(0).ToString();
                     application.company_vat_number = reader.GetString(1);
-                    application.given_name = reader.GetString(2);
-                    application.family_name = reader.GetString(3);
-                    application.email = reader.GetString(4);
-                    application.tax_code = reader.GetString(5);
-                    application.company_category = reader.GetString(6);
-                    return Task.FromResult(JsonSerializer.Serialize(application));
+                    application.company_category = reader.GetString(2);
+                    application.given_name = reader.GetString(3);
+                    application.family_name = reader.GetString(4);
+                    application.email = reader.GetString(5);
+                    application.tax_code = reader.GetString(6);
                 }
             }
-            throw new ApplicationException(ApplicationException.ErrorCode.APPLICATION_NOT_FOUND, "Application not found");
+            connection.Close();
+            return Task.FromResult(JsonSerializer.Serialize(application));
         }
         catch (AuthenticationException)
         {
@@ -271,20 +284,328 @@ public class Application
         {
             throw new Exception("Database error", e);
         }
+        catch (ApplicationException)
+        {
+            throw;
+        }
         catch (Exception e)
         {
             throw new Exception("Generic error", e);
         }
     }
 
-    public static Task GetMethod_Applications()
+    public static Task<string> GetMethod_Applications(
+        IHeaderDictionary headers,
+        IQueryCollection query,
+        DbDataSource dataSource,
+        IDateTimeProvider dateTimeProvider,
+        IRemoteJwksHub remoteJwksHub
+    )
     {
-        return Task.CompletedTask;
+        try
+        {
+            string bearer_token = headers["Authorization"];
+            string id_token = default(string);
+            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
+            if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
+            if (id_token == default(string)) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
+            Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+            string providerName = remoteJwksHub.GetIssuerName(token.iss);
+            using DbConnection connection = dataSource.OpenConnection();
+
+            //check if user is working for a WA company, otherwise return unauthorized
+            DbCommand companyCommand = connection.CreateCommand();
+            companyCommand.CommandText = @"
+                SELECT
+                    industry_sector
+                FROM
+                    person 
+                    inner join company 
+                    on 
+                        person.company_vat_number=company.vat_number
+                    inner join user_account 
+                    on 
+                        person.account_id=user_account.id
+                WHERE
+                    user_account.sub=$1 and user_account.registered_provider=$2
+            ";
+            companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, token.sub));
+            companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, providerName));
+            companyCommand.Prepare();
+            using (DbDataReader reader = companyCommand.ExecuteReader())
+            {
+                if (!reader.HasRows) throw new ApplicationException(ApplicationException.ErrorCode.USER_ACCOUNT_NOT_FOUND, "User account not found");
+                if (reader.Read())
+                {
+                    string industry_sector = reader.GetString(0);
+                    if (industry_sector != "WA") throw new AuthenticationException(AuthenticationException.ErrorCode.USER_UNAUTHORIZED, "User unauthorized");
+                }
+            }
+
+
+            DbCommand command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT 
+                    presentation_id, 
+                    company_vat_number, 
+                    company_industry_sector, 
+                    given_name, 
+                    family_name, 
+                    email, 
+                    tax_code 
+                FROM 
+                    presentation_letter
+                ORDER BY 
+                    presentation_id ASC
+                LIMIT $3
+                OFFSET $4 
+                
+            ";
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, token.sub));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, providerName));
+            string limit = query["count_per_page"] == default(string) ? "10" : query["count_per_page"];
+            string offset = query["page_number"] == default(string) ? "0" : query["page_number"];
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(limit)));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(offset)));
+            command.Prepare();
+            List<Application> applications = new List<Application>();
+            using (DbDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    Application application = new Application();
+                    application.id = reader.GetGuid(0).ToString();
+                    application.company_vat_number = reader.GetString(1);
+                    application.company_category = reader.GetString(2);
+                    application.given_name = reader.GetString(3);
+                    application.family_name = reader.GetString(4);
+                    application.email = reader.GetString(5);
+                    application.tax_code = reader.GetString(6);
+                    applications.Add(application);
+                }
+            }
+            connection.Close();
+            return Task.FromResult(JsonSerializer.Serialize(applications));
+        }
+        catch (AuthenticationException)
+        {
+            throw;
+        }
+        catch (DbException e)
+        {
+            throw new Exception("Database error", e);
+        }
+        catch (ApplicationException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw new Exception("Generic error", e);
+        }
     }
 
-    public static Task PostMethod_ManageApplication()
+    public static Task PostMethod_ManageApplication(
+        IHeaderDictionary headers,
+        RouteValueDictionary query,
+        DbDataSource dataSource,
+        IDateTimeProvider dateTimeProvider,
+        IRemoteJwksHub remoteJwksHub
+    )
     {
-        return Task.CompletedTask;
+        try
+        {
+            string applicationId = (string)query["id"];
+            //check if applicationId is a uuid
+            if (!Guid.TryParse(applicationId, out Guid _)) throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Invalid application id");
+            if (applicationId == default(string)) throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Application id is required");
+            string action = (string)query["action"];
+            if (action == default(string)) throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Action is required");
+            if (action != "approve" && action != "reject") throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Invalid action");
+            string bearer_token = headers["Authorization"];
+            string id_token = default(string);
+            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
+            if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
+            if (id_token == default(string)) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
+            Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+            string providerName = remoteJwksHub.GetIssuerName(token.iss);
+            using (DbConnection connection = dataSource.OpenConnection())
+            {
+                //check if user is working for a WA company, otherwise return unauthorized
+                DbCommand companyCommand = connection.CreateCommand();
+                companyCommand.CommandText = @"
+                    SELECT
+                        industry_sector
+                    FROM
+                        person 
+                        inner join company 
+                        on 
+                            person.company_vat_number=company.vat_number
+                        inner join user_account 
+                        on 
+                            person.account_id=user_account.id
+                    WHERE
+                        user_account.sub=$1 and user_account.registered_provider=$2
+                ";
+                companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, token.sub));
+                companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, providerName));
+                companyCommand.Prepare();
+                using (DbDataReader reader = companyCommand.ExecuteReader())
+                {
+                    if (!reader.HasRows) throw new ApplicationException(ApplicationException.ErrorCode.USER_ACCOUNT_NOT_FOUND, "User account not found");
+                    if (reader.Read())
+                    {
+                        string industry_sector = reader.GetString(0);
+                        if (industry_sector != "WA") throw new AuthenticationException(AuthenticationException.ErrorCode.USER_UNAUTHORIZED, "User unauthorized");
+                    }
+                }
+
+                ManageApplication_Transaction(
+                    token,
+                    connection,
+                    providerName,
+                    applicationId,
+                    action == "approve" ? ApplicationAction.APPROVE : ApplicationAction.REJECT
+                ).Wait();
+            }
+            return Task.CompletedTask;
+        }
+        catch (AuthenticationException)
+        {
+            throw;
+        }
+        catch (DbException e)
+        {
+            throw new Exception("Database error", e);
+        }
+        catch (ApplicationException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            throw new Exception("Generic error", e);
+        }
+    }
+
+    internal enum ApplicationAction
+    {
+        APPROVE,
+        REJECT
+    }
+
+    internal static Task ManageApplication_Transaction(
+        Token token,
+        DbConnection connection,
+        string providerName,
+        string applicationId,
+        ApplicationAction action
+    )
+    {
+        try
+        {
+            //begin transaction using plain sql command
+            DbCommand transactionCommand = connection.CreateCommand();
+            transactionCommand.CommandText = "BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED";
+            transactionCommand.ExecuteNonQuery();
+
+            //delete application id from presentation_letter table and return its data
+            DbCommand command = connection.CreateCommand();
+            command.CommandText = @"
+                DELETE FROM 
+                    presentation_letter
+                WHERE 
+                    presentation_id=$1
+                RETURNING 
+                    company_vat_number, 
+                    given_name, 
+                    family_name, 
+                    email, 
+                    tax_code, 
+                    company_industry_sector,
+                    user_account
+            ";
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(applicationId)));
+            command.Prepare();
+            Application application = new Application();
+            string userAccount = default(string);
+            using (DbDataReader reader = command.ExecuteReader())
+            {
+                if (!reader.HasRows) throw new ApplicationException(ApplicationException.ErrorCode.APPLICATION_NOT_FOUND, "Application not found");
+                if (reader.Read())
+                {
+                    application.company_vat_number = reader.GetString(0);
+                    application.given_name = reader.GetString(1);
+                    application.family_name = reader.GetString(2);
+                    application.email = reader.GetString(3);
+                    application.tax_code = reader.GetString(4);
+                    application.company_category = reader.GetString(5);
+                    userAccount = reader.GetInt64(6).ToString();
+                }
+            }
+
+            //insert into person table
+            DbCommand personCommand = connection.CreateCommand();
+            personCommand.CommandText = @"
+                INSERT INTO 
+                    person (
+                        company_vat_number,
+                        given_name,
+                        family_name,
+                        email,
+                        tax_code,
+                        account_id
+                    )
+                VALUES (
+                    $1,
+                    $2,
+                    $3,
+                    $4,
+                    $5,
+                    $6
+                )
+                ON CONFLICT (account_id) DO NOTHING
+                RETURNING global_id
+            ";
+            personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_vat_number));
+            personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.given_name));
+            personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.family_name));
+            personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.email));
+            personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.tax_code));
+            personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int64, long.Parse(userAccount)));
+            personCommand.Prepare();
+            string personGuid = default(string);
+            using (DbDataReader reader = personCommand.ExecuteReader())
+            {
+                if (!reader.HasRows) throw new ApplicationException(ApplicationException.ErrorCode.USER_ALREADY_EXISTS, "User already exists");
+                if (reader.Read())
+                {
+                    Console.WriteLine(reader.GetGuid(0));
+                    personGuid = reader.GetGuid(0).ToString();
+                }
+            }
+
+            //commit transaction
+            DbCommand commitCommand = connection.CreateCommand();
+            commitCommand.CommandText = "COMMIT";
+            commitCommand.ExecuteNonQuery();
+            connection.Close();
+            return Task.CompletedTask;
+        }
+        catch (DbException e) when (e.InnerException is not IOException)
+        {
+            Console.WriteLine(e);
+            DbCommand rollbackCommand = connection.CreateCommand();
+            rollbackCommand.CommandText = "ROLLBACK";
+            rollbackCommand.ExecuteNonQuery();
+            throw;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 }
 
@@ -302,7 +623,10 @@ public class ApplicationException : Exception
         APPLICATION_ALREADY_EXISTS = 7,
         UNKNOW_COMPANY_INDUSTRY_SECTOR = 8,
         COMPANY_INDUSTRY_SECTOR_CONFLICT = 9,
-        EXPECTED_JSON_BODY = 10
+        EXPECTED_JSON_BODY = 10,
+        USER_ACCOUNT_NOT_FOUND = 11,
+        INSUFFICIENT_PERMISSIONS = 12,
+        USER_ALREADY_EXISTS = 13,
     }
     public ErrorCode Code { get; } = default(ErrorCode);
     public ApplicationException(ErrorCode errorCode, string message) : base(message)

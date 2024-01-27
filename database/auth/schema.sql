@@ -17,15 +17,13 @@ create table user_account (
 );
 
 create table industry_sector (
-    sector_name varchar(2) primary key check(sector_name in ('WA', 'FA'))
+    sector_name varchar(3) primary key check(sector_name in ('WSP', 'FAR'))
 );
 
+create table user_role (
+    role_name varchar(2) primary key check(role_name in ('WA', 'FA'))
+);
 
-/*
-    User role is automatically assigned based on the company he works for.
-    So, no specific table column is needed to store the user role.
-    A user can work for 1 company only.
-*/
 create table person(
     global_id uuid unique not null default gen_random_uuid(),
     tax_code varchar(16) not null unique,
@@ -33,8 +31,20 @@ create table person(
     given_name text not null,
     family_name text not null,
     email text not null,
-    company_vat_number varchar(11) not null,
-    unique (account_id, company_vat_number)
+    person_role varchar(2) not null,
+    unique (account_id, person_role)
+);
+
+create table person_fa (
+    account_id bigint primary key,
+    role_name varchar(2) not null check(role_name = 'FA'),
+    company_vat_number varchar(11) not null
+);
+
+create table person_wa (
+    account_id bigint primary key,
+    role_name varchar(2) not null check(role_name = 'WA'),
+    company_vat_number varchar(11) not null
 );
 
 create table company(
@@ -43,14 +53,22 @@ create table company(
     unique (vat_number, industry_sector)
 );
 
+create table company_far (
+    vat_number varchar(11) primary key,
+    industry_sector varchar(2) not null check(industry_sector = 'FAR')
+);
+
+create table company_wsp (
+    vat_number varchar(11) primary key,
+    industry_sector varchar(2) not null check(industry_sector = 'WSP')
+);
+
 create table profile_company(
     vat_number varchar(11) primary key,
-    industry_sector varchar(2) not null,
     company_name text not null,
     working_email_address text not null,
     working_phone_number varchar(10) not null,
-    working_address text not null,
-    unique (vat_number, industry_sector)
+    working_address text not null
 );
 
 create table presentation_letter (
@@ -66,22 +84,20 @@ create table presentation_letter (
     primary key (user_account)
 );
 
+/*
+    4 byte + 8 byte = 12 byte per row
+*/
 create table api_acl (
-    person_id bigint not null,
-    company_vat_number varchar(11) not null,
-    company_industry_sector varchar(2) not null check(company_industry_sector = 'FA'),
-    date_start timestamptz not null,
-    date_end timestamptz not null check(date_end > date_start),
-    primary key (person_id, date_start, date_end)
+    person_fa bigserial not null,
+    date_allowed date not null,
+    primary key (person_fa, date_allowed)
 );
 
 create table api_acl_request (
-    person_id bigint not null,
-    company_vat_number varchar(11) not null,
-    company_industry_sector varchar(2) not null check(company_industry_sector = 'FA'),
-    date_start timestamptz not null,
-    date_end timestamptz not null check(date_end > date_start),
-    primary key (person_id, date_start, date_end)
+    acl_id bigserial not null primary key,
+    person_fa bigint not null,
+    date_start date not null,
+    date_end date not null check(date_end >= date_start)
 );
 
 create table rsa (

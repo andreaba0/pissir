@@ -109,17 +109,26 @@ public abstract class Manager
             try
             {
                 await UpdateRsaParameters();
+                int exp = 0;
+                lock (_lock)
+                {
+                    _expiration = 1000*60*5; //5 minutes
+                    exp = _expiration;
+                }
+                await Task.Delay(exp, tk);
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
+                int exp = 0;
+                lock (_lock)
+                {
+                    _expiration = 1000*20; //20 seconds
+                    exp = _expiration;
+                }
+                await Task.Delay(exp, tk);
+                
             }
-            int exp;
-            lock (_lock)
-            {
-                exp = _expiration;
-            }
-            await Task.Delay(exp, tk);
         }
         return 0;
     }

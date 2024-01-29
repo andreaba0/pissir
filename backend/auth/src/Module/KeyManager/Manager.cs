@@ -89,6 +89,79 @@ public class LocalManager : Manager
     }
 }
 
+public class QueryKeyService
+{
+    private readonly DbDataSource _dbDataSource;
+    private readonly IRemoteJwksHub _jwksHub;
+
+    public QueryKeyService(
+        DbDataSource dbDataSource,
+        IRemoteJwksHub jwksHub
+    )
+    {
+        _dbDataSource = dbDataSource;
+        _jwksHub = jwksHub;
+    }
+
+    public async Task<List<ProviderInfo>> QueryJwksEndpointAsync()
+    {
+        await using var connection = await _dbDataSource.OpenConnectionAsync();
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+                select 
+                    provider_name, 
+                    configuration_uri, 
+                    to_json(
+                        array_agg(
+                            audience
+                        )
+                    ) as audicence_list 
+                from 
+                    registered_provider as rp, 
+                    allowed_audience as aa 
+                where 
+                    aa.registered_provider=rp.provider_name 
+                group by 
+                    rp.provider_name
+            ";
+        var reader = await command.ExecuteReaderAsync();
+        List<ProviderInfo> providers = new List<ProviderInfo>();
+        while (await reader.ReadAsync())
+        {
+            var name = reader.GetString(0);
+            var configurationUri = reader.GetString(1);
+            var audienceList = reader.GetString(2);
+            var audience = JsonSerializer.Deserialize<string[]>(audienceList);
+            providers.Add(new ProviderInfo(name, configurationUri, audience));
+        }
+        return providers;
+    }
+
+    public async Task<int> RunAsync(CancellationToken ct)
+    {
+        List<ProviderInfo>? providers = default(List<ProviderInfo>);
+        while (true)
+        {
+            Console.WriteLine("Querying jwks endpoint...");
+            try
+            {
+                providers = await QueryJwksEndpointAsync();
+                break;
+            }
+            catch (Exception)
+            {
+                await Task.Delay(1000);
+            }
+        }
+
+        var tasks = new List<Task>();
+        await _jwksHub.SetupAsync(providers);
+        tasks.Add(_jwksHub.RunAsync(ct));
+        await Task.WhenAll(tasks);
+        return 0;
+    }
+}
+
 public class LocalManagerException : Exception
 {
     public enum ErrorCode

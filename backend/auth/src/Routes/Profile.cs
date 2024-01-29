@@ -7,10 +7,13 @@ using Module.Middleware;
 using System.Collections.Specialized;
 using Module.Openid;
 using System.Net;
+using Types;
 
 using System.Threading.Tasks;
 using Utility;
 using System.Net.Http;
+
+using AuthorizationService = Module.Middleware.Authorization;
 
 namespace Routes;
 
@@ -40,53 +43,25 @@ public class Profile
             if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
             if (id_token == null) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
             Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+
+            User user = AuthorizationService.GetUser(remoteJwksHub, dataSource, token.sub, remoteJwksHub.GetIssuerName(token.iss)).Result;
+
             using DbConnection connection = dataSource.OpenConnection();
-            DbCommand command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT 
-                    global_id, 
-                    given_name, 
-                    family_name, 
-                    email, 
-                    tax_code, 
-                    company_vat_number, 
-                    industry_sector
-                FROM 
-                    person 
-                        inner join 
-                    user_account 
-                        on 
-                            person.account_id = user_account.id
-                        inner join
-                    company
-                        on
-                            person.company_vat_number = company.vat_number
-                WHERE user_account.sub=$1 and user_account.registered_provider=$2
-            ";
-            //NpgSql
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, token.sub));
-            string providerName = remoteJwksHub.GetIssuerName(token.iss);
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, providerName));
-            using (DbDataReader reader = command.ExecuteReader())
-            {
-                if (!reader.HasRows) throw new ProfileException(ProfileException.ErrorCode.USER_NOT_FOUND, "User not found");
-                if (reader.Read())
-                {
-                    profile.id = reader.GetString(0);
-                    profile.given_name = reader.GetString(1);
-                    profile.family_name = reader.GetString(2);
-                    profile.email = reader.GetString(3);
-                    profile.tax_code = reader.GetString(4);
-                    profile.role = (reader.GetString(5)) switch
-                    {
-                        "FA" => "FA",
-                        "WSP" => "WSP",
-                        _ => throw new ProfileException(ProfileException.ErrorCode.UNKNOW_COMPANY_INDUSTRY_SECTOR)
-                    };
-                    profile.company_vat_number = reader.GetString(6);
-                }
-                reader.Close();
-            }
+
+            profile.id = user.global_id;
+            profile.given_name = user.given_name;
+            profile.family_name = user.family_name;
+            profile.email = user.email;
+            profile.tax_code = user.tax_code;
+            profile.role = user.role;
+            profile.company_vat_number = user.company_vat_number;
+
+            if(profile.role != "FA" && profile.role != "WA") throw new ProfileException(ProfileException.ErrorCode.UNKNOW_USER_ROLE, "Unknow user role");
+
+            string companyTable = (profile.role == "FA") ? "company_far" : "company_wsp";
+            string personTable = (profile.role == "FA") ? "person_fa" : "person_wa";
+            DbCommand commandGetCompanyVatInfo = connection.CreateCommand();
+            //TODO get company info from db table
             connection.Close();
             return profile;
         }
@@ -113,13 +88,14 @@ public class ProfileException : Exception
 {
     public enum ErrorCode
     {
-        INVALID_TOKEN,
-        CREDENTIALS_REQUIRED,
-        INVALID_SIGNATURE,
-        TOKEN_EXPIRED,
-        GENERIC_ERROR,
-        UNKNOW_COMPANY_INDUSTRY_SECTOR,
-        USER_NOT_FOUND,
+        GENERIC_ERROR = 0,
+        INVALID_TOKEN = 1,
+        CREDENTIALS_REQUIRED = 2,
+        INVALID_SIGNATURE = 3,
+        TOKEN_EXPIRED = 4,
+        UNKNOW_COMPANY_INDUSTRY_SECTOR = 5,
+        USER_NOT_FOUND = 6,
+        UNKNOW_USER_ROLE = 7
     }
     public ErrorCode Code { get; } = default(ErrorCode);
 

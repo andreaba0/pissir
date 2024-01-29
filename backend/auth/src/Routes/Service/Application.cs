@@ -39,25 +39,6 @@ public class Application
             transactionCommand.CommandText = "BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED";
             transactionCommand.ExecuteNonQuery();
 
-            //insert company vat number into company table and if it already exists do nothing
-            DbCommand companyCommand = connection.CreateCommand();
-            companyCommand.CommandText = @"
-                INSERT INTO 
-                    company (
-                        vat_number, 
-                        industry_sector
-                    )
-                VALUES (
-                    $1, 
-                    $2
-                )
-                ON CONFLICT (vat_number) DO NOTHING
-            ";
-            companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_vat_number));
-            companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_category));
-            companyCommand.Prepare();
-            companyCommand.ExecuteNonQuery();
-
             //insert user account into user_account table and if it already exists do nothing
             DbCommand userAccountCommand = connection.CreateCommand();
             userAccountCommand.CommandText = @"
@@ -208,9 +189,9 @@ public class Application
         {
             throw;
         }
-        catch (DbException e)
+        catch (DbException)
         {
-            throw new Exception("Database error", e);
+            throw;
         }
         catch (JsonException e)
         {
@@ -317,15 +298,9 @@ public class Application
             DbCommand companyCommand = connection.CreateCommand();
             companyCommand.CommandText = @"
                 SELECT
-                    industry_sector
+                    person_role
                 FROM
-                    person 
-                    inner join company 
-                    on 
-                        person.company_vat_number=company.vat_number
-                    inner join user_account 
-                    on 
-                        person.account_id=user_account.id
+                    person inner join user_account on person.account_id=user_account.id
                 WHERE
                     user_account.sub=$1 and user_account.registered_provider=$2
             ";
@@ -337,8 +312,8 @@ public class Application
                 if (!reader.HasRows) throw new ApplicationException(ApplicationException.ErrorCode.USER_ACCOUNT_NOT_FOUND, "User account not found");
                 if (reader.Read())
                 {
-                    string industry_sector = reader.GetString(0);
-                    if (industry_sector != "WA") throw new AuthenticationException(AuthenticationException.ErrorCode.USER_UNAUTHORIZED, "User unauthorized");
+                    string personRole = reader.GetString(0);
+                    if (personRole != "WA") throw new AuthenticationException(AuthenticationException.ErrorCode.USER_UNAUTHORIZED, "User unauthorized");
                 }
             }
 
@@ -436,13 +411,9 @@ public class Application
                 DbCommand companyCommand = connection.CreateCommand();
                 companyCommand.CommandText = @"
                     SELECT
-                        industry_sector
+                        person_role
                     FROM
-                        person 
-                        inner join company 
-                        on 
-                            person.company_vat_number=company.vat_number
-                        inner join user_account 
+                        person inner join user_account 
                         on 
                             person.account_id=user_account.id
                     WHERE
@@ -456,18 +427,29 @@ public class Application
                     if (!reader.HasRows) throw new ApplicationException(ApplicationException.ErrorCode.USER_ACCOUNT_NOT_FOUND, "User account not found");
                     if (reader.Read())
                     {
-                        string industry_sector = reader.GetString(0);
-                        if (industry_sector != "WA") throw new AuthenticationException(AuthenticationException.ErrorCode.USER_UNAUTHORIZED, "User unauthorized");
+                        string personRole = reader.GetString(0);
+                        if (personRole != "WA") throw new AuthenticationException(AuthenticationException.ErrorCode.USER_UNAUTHORIZED, "User unauthorized");
                     }
                 }
 
-                ManageApplication_Transaction(
-                    token,
-                    connection,
-                    providerName,
-                    applicationId,
-                    action == "approve" ? ApplicationAction.APPROVE : ApplicationAction.REJECT
-                ).Wait();
+                if (action == "approve")
+                {
+                    ManageApplication_TransactionApprove(
+                        token,
+                        connection,
+                        providerName,
+                        applicationId,
+                        Application.ApplicationAction.APPROVE
+                    ).Wait();
+                } else {
+                    ManageApplication_Reject(
+                        token,
+                        connection,
+                        providerName,
+                        applicationId,
+                        Application.ApplicationAction.REJECT
+                    ).Wait();
+                }
             }
             return Task.CompletedTask;
         }
@@ -495,7 +477,55 @@ public class Application
         REJECT
     }
 
-    internal static Task ManageApplication_Transaction(
+    internal static Task ManageApplication_Reject(
+        Token token,
+        DbConnection connection,
+        string providerName,
+        string applicationId,
+        ApplicationAction action
+    )
+    {
+        try
+        {
+            //begin transaction using plain sql command
+            DbCommand transactionCommand = connection.CreateCommand();
+
+            //delete application id from presentation_letter table and return its data
+            DbCommand command = connection.CreateCommand();
+            command.CommandText = @"
+                DELETE FROM 
+                    presentation_letter
+                WHERE 
+                    presentation_id=$1
+                RETURNING 
+                    user_account
+            ";
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(applicationId)));
+            command.Prepare();
+            Application application = new Application();
+            string userAccount = default(string);
+            using (DbDataReader reader = command.ExecuteReader())
+            {
+                if (!reader.HasRows) throw new ApplicationException(ApplicationException.ErrorCode.APPLICATION_NOT_FOUND, "Application not found");
+                if (reader.Read())
+                {
+                    userAccount = reader.GetInt64(6).ToString();
+                }
+            }
+            return Task.CompletedTask;
+        }
+        catch (DbException e)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            throw;
+        }
+        return Task.CompletedTask;
+    }
+
+    internal static Task ManageApplication_TransactionApprove(
         Token token,
         DbConnection connection,
         string providerName,
@@ -545,6 +575,45 @@ public class Application
                 }
             }
 
+            //insert into company table
+            DbCommand companyCommand = connection.CreateCommand();
+            companyCommand.CommandText = @"
+                INSERT INTO 
+                    company (
+                        vat_number, 
+                        industry_sector
+                    )
+                VALUES (
+                    $1, 
+                    $2
+                )
+                ON CONFLICT (vat_number) DO NOTHING
+            ";
+            companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_vat_number));
+            companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_category));
+            companyCommand.Prepare();
+            companyCommand.ExecuteNonQuery();
+
+            //insert into respective company specialization
+            DbCommand specializationCommand = connection.CreateCommand();
+            string specializationTable = (application.company_category == "WSP") ? "company_wsp" : "company_far";
+            specializationCommand.CommandText = @"
+                INSERT INTO 
+                    " + specializationTable + @" (
+                        vat_number,
+                        industry_sector
+                    )
+                VALUES (
+                    $1,
+                    $2
+                )
+                ON CONFLICT (vat_number) DO NOTHING
+            ";
+            specializationCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_vat_number));
+            specializationCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_category));
+            specializationCommand.Prepare();
+            specializationCommand.ExecuteNonQuery();
+
             //insert into person table
             DbCommand personCommand = connection.CreateCommand();
             personCommand.CommandText = @"
@@ -555,7 +624,8 @@ public class Application
                         family_name,
                         email,
                         tax_code,
-                        account_id
+                        account_id,
+                        person_role
                     )
                 VALUES (
                     $1,
@@ -563,10 +633,9 @@ public class Application
                     $3,
                     $4,
                     $5,
-                    $6
+                    $6,
+                    $7
                 )
-                ON CONFLICT (account_id) DO NOTHING
-                RETURNING global_id
             ";
             personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_vat_number));
             personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.given_name));
@@ -574,17 +643,41 @@ public class Application
             personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.email));
             personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.tax_code));
             personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int64, long.Parse(userAccount)));
-            personCommand.Prepare();
-            string personGuid = default(string);
-            using (DbDataReader reader = personCommand.ExecuteReader())
+            if(application.company_category == "WSP")
             {
-                if (!reader.HasRows) throw new ApplicationException(ApplicationException.ErrorCode.USER_ALREADY_EXISTS, "User already exists");
-                if (reader.Read())
-                {
-                    Console.WriteLine(reader.GetGuid(0));
-                    personGuid = reader.GetGuid(0).ToString();
-                }
+                personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, "WA"));
+            } else {
+                personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, "FA"));
             }
+            personCommand.Prepare();
+            personCommand.ExecuteNonQuery();
+
+            //insert user into specialized table
+            DbCommand userCommand = connection.CreateCommand();
+            string userTable = (application.company_category == "WSP") ? "person_wa" : "person_fa";
+            userCommand.CommandText = @"
+                INSERT INTO 
+                    " + userTable + @" (
+                        account_id,
+                        person_role,
+                        company_vat_number
+                    )
+                VALUES (
+                    $1,
+                    $2,
+                    $3
+                )
+            ";
+            userCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int64, long.Parse(userAccount)));
+            if(application.company_category == "WSP")
+            {
+                userCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, "WA"));
+            } else {
+                userCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, "FA"));
+            }
+            userCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_vat_number));
+            userCommand.Prepare();
+            userCommand.ExecuteNonQuery();
 
             //commit transaction
             DbCommand commitCommand = connection.CreateCommand();

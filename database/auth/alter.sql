@@ -25,9 +25,6 @@ add foreign key (company_vat_number) references company_wsp(vat_number);
 alter table company
 add foreign key (industry_sector) references industry_sector(sector_name);
 
-alter table profile_company
-add foreign key (vat_number) references company(vat_number);
-
 alter table company_far
 add foreign key (vat_number, industry_sector) references company(vat_number, industry_sector);
 

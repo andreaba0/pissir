@@ -49,26 +49,22 @@ create table person_wa (
 
 create table company(
     vat_number varchar(11) primary key,
-    industry_sector varchar(2) not null,
+    industry_sector varchar(3) not null,
+    company_name text,
+    working_email_address text,
+    working_phone_number varchar(10),
+    working_address text,
     unique (vat_number, industry_sector)
 );
 
 create table company_far (
     vat_number varchar(11) primary key,
-    industry_sector varchar(2) not null check(industry_sector = 'FAR')
+    industry_sector varchar(3) not null check(industry_sector = 'FAR')
 );
 
 create table company_wsp (
     vat_number varchar(11) primary key,
-    industry_sector varchar(2) not null check(industry_sector = 'WSP')
-);
-
-create table profile_company(
-    vat_number varchar(11) primary key,
-    company_name text not null,
-    working_email_address text not null,
-    working_phone_number varchar(10) not null,
-    working_address text not null
+    industry_sector varchar(3) not null check(industry_sector = 'WSP')
 );
 
 create table presentation_letter (

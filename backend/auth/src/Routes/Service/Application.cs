@@ -89,12 +89,18 @@ public class Application
                 ON CONFLICT (user_account) DO NOTHING
                 RETURNING presentation_id
             ";
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_vat_number));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.given_name));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.family_name));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.email));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.tax_code));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_category));
+            string companyVatNumber = application.company_vat_number ?? throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "company_vat_number is required");
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, companyVatNumber));
+            string givenName = application.given_name ?? throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "given_name is required");
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, givenName));
+            string familyName = application.family_name ?? throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "family_name is required");
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, familyName));
+            string email = application.email ?? throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "email is required");
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, email));
+            string taxCode = application.tax_code ?? throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "tax_code is required");
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, taxCode));
+            string companyIndustrySector = application.company_category ?? throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "company_category is required");
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, companyIndustrySector));
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, sub));
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, providerName));
             command.Prepare();
@@ -146,15 +152,11 @@ public class Application
     {
         try
         {
-            StreamReader reader = new StreamReader(body);
-            string bodyString = reader.ReadToEndAsync().Result;
-            if (bodyString == null) throw new ApplicationException(ApplicationException.ErrorCode.EXPECTED_JSON_BODY, "Expected json body");
-            Application application = JsonSerializer.Deserialize<Application>(bodyString, new JsonSerializerOptions
+            Application application = JsonSerializer.Deserialize<Application>(body, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
                 UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
-            });
-            if (application == null) throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Request body is required");
+            }) ?? throw new ApplicationException(ApplicationException.ErrorCode.EXPECTED_JSON_BODY, "Expected json body");
             if (application.company_vat_number == null)
                 throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "company_vat_number is required");
             if (application.given_name == null)
@@ -169,12 +171,10 @@ public class Application
                 throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "company_category is required");
             if (application.company_category != "WA" && application.company_category != "FA")
                 throw new ApplicationException(ApplicationException.ErrorCode.UNKNOW_COMPANY_INDUSTRY_SECTOR, "Unknow company industry sector");
-            string bearer_token = headers["Authorization"];
-            string id_token = default(string);
-            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
-            if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
-            if (id_token == default(string)) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
-            Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+
+            string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+            string id_token = Authentication.ParseBearerToken(bearer_token);
+            Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
             string providerName = remoteJwksHub.GetIssuerName(token.iss);
             using (DbConnection connection = dataSource.OpenConnection())
             {
@@ -213,12 +213,9 @@ public class Application
     {
         try
         {
-            string bearer_token = headers["Authorization"];
-            string id_token = default(string);
-            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
-            if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
-            if (id_token == default(string)) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
-            Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+            string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+            string id_token = Authentication.ParseBearerToken(bearer_token);
+            Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
             string providerName = remoteJwksHub.GetIssuerName(token.iss);
             using DbConnection connection = dataSource.OpenConnection();
             DbCommand command = connection.CreateCommand();
@@ -285,12 +282,9 @@ public class Application
     {
         try
         {
-            string bearer_token = headers["Authorization"];
-            string id_token = default(string);
-            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
-            if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
-            if (id_token == default(string)) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
-            Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+            string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+            string id_token = Authentication.ParseBearerToken(bearer_token);
+            Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
             string providerName = remoteJwksHub.GetIssuerName(token.iss);
             using DbConnection connection = dataSource.OpenConnection();
 
@@ -338,8 +332,8 @@ public class Application
             ";
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, token.sub));
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, providerName));
-            string limit = query["count_per_page"] == default(string) ? "10" : query["count_per_page"];
-            string offset = query["page_number"] == default(string) ? "0" : query["page_number"];
+            string limit = query["count_per_page"].Count > 0 ? query["count_per_page"].ToString() : "10";
+            string offset = query["page_number"].Count > 0 ? query["page_number"].ToString() : "0";
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(limit)));
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(offset)));
             command.Prepare();
@@ -391,19 +385,16 @@ public class Application
     {
         try
         {
-            string applicationId = (string)query["id"];
+            string applicationId = query?["id"]?.ToString() ?? string.Empty;
             //check if applicationId is a uuid
             if (!Guid.TryParse(applicationId, out Guid _)) throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Invalid application id");
-            if (applicationId == default(string)) throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Application id is required");
-            string action = (string)query["action"];
-            if (action == default(string)) throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Action is required");
+            if (applicationId == string.Empty) throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Application id is required");
+            string action = query?["action"]?.ToString() ?? string.Empty;
+            if (action == string.Empty) throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Action is required");
             if (action != "approve" && action != "reject") throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Invalid action");
-            string bearer_token = headers["Authorization"];
-            string id_token = default(string);
-            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
-            if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
-            if (id_token == default(string)) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
-            Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+            string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+            string id_token = Authentication.ParseBearerToken(bearer_token);
+            Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
             string providerName = remoteJwksHub.GetIssuerName(token.iss);
             using (DbConnection connection = dataSource.OpenConnection())
             {
@@ -441,7 +432,9 @@ public class Application
                         applicationId,
                         Application.ApplicationAction.APPROVE
                     ).Wait();
-                } else {
+                }
+                else
+                {
                     ManageApplication_Reject(
                         token,
                         connection,
@@ -503,26 +496,20 @@ public class Application
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(applicationId)));
             command.Prepare();
             Application application = new Application();
-            string userAccount = default(string);
             using (DbDataReader reader = command.ExecuteReader())
             {
                 if (!reader.HasRows) throw new ApplicationException(ApplicationException.ErrorCode.APPLICATION_NOT_FOUND, "Application not found");
-                if (reader.Read())
-                {
-                    userAccount = reader.GetInt64(6).ToString();
-                }
             }
             return Task.CompletedTask;
         }
-        catch (DbException e)
+        catch (DbException)
         {
             throw;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             throw;
         }
-        return Task.CompletedTask;
     }
 
     internal static Task ManageApplication_TransactionApprove(
@@ -559,7 +546,7 @@ public class Application
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(applicationId)));
             command.Prepare();
             Application application = new Application();
-            string userAccount = default(string);
+            string userAccount = string.Empty;
             using (DbDataReader reader = command.ExecuteReader())
             {
                 if (!reader.HasRows) throw new ApplicationException(ApplicationException.ErrorCode.APPLICATION_NOT_FOUND, "Application not found");
@@ -589,8 +576,10 @@ public class Application
                 )
                 ON CONFLICT (vat_number) DO NOTHING
             ";
-            companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_vat_number));
-            companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_category));
+            string companyVatNumber = application.company_vat_number ?? throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "company_vat_number is required");
+            string companyIndustrySector = application.company_category ?? throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "company_industry_sector is required");
+            companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, companyVatNumber));
+            companyCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, companyIndustrySector));
             companyCommand.Prepare();
             companyCommand.ExecuteNonQuery();
 
@@ -643,10 +632,12 @@ public class Application
             personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.email));
             personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.tax_code));
             personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int64, long.Parse(userAccount)));
-            if(application.company_category == "WSP")
+            if (application.company_category == "WSP")
             {
                 personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, "WA"));
-            } else {
+            }
+            else
+            {
                 personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, "FA"));
             }
             personCommand.Prepare();
@@ -669,10 +660,12 @@ public class Application
                 )
             ";
             userCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int64, long.Parse(userAccount)));
-            if(application.company_category == "WSP")
+            if (application.company_category == "WSP")
             {
                 userCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, "WA"));
-            } else {
+            }
+            else
+            {
                 userCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, "FA"));
             }
             userCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_vat_number));

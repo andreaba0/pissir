@@ -20,8 +20,8 @@ namespace Routes;
 public class ApiAccess {
 
     internal class AccessRequestBody {
-        public DateTime? from { get; set; }
-        public DateTime? to { get; set; }
+        public DateTime? from { get; set; } = null;
+        public DateTime? to { get; set; } = null;
     }
 
     public static Task PostMethod_ACLRequest(
@@ -32,16 +32,13 @@ public class ApiAccess {
         IRemoteJwksHub remoteJwksHub
     ) {
         try {
-            string bearer_token = headers["Authorization"];
-            string id_token = default(string);
-            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
-            if(!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
-            if(id_token == null) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
-            Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+            string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+            string id_token = Authentication.ParseBearerToken(bearer_token);
+            Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
 
             User user = AuthorizationService.GetUser(remoteJwksHub, dataSource, token.sub, remoteJwksHub.GetIssuerName(token.iss)).Result;
 
-            AccessRequestBody accessRequestBody = JsonSerializer.Deserialize<AccessRequestBody>(body);
+            AccessRequestBody accessRequestBody = JsonSerializer.Deserialize<AccessRequestBody>(body) ?? throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_REQUEST_BODY, "Invalid request body");
 
             if(accessRequestBody.from == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "from is required");
             if(accessRequestBody.to == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "to is required");
@@ -72,7 +69,6 @@ public class ApiAccess {
         } catch(Exception) {
             throw;
         }
-        return Task.CompletedTask;
     }
 
     public static Task GetMethod_ACLRequest() {
@@ -87,16 +83,13 @@ public class ApiAccess {
         IRemoteJwksHub remoteJwksHub
     ) {
         try {
-            string bearer_token = headers["Authorization"];
-            string id_token = default(string);
-            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
-            if(!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
-            if(id_token == null) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
-            Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+            string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+            string id_token = Authentication.ParseBearerToken(bearer_token);
+            Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
 
             User user = AuthorizationService.GetUser(remoteJwksHub, dataSource, token.sub, remoteJwksHub.GetIssuerName(token.iss)).Result;
 
-            AccessRequestBody accessRequestBody = JsonSerializer.Deserialize<AccessRequestBody>(body);
+            AccessRequestBody accessRequestBody = JsonSerializer.Deserialize<AccessRequestBody>(body) ?? throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_REQUEST_BODY, "Invalid request body");
 
             if(accessRequestBody.from == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "from is required");
             if(accessRequestBody.to == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "to is required");
@@ -121,6 +114,9 @@ public class ApiAccess {
             transactionInit.CommandText = "BEGIN";
             transactionInit.ExecuteNonQuery();
 
+            //check if to and from are != null
+            if(accessRequestBody.from == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "from is required");
+            if(accessRequestBody.to == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "to is required");
             int numberOfDays = (int)(accessRequestBody.to - accessRequestBody.from).Value.TotalDays;
             for(int i=0;i<numberOfDays;i+=10) {
                 int step = (numberOfDays - i > 10) ? 10 : numberOfDays - i;
@@ -186,6 +182,7 @@ public class ApiAccessException : Exception {
         INVALID_DATE = 1,
         INVALID_COMPANY_VAT_NUMBER = 2,
         INVALID_DATE_RANGE = 3,
+        INVALID_REQUEST_BODY = 4
     }
     public ErrorCode Code { get; } = default(ErrorCode);
     public ApiAccessException(ErrorCode errorCode, string message) : base(message) {

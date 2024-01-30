@@ -10,8 +10,6 @@ using Module.Openid;
 using System.Net;
 using Utility;
 using Types;
-using Module.KeyManager;
-using Module.Middleware;
 
 using AuthorizationService = Module.Middleware.Authorization;
 
@@ -21,10 +19,10 @@ public class Company
 {
     public string? vat_number { get; set; } = default(string);
     public string? industry_sector { get; set; } = default(string);
-    public string company_name { get; set; } = default(string);
-    public string working_email_address { get; set; } = default(string);
-    public string working_phone_number { get; set; } = default(string);
-    public string working_address { get; set; } = default(string);
+    public string? company_name { get; set; } = default(string);
+    public string? working_email_address { get; set; } = default(string);
+    public string? working_phone_number { get; set; } = default(string);
+    public string? working_address { get; set; } = default(string);
 
     public static Task<string> GetMethod_CompanyInfo(
         IHeaderDictionary headers,
@@ -35,22 +33,16 @@ public class Company
     {
         try
         {
-            string bearer_token = headers["Authorization"];
-            string id_token = default(string);
-            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
-            if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
-            if (id_token == null) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
-            Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+            string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+            string id_token = Authentication.ParseBearerToken(bearer_token);
+            Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
             string providerName = remoteJwksHub.GetIssuerName(token.iss);
             using DbConnection connection = dataSource.OpenConnection();
 
-            string userTable = default(string);
-            string companyTable = default(string);
-
             User user = AuthorizationService.GetUser(remoteJwksHub, dataSource, token.sub, providerName).Result;
             if (user.role != "FA" && user.role != "WA") throw new ProfileException(ProfileException.ErrorCode.UNKNOW_USER_ROLE, "Unknow user role");
-            userTable = (user.role == "FA") ? "person_fa" : "person_wa";
-            companyTable = (user.role == "FA") ? "company_far" : "company_wsp";
+            string userTable = (user.role == "FA") ? "person_fa" : "person_wa";
+            string companyTable = (user.role == "FA") ? "company_far" : "company_wsp";
 
 
             DbCommand commandGetCompanyProfile = connection.CreateCommand();
@@ -95,7 +87,7 @@ public class Company
         {
             throw;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             throw;
         }
@@ -111,15 +103,12 @@ public class Company
     {
         try
         {
-            string bearer_token = headers["Authorization"];
-            string id_token = default(string);
-            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
-            if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
-            if (id_token == null) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
-            Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+            string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+            string id_token = Authentication.ParseBearerToken(bearer_token);
+            Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
             string providerName = remoteJwksHub.GetIssuerName(token.iss);
             //expect body to be a json of type Company
-            Company company = JsonSerializer.DeserializeAsync<Company>(body).Result;
+            Company company = JsonSerializer.Deserialize<Company>(body) ?? throw new CompanyException(CompanyException.ErrorCode.INVALID_REQUEST_BODY, "Invalid request body");
             using DbConnection connection = dataSource.OpenConnection();
 
             DbCommand commandGetCompanyInfo = connection.CreateCommand();
@@ -153,11 +142,10 @@ public class Company
             }
             if (updateList.Count == 0) throw new CompanyException(CompanyException.ErrorCode.INVALID_REQUEST_BODY, "Request should update at least one field");
             string updateString = string.Join(",", updateList);
-            string companyTable = default(string);
 
             User user = AuthorizationService.GetUser(remoteJwksHub, dataSource, token.sub, providerName).Result;
             if (user.role != "FA" && user.role != "WA") throw new ProfileException(ProfileException.ErrorCode.UNKNOW_USER_ROLE, "Unknow user role");
-            companyTable = (user.role == "FA") ? "company_far" : "company_wsp";
+            string companyTable = (user.role == "FA") ? "company_far" : "company_wsp";
             string userTable = (companyTable == "company_wsp") ? "person_wa" : "person_fa";
 
             DbCommand commandUpdateCompanyInfo = connection.CreateCommand();

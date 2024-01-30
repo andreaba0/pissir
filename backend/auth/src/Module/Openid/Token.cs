@@ -11,14 +11,14 @@ public class Token {
     public string email {get; set;}
     public bool email_verified {get; set;}
     public Token() {
-        iss = "";
-        sub = "";
-        aud = "";
+        iss = string.Empty;
+        sub = string.Empty;
+        aud = string.Empty;
         exp = 0;
         iat = 0;
-        given_name = "";
-        family_name = "";
-        email = "";
+        given_name = string.Empty;
+        family_name = string.Empty;
+        email = string.Empty;
         email_verified = false;
     }
 }

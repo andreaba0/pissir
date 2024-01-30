@@ -19,13 +19,13 @@ namespace Routes;
 
 public class Profile
 {
-    public string id { get; set; } = default(string);
-    public string given_name { get; set; } = default(string);
-    public string family_name { get; set; } = null;
-    public string email { get; set; } = null;
-    public string tax_code { get; set; } = null;
-    public string role { get; set; } = null;
-    public string company_vat_number { get; set; } = null;
+    public string? id { get; set; } = default(string);
+    public string? given_name { get; set; } = default(string);
+    public string? family_name { get; set; } = default(string);
+    public string? email { get; set; } = default(string);
+    public string? tax_code { get; set; } = default(string);
+    public string? role { get; set; } = default(string);
+    public string? company_vat_number { get; set; } = default(string);
     public Profile() { }
     public static Profile GetMethod(
         IHeaderDictionary headers,
@@ -37,12 +37,9 @@ public class Profile
         try
         {
             Profile profile = new Profile();
-            string bearer_token = headers["Authorization"];
-            string id_token = default(string);
-            bool isBearerToken = Authentication.TryParseBearerToken(bearer_token, out id_token);
-            if (!isBearerToken) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Bearer token required");
-            if (id_token == null) throw new AuthenticationException(AuthenticationException.ErrorCode.CREDENTIALS_REQUIRED, "Credentials required");
-            Token token = Authentication.ParseToken(id_token, remoteJwksHub, dateTimeProvider);
+            string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+            string id_token = Authentication.ParseBearerToken(bearer_token);
+            Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
 
             User user = AuthorizationService.GetUser(remoteJwksHub, dataSource, token.sub, remoteJwksHub.GetIssuerName(token.iss)).Result;
 
@@ -73,7 +70,7 @@ public class Profile
         {
             throw;
         }
-        catch (DbException e)
+        catch (DbException)
         {
             throw;
         }

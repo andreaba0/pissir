@@ -21,30 +21,56 @@ public static class Authentication
         Anonymous
     }
 
-    public static bool TryParseBearerToken(string authorizationHeader, out string jwt) {
+    public static bool TryParseBearerToken(string authorizationHeader, out string jwt)
+    {
         jwt = string.Empty;
-        if(authorizationHeader == null || authorizationHeader == string.Empty) {
+        if (authorizationHeader == null || authorizationHeader == string.Empty)
+        {
             return false;
         }
         Regex tokenRegex = new Regex(@"^(?<scheme>[A-Za-z-]+)\s(?<token>[A-Za-z0-9-_\.]+)$");
-        if(!tokenRegex.IsMatch(authorizationHeader)) {
+        if (!tokenRegex.IsMatch(authorizationHeader))
+        {
             return false;
         }
         string scheme = tokenRegex.Match(authorizationHeader).Groups["scheme"].Value;
-        if(scheme.ToLower() != "bearer") {
+        if (scheme.ToLower() != "bearer")
+        {
             return false;
         }
         string token = tokenRegex.Match(authorizationHeader).Groups["token"].Value;
         Regex jwtRegex = new Regex(@"^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$");
         string jwtToken = jwtRegex.Match(token).Value;
-        if(jwtToken == string.Empty) {
+        if (jwtToken == string.Empty)
+        {
             return false;
         }
-        if($"{scheme} {jwtToken}" != authorizationHeader) {
+        if ($"{scheme} {jwtToken}" != authorizationHeader)
+        {
             return false;
         }
         jwt = jwtToken;
         return true;
+    }
+
+    public static string ParseBearerToken(string authorizationHeader)
+    {
+        if (authorizationHeader == null || authorizationHeader == string.Empty)
+            throw new AuthenticationException(AuthenticationException.ErrorCode.MISSING_AUTHORIZATION_HEADER, "Missing authorization header");
+        Regex tokenRegex = new Regex(@"^(?<scheme>[A-Za-z-]+)\s(?<token>[A-Za-z0-9-_\.]+)$");
+        if (!tokenRegex.IsMatch(authorizationHeader))
+            throw new AuthenticationException(AuthenticationException.ErrorCode.INCORRECT_AUTHORIZATION_HEADER, "Incorrect authorization header");
+        string scheme = tokenRegex.Match(authorizationHeader).Groups["scheme"].Value;
+        if (scheme.ToLower() != "bearer")
+            throw new AuthenticationException(AuthenticationException.ErrorCode.INCORRECT_AUTHORIZATION_SCHEME, "Incorrect authorization scheme");
+        string token = tokenRegex.Match(authorizationHeader).Groups["token"].Value;
+        Regex jwtRegex = new Regex(@"^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$");
+        string jwtToken = jwtRegex.Match(token).Value;
+        if (jwtToken == string.Empty)
+            throw new AuthenticationException(AuthenticationException.ErrorCode.MISSING_AUTHORIZATION_TOKEN_IN_HEADER, "Missing authorization token in header");
+        if ($"{scheme} {jwtToken}" != authorizationHeader)
+            throw new AuthenticationException(AuthenticationException.ErrorCode.INCORRECT_AUTHORIZATION_HEADER, "Incorrect authorization header");
+        return jwtToken;
     }
 
     internal static string ToBase64Url(byte[] input)
@@ -61,7 +87,7 @@ public static class Authentication
         {
             PropertyNameCaseInsensitive = true,
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
-        });
+        }) ?? new Dictionary<string, object>();
     }
 
     internal static string GetValue(IDictionary<string, object> dictionary, string key)
@@ -75,6 +101,62 @@ public static class Authentication
             "alg" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.ALGORITHM_REQUIRED, "Algorithm required"),
             _ => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, $"Unknown key {key} in token")
         };
+    }
+
+    internal static Token VerifiedPayload(
+        string id_token,
+        IRemoteJwksHub remoteManager,
+        IDateTimeProvider dateTimeProvider
+    )
+    {
+        try
+        {
+            var parts = id_token.Split('.');
+            if (parts.Length != 3)
+            {
+                throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Malformed token");
+            }
+            IDictionary<string, object> header = Jose.JWT.Headers(id_token);
+            IDictionary<string, object> payload = ToDictionary(Encoding.UTF8.GetString(Base64Url.Decode(parts[1])));
+            string signature = parts[2];
+            string alg = Authentication.GetValue(header, "alg");
+            string kid = Authentication.GetValue(header, "kid");
+            string iss = Authentication.GetValue(payload, "iss");
+            string aud = Authentication.GetValue(payload, "aud");
+            var key = remoteManager.GetKey(kid, iss);
+            string json = Jose.JWT.Decode(id_token, new Jwk(
+                Authentication.ToBase64Url(key.Exponent),
+                Authentication.ToBase64Url(key.Modulus)
+            ), JwsAlgorithm.RS256);
+
+            Token payloadVerified = JsonSerializer.Deserialize<Token>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (Authentication.IsExpired(
+                payloadVerified,
+                dateTimeProvider
+            )) throw new AuthenticationException(AuthenticationException.ErrorCode.TOKEN_EXPIRED, "Token expired");
+            if (!Authentication.IsActuallyValid(
+                payloadVerified,
+                dateTimeProvider
+            )) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token");
+            return payloadVerified;
+        }
+        catch (AuthenticationException)
+        {
+            throw;
+        }
+        catch (JsonException e)
+        {
+            throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token", e);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token", e);
+        }
     }
 
     internal static Token ParseToken(
@@ -118,11 +200,11 @@ public static class Authentication
                 PropertyNameCaseInsensitive = true
             });
         }
-        catch (AuthenticationException e)
+        catch (AuthenticationException)
         {
             throw;
         }
-        catch(JsonException e)
+        catch (JsonException e)
         {
             throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token", e);
         }
@@ -155,7 +237,7 @@ public static class Authentication
                     Authentication.ToBase64Url(key.Modulus)
             ));
         }
-        catch (AuthenticationException e)
+        catch (AuthenticationException)
         {
             throw;
         }
@@ -176,6 +258,20 @@ public static class Authentication
         {
             throw new Exception("Invalid token", e);
         }
+    }
+
+    public static bool IsExpired(Token token, IDateTimeProvider dateTimeProvider)
+    {
+        DateTime now = dateTimeProvider.UtcNow;
+        DateTime expiration = dateTimeProvider.FromUnixTime(token.exp);
+        return now > expiration;
+    }
+
+    public static bool IsActuallyValid(Token token, IDateTimeProvider dateTimeProvider)
+    {
+        DateTime now = dateTimeProvider.UtcNow;
+        DateTime issuedAt = dateTimeProvider.FromUnixTime(token.iat);
+        return now >= issuedAt;
     }
     public static bool IsExpired(
         int exp,
@@ -210,6 +306,10 @@ public class AuthenticationException : Exception
         CREDENTIALS_REQUIRED = 14,
         GENERIC_ERROR = 0,
         USER_UNAUTHORIZED = 15,
+        INCORRECT_AUTHORIZATION_SCHEME = 16,
+        INCORRECT_AUTHORIZATION_HEADER = 17,
+        MISSING_AUTHORIZATION_TOKEN_IN_HEADER = 18,
+        MISSING_AUTHORIZATION_HEADER = 19,
     }
 
     public ErrorCode Code { get; } = default(ErrorCode);

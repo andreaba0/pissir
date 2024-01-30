@@ -23,74 +23,25 @@ using Module.KeyManager;
 
 namespace Module.WebServer;
 
-internal class RSAParameterArray
-{
-    public RSAParameters[] parameters { get; set; }
-}
 public class WebServer
 {
     private readonly DbDataSource _dbDataSource;
     private Manager _keyManager;
     private readonly IRemoteJwksHub _remoteManager;
+    private readonly QueryKeyService _queryKeyService;
 
-    public WebServer(DbDataSource dbDataSource, IRemoteJwksHub remoteManager)
+    public WebServer(DbDataSource dbDataSource, IRemoteJwksHub remoteManager, QueryKeyService queryKeyService)
     {
         _dbDataSource = dbDataSource;
         _remoteManager = remoteManager;
         _keyManager = new LocalManager(
             _dbDataSource
         );
-    }
-
-    public async Task<List<ProviderInfo>> QueryJwksEndpointAsync()
-    {
-        //query list of jwks endpoint from database
-        try
-        {
-            await using var connection = await _dbDataSource.OpenConnectionAsync();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                select 
-                    provider_name, 
-                    configuration_uri, 
-                    to_json(
-                        array_agg(
-                            audience
-                        )
-                    ) as audicence_list 
-                from 
-                    registered_provider as rp, 
-                    allowed_audience as aa 
-                where 
-                    aa.registered_provider=rp.provider_name 
-                group by 
-                    rp.provider_name
-            ";
-            var reader = await command.ExecuteReaderAsync();
-            List<ProviderInfo> providers = new List<ProviderInfo>();
-            while (await reader.ReadAsync())
-            {
-                var name = reader.GetString(0);
-                var configurationUri = reader.GetString(1);
-                var audienceList = reader.GetString(2);
-                var audience = JsonSerializer.Deserialize<string[]>(audienceList);
-                providers.Add(new ProviderInfo(name, configurationUri, audience));
-            }
-            return providers;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-            return new List<ProviderInfo>();
-        }
+        _queryKeyService = queryKeyService;
     }
 
     public async Task<int> RunAsync(CancellationToken cancellationToken = default)
     {
-
-        List<ProviderInfo> providers = await QueryJwksEndpointAsync();
-        await _remoteManager.SetupAsync(providers);
-
         //create a web server with WebApplication builder that listen on port wit manuel route handling
         var builder = WebApplication.CreateBuilder();
         var configuration = builder.Configuration;
@@ -117,16 +68,16 @@ public class WebServer
             ";
 
             DbParameter[] dbParameters = new DbParameter[] {
-                CreateParameter(connection, DbType.String, keyId),
-                CreateParameter(connection, DbType.Binary, parameters.D),
-                CreateParameter(connection, DbType.Binary, parameters.DP),
-                CreateParameter(connection, DbType.Binary, parameters.DQ),
-                CreateParameter(connection, DbType.Binary, parameters.Exponent),
-                CreateParameter(connection, DbType.Binary, parameters.InverseQ),
-                CreateParameter(connection, DbType.Binary, parameters.Modulus),
-                CreateParameter(connection, DbType.Binary, parameters.P),
-                CreateParameter(connection, DbType.Binary, parameters.Q),
-                CreateParameter(connection, DbType.DateTime, DateTime.UtcNow)
+                DbUtility.CreateParameter(connection, DbType.String, keyId),
+                DbUtility.CreateParameter(connection, DbType.Binary, parameters.D),
+                DbUtility.CreateParameter(connection, DbType.Binary, parameters.DP),
+                DbUtility.CreateParameter(connection, DbType.Binary, parameters.DQ),
+                DbUtility.CreateParameter(connection, DbType.Binary, parameters.Exponent),
+                DbUtility.CreateParameter(connection, DbType.Binary, parameters.InverseQ),
+                DbUtility.CreateParameter(connection, DbType.Binary, parameters.Modulus),
+                DbUtility.CreateParameter(connection, DbType.Binary, parameters.P),
+                DbUtility.CreateParameter(connection, DbType.Binary, parameters.Q),
+                DbUtility.CreateParameter(connection, DbType.DateTime, DateTime.UtcNow)
             };
             command.Parameters.AddRange(dbParameters);
 
@@ -170,14 +121,27 @@ public class WebServer
             catch (AuthenticationException e)
             {
                 context.Response.StatusCode = 401;
-                await context.Response.WriteAsync("Unauthorized");
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
             }
-            catch (DbException e)
+            catch (DbException)
             {
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync("Server error");
             }
-            catch (Exception e)
+            catch (ProfileException e)
+            {
+                if (e.Code == ProfileException.ErrorCode.USER_NOT_FOUND)
+                {
+                    context.Response.StatusCode = 404;
+                    await context.Response.WriteAsync("Not Found");
+                }
+                else
+                {
+                    context.Response.StatusCode = 500;
+                    await context.Response.WriteAsync("Server error");
+                }
+            }
+            catch (Exception)
             {
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync("Server error");
@@ -200,7 +164,7 @@ public class WebServer
                 KeyArray keyArray = new KeyArray(keys);
                 var json = JsonSerializer.Serialize(keyArray);
                 context.Response.ContentType = "application/json";
-                context.Response.Headers.Add("Cache-Control", "max-age=3600");
+                context.Response.Headers.Append("Cache-Control", "max-age=3600");
                 await context.Response.WriteAsync(json);
             }
             catch (Exception ex)
@@ -213,32 +177,143 @@ public class WebServer
 
         app.MapPost("/service/apply", async context =>
         {
-            context.Response.StatusCode = 200;
-            await context.Response.WriteAsync("OK");
+            try
+            {
+                Application.PostMethod_Apply(
+                    context.Request.Headers,
+                    context.Request.Body,
+                    _dbDataSource,
+                    new DateTimeProvider(),
+                    _remoteManager
+                ).Wait();
+            }
+            catch (AuthenticationException e)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+            catch (Routes.ApplicationException e)
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync((e.Code != default(Routes.ApplicationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (Exception)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
         });
 
         app.MapGet("/service/application", async context =>
         {
-            context.Response.StatusCode = 200;
-            await context.Response.WriteAsync("OK");
+            try
+            {
+                Task<string> applicationTask = Application.GetMethod_Applications(
+                    context.Request.Headers,
+                    context.Request.Query,
+                    _dbDataSource,
+                    new DateTimeProvider(),
+                    _remoteManager
+                );
+                context.Response.StatusCode = 200;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(applicationTask.Result);
+            }
+            catch (AuthenticationException e)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+            catch (Routes.ApplicationException e)
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync((e.Code != default(Routes.ApplicationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (Exception)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
         });
 
-        app.MapPost("/service/application/{id}/accept", async context =>
+        app.MapGet("/service/my_application", async context =>
         {
-            context.Response.StatusCode = 200;
-            await context.Response.WriteAsync("OK");
+            try
+            {
+                Task<string> applicationTask = Application.GetMethod_MyApplication(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    new DateTimeProvider(),
+                    _remoteManager
+                );
+                context.Response.StatusCode = 200;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(applicationTask.Result);
+            }
+            catch (AuthenticationException e)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+            catch (Routes.ApplicationException e)
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync((e.Code != default(Routes.ApplicationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (Exception)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
         });
 
-        app.MapPost("/service/application/{id}/reject", async context =>
+        app.MapPost("/service/application/{id}/{action}", async context =>
         {
-            context.Response.StatusCode = 200;
-            await context.Response.WriteAsync("OK");
-        });
-
-        app.MapPost("/service/application/{id}/cancel", async context =>
-        {
-            context.Response.StatusCode = 200;
-            await context.Response.WriteAsync("OK");
+            try
+            {
+                Application.PostMethod_ManageApplication(
+                    context.Request.Headers,
+                    context.Request.RouteValues,
+                    _dbDataSource,
+                    new DateTimeProvider(),
+                    _remoteManager
+                ).Wait();
+            }
+            catch (AuthenticationException e)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+            catch (Routes.ApplicationException e)
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync((e.Code != default(Routes.ApplicationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (Exception)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
         });
 
         app.MapPost("/apiaccess", async context =>
@@ -259,16 +334,48 @@ public class WebServer
             await context.Response.WriteAsync("OK");
         });
 
-        app.MapPost("/apiaccess/{id}/accept", async context =>
+        app.MapPost("/apiaccess/{id}/{action}", async context =>
         {
             context.Response.StatusCode = 200;
             await context.Response.WriteAsync("OK");
         });
 
-        app.MapPost("/apiaccess/{id}/reject", async context =>
+        app.MapGet("/company", async context =>
         {
-            context.Response.StatusCode = 200;
-            await context.Response.WriteAsync("OK");
+            try
+            {
+                Task<string> companyTask = Company.GetMethod_CompanyInfo(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    new DateTimeProvider(),
+                    _remoteManager
+                );
+                context.Response.StatusCode = 200;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(companyTask.Result);
+            }
+            catch (AuthenticationException e)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException e)
+            {
+                Console.WriteLine(e);
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+            catch (Routes.CompanyException e)
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync((e.Code != default(Routes.CompanyException.ErrorCode)) ? e.Message : "");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
         });
 
         app.MapGet("/company/{id}", async context =>
@@ -280,18 +387,10 @@ public class WebServer
         Task[] tasks = new Task[] {
             _keyManager.RunAsync(cancellationToken),
             app.RunAsync(cancellationToken),
-            _remoteManager.RunAsync(cancellationToken)
+            _queryKeyService.RunAsync(cancellationToken)
         };
         await Task.WhenAll(tasks);
 
         return 0;
-    }
-
-    DbParameter CreateParameter(DbConnection connection, DbType type, object? value)
-    {
-        DbParameter parameter = DbProviderFactories.GetFactory(connection).CreateParameter();
-        parameter.DbType = type;
-        parameter.Value = value;
-        return parameter;
     }
 }

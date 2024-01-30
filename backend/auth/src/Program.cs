@@ -7,9 +7,9 @@ using Npgsql;
 using Utility;
 
 using System.Data.Common;
-
-using Module.Accountant;
 using Module.WebServer;
+
+using Module.KeyManager;
 
 class Program
 {
@@ -44,6 +44,9 @@ class Program
         string postgresUsername = GetProperty(configuration, "database:username");
         string postgresPassword = GetProperty(configuration, "database:password");
 
+        string openIdCertsGoogle = GetProperty(configuration, "openid:certs:google");
+        string openIdCertsFacebook = GetProperty(configuration, "openid:certs:facebook");
+
         CancellationTokenSource cts = new CancellationTokenSource();
 
         //Shared thread safe instances
@@ -53,33 +56,33 @@ class Program
             "auth"
         );
 
+        HttpClient httpClient = new HttpClient();
+        httpClient.Timeout = TimeSpan.FromSeconds(5);
+
         //Shared channel used to send data to mqtt client pool
         Channel<IMqttBusPacket> mqttChannel = mqttPool.GetSharedInputChannel();
 
         ISharedStorage dbHasChanged = new SharedStorage((bool)false);
 
-
-        Accountant accountant = new Accountant(
-            dataSource,
-            mqttChannel,
-            dbHasChanged
+        RemoteJwksHub remoteJwksHub = new RemoteJwksHub(
+            httpClient
         );
         
         WebServer webServer = new WebServer(
             dataSource,
-            5000
+            remoteJwksHub,
+            new QueryKeyService(
+                dataSource,
+                remoteJwksHub
+            )
         );
 
         Task mqttTask = Task.Factory.StartNew(() => mqttPool.RunAsync(
             cts.Token
         ), TaskCreationOptions.LongRunning);
-        Task accountantTask = Task.Factory.StartNew(() => accountant.RunAsync(
-            cts.Token
-        ), TaskCreationOptions.LongRunning);
         Task webServerTask = Task.Factory.StartNew(() => webServer.RunAsync(cts.Token), TaskCreationOptions.LongRunning);
 
         mqttTask.Wait();
-        accountantTask.Wait();
         webServerTask.Wait();
 
         Console.WriteLine("Exiting...");

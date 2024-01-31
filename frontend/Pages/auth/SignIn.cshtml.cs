@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
+using ServiceStack.MiniProfiler;
 using System.Net;
 
 public class SignInModel : PageModel
@@ -13,14 +14,14 @@ public class SignInModel : PageModel
         "access_type=online&" +
         "response_type=code&" +
         "state=1234567890qwerty&" +
-        "redirect_uri=https%3A//redirect.localhost.andreabarchietto.it/oauth/google&" +
+        "redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/google&" +
         "client_id=218970200448-62ddcs49ilsub6a1r1l2k2vpd84elkqs.apps.googleusercontent.com";
 
     string authFacebook = "https://www.facebook.com/v18.0/dialog/oauth?" +
         "scope=openid&" +
         "response_type=code&" +
         "state=1234567890qwerty&" +
-        "redirect_uri=https%3A//redirect.localhost.andreabarchietto.it/oauth/facebook&" +
+        "redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/facebook&" +
         "client_id=709636884633879&" +
         "client_secret=f502cde6c8b5dec3d1046ceef2aa78e8";
 
@@ -99,14 +100,14 @@ public class SignInModel : PageModel
                     tokenEndpoint = "https://oauth2.googleapis.com/token";
                     clientId = "218970200448-62ddcs49ilsub6a1r1l2k2vpd84elkqs.apps.googleusercontent.com";
                     clientSecret = "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";
-                    redirectUri = "https://redirect.localhost.andreabarchietto.it/oauth/google";
+                    redirectUri = "https://appweb.andreabarchietto.it/localhost_redirect/oauth/google";
                     break;
 
                 case "facebook":
                     tokenEndpoint = "https://graph.facebook.com/v18.0/oauth/access_token";
                     clientId = "709636884633879";
                     clientSecret = "f502cde6c8b5dec3d1046ceef2aa78e8";
-                    redirectUri = "https://redirect.localhost.andreabarchietto.it/oauth/facebook";
+                    redirectUri = "https://appweb.andreabarchietto.it/localhost_redirect/oauth/facebook";
                     break;
 
                 default:

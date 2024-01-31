@@ -194,15 +194,16 @@ namespace frontend.Pages
 
         /*
             Richiesta dati dello storico ordini d'acqua per azienda agricola  /water/order
+            Richiesta dati storico vendite azienda idrica     /water/order
+
             Richiesta dati sui consumi delle colture possedute dall'azienda agricola   /water/consumption
+            Richiesta dati consumo aziende agricole a cui l'azienda idrica ha venduto   /water/consumption
+
             Richiesta dati storico sensori di umidità    /object/sensor
             Richiesta dati storico sensori di temperatura   /object/sensor
             Richiesta dati storico attuatori    /object/actuator
+
             Richiesta dati per limiti di vendita di ogni azienda agricola   /water/limit/all
-            Richiesta dati storico vendite azienda idrica     /water/order
-            Richiesta dati consumo aziende agricole a cui l'azienda idrica ha venduto   /water/consumption
-
-
          */
 
 

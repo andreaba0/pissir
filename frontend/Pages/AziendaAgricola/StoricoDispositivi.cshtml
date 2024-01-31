@@ -5,14 +5,25 @@
 }
 <link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
 
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#storicoSensori').DataTable();
+        $('#storicoAttuatori').DataTable();
+    });
+</script>
+
+
 <div style="margin: 1em;">
     <h4>Storico dispositivi</h4>
     <small>• Viene visualizzato lo storico delle misurazioni dei sensori e le azioni degli attuatori.</small>
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
-    <div style="display:flex;">
-        <div style="display:block; padding-right:1em;">
+    <div class="row">
+        <div class="col">
             <h4>Misure Sensori</h4>
-            <table class="table">
+            <table class="table" id="storicoSensori">
                 <thead>
                     <tr>
                         <th>ID sensore</th>
@@ -73,9 +84,9 @@
             </table>
         </div>
         
-        <div style="display:block; padding-right:1em;">
+        <div class="col">
             <h4>Azioni Attuatori</h4>
-            <table class="table">
+            <table class="table" id="storicoAttuatori">
                 <thead>
                     <tr>
                         <th>ID attuatore</th>

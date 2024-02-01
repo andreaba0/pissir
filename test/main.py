@@ -3,6 +3,31 @@ import os
 import time
 from utility import Assert, Group
 
+#json object
+json = {
+    "server": {
+        "fakeOAuthProvider": {
+            "ip": "172.10.0.4",
+            "exposed_port": 8000,
+            "host_port": 10203
+        },
+        "authServer": {
+            "ip": "172.10.0.2",
+            "exposed_port": 8000,
+            "host_port": 10200
+        },
+        "authDatabase": {
+            "ip": "172.10.0.3",
+            "exposed_port": 5432,
+            "host_port": 10201
+        },
+    },
+    "network": {
+        "name": "test_auth_network",
+        "ip_range": "172.10.0.0/16"
+    }
+}
+
 def setupBridgeAuthNetwork():
     client = docker.from_env()
     networks = client.networks.list()
@@ -43,7 +68,7 @@ def runAuthDatabaseInstance():
     container = client.containers.run(
         image, 
         detach=True, 
-        ports={'10201/tcp': 5432},
+        ports={'5432/tcp': 10201},
         environment=envVariable,
     )
     network = client.networks.get("test_auth_network")
@@ -90,13 +115,52 @@ def runAuthServerInstance():
     container = client.containers.run(
         image, 
         detach=True, 
-        ports={'10200/tcp': 8000},
+        ports={'8000/tcp': 10200},
         environment=envVariable
     )
     network = client.networks.get("test_auth_network")
     network.connect(
         container,
         ipv4_address="172.10.0.2"
+    )
+    print(container.logs())
+
+def runFakeOAuthProviderInstance():
+    imageName = "test_fake_oauth_provider"
+    client=docker.from_env()
+    runningContainers = client.containers.list()
+    for container in runningContainers:
+        for tag in container.image.tags:
+            name = tag.split(':')[0]
+            if name == imageName:
+                container.stop()
+                container.remove()
+    baseImageName = "test_fake_oauth_provider"
+    # delete old image
+    images = client.images.list()
+    for image in images:
+        for tag in image.tags:
+            name = tag.split(':')[0]
+            if name == baseImageName:
+                image.remove()
+    currentPath = os.getcwd()
+    dockerfilePath = currentPath + "/../oauth_redirect"
+    currentTimeStamp = str(int(time.time()))
+    newImageName = baseImageName + ":" + currentTimeStamp
+    image, build_log = client.images.build(
+        path=dockerfilePath,
+        dockerfile="Dockerfile", 
+        tag=newImageName
+    )
+    container = client.containers.run(
+        image, 
+        detach=True, 
+        ports={'8000/tcp': 10203},
+    )
+    network = client.networks.get("test_auth_network")
+    network.connect(
+        container,
+        ipv4_address="172.10.0.4"
     )
     print(container.logs())
 
@@ -113,13 +177,15 @@ def main():
         print("6. Setup bridge network")
         print("7. Exit")
         choice = int(input("Enter your choice: "))
-        if choice<1 or choice>6:
-            print("Choice must be in range {1,5}")
+        if choice<1 or choice>7:
+            print("Choice must be in range {1,7}")
             continue
         if choice == 1:
             runAuthDatabaseInstance()
         if choice == 2:
             runAuthServerInstance()
+        if choice == 5:
+            runFakeOAuthProviderInstance()
         if choice == 6:
             setupBridgeAuthNetwork()
         if choice == 7:

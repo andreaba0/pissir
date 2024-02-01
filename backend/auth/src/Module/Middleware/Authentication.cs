@@ -14,11 +14,10 @@ namespace Module.Middleware;
 
 public static class Authentication
 {
-    public enum Role
-    {
-        GSI,
-        FAR,
-        Anonymous
+    public enum SchemeList {
+        BEARER,
+        INTERNAL,
+        UNKNOW
     }
 
     public static bool TryParseBearerToken(string authorizationHeader, out string jwt)
@@ -53,24 +52,26 @@ public static class Authentication
         return true;
     }
 
-    public static string ParseBearerToken(string authorizationHeader)
+    public static string ParseBearerToken(string authorizationHeader, Authentication.SchemeList scheme = SchemeList.BEARER)
     {
         if (authorizationHeader == null || authorizationHeader == string.Empty)
             throw new AuthenticationException(AuthenticationException.ErrorCode.MISSING_AUTHORIZATION_HEADER, "Missing authorization header");
         Regex tokenRegex = new Regex(@"^(?<scheme>[A-Za-z-]+)\s(?<token>[A-Za-z0-9-_\.]+)$");
         if (!tokenRegex.IsMatch(authorizationHeader))
             throw new AuthenticationException(AuthenticationException.ErrorCode.INCORRECT_AUTHORIZATION_HEADER, "Incorrect authorization header");
-        string scheme = tokenRegex.Match(authorizationHeader).Groups["scheme"].Value;
-        if (scheme.ToLower() != "bearer")
+        string foundScheme = tokenRegex.Match(authorizationHeader).Groups["scheme"].Value;
+        if (foundScheme.ToLower() != scheme.ToString().ToLower())
             throw new AuthenticationException(AuthenticationException.ErrorCode.INCORRECT_AUTHORIZATION_SCHEME, "Incorrect authorization scheme");
-        string token = tokenRegex.Match(authorizationHeader).Groups["token"].Value;
-        Regex jwtRegex = new Regex(@"^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$");
-        string jwtToken = jwtRegex.Match(token).Value;
-        if (jwtToken == string.Empty)
+        string? token = tokenRegex.Match(authorizationHeader).Groups["token"].Value;
+        if (token == string.Empty || token == null)
             throw new AuthenticationException(AuthenticationException.ErrorCode.MISSING_AUTHORIZATION_TOKEN_IN_HEADER, "Missing authorization token in header");
-        if ($"{scheme} {jwtToken}" != authorizationHeader)
+        //Regex jwtRegex = new Regex(@"^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$");
+        //string jwtToken = jwtRegex.Match(token).Value;
+        //if (jwtToken == string.Empty)
+            //throw new AuthenticationException(AuthenticationException.ErrorCode.MISSING_AUTHORIZATION_TOKEN_IN_HEADER, "Missing authorization token in header");
+        if ($"{foundScheme} {token}" != authorizationHeader)
             throw new AuthenticationException(AuthenticationException.ErrorCode.INCORRECT_AUTHORIZATION_HEADER, "Incorrect authorization header");
-        return jwtToken;
+        return token;
     }
 
     internal static string ToBase64Url(byte[] input)

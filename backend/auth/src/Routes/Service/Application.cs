@@ -152,11 +152,11 @@ public class Application
     {
         try
         {
-            Application application = JsonSerializer.Deserialize<Application>(body, new JsonSerializerOptions
+            Application application = JsonSerializer.DeserializeAsync<Application>(body, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
                 UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
-            }) ?? throw new ApplicationException(ApplicationException.ErrorCode.EXPECTED_JSON_BODY, "Expected json body");
+            }).Result ?? throw new ApplicationException(ApplicationException.ErrorCode.EXPECTED_JSON_BODY, "Expected json body");
             if (application.company_vat_number == null)
                 throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "company_vat_number is required");
             if (application.given_name == null)
@@ -176,6 +176,14 @@ public class Application
             string id_token = Authentication.ParseBearerToken(bearer_token);
             Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
             string providerName = remoteJwksHub.GetIssuerName(token.iss);
+
+            if(token.given_name != application.given_name) 
+                throw new ApplicationException(ApplicationException.ErrorCode.BODY_FIELD_DOES_NOT_MATCH_JWT_FIELD, "Body field given_name does not match provider field given_name");
+            if(token.family_name != application.family_name)
+                throw new ApplicationException(ApplicationException.ErrorCode.BODY_FIELD_DOES_NOT_MATCH_JWT_FIELD, "Body field family_name does not match provider field family_name");
+            if(token.email != application.email)
+                throw new ApplicationException(ApplicationException.ErrorCode.BODY_FIELD_DOES_NOT_MATCH_JWT_FIELD, "Body field email does not match provider field email");
+
             using (DbConnection connection = dataSource.OpenConnection())
             {
                 UploadApplicationInTransaction(connection, application, providerName, token.sub).Wait();
@@ -713,6 +721,7 @@ public class ApplicationException : Exception
         USER_ACCOUNT_NOT_FOUND = 11,
         INSUFFICIENT_PERMISSIONS = 12,
         USER_ALREADY_EXISTS = 13,
+        BODY_FIELD_DOES_NOT_MATCH_JWT_FIELD = 14,
     }
     public ErrorCode Code { get; } = default(ErrorCode);
     public ApplicationException(ErrorCode errorCode, string message) : base(message)

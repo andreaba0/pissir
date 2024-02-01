@@ -24,8 +24,7 @@ public static class Authorization {
                     family_name, 
                     email, 
                     tax_code,
-                    person_role,
-                    company_vat_number
+                    person_role
                 FROM 
                     person inner join user_account on person.account_id=user_account.id
                 WHERE user_account.sub=$1 and user_account.registered_provider=$2
@@ -39,16 +38,39 @@ public static class Authorization {
                 throw new AuthorizationException(AuthorizationException.ErrorCode.USER_NOT_FOUND, "User not found");
             }
             while(reader.Read()) {
-                userFields.global_id = reader.GetString(0);
+                userFields.global_id = reader.GetGuid(0).ToString();
                 userFields.given_name = reader.GetString(1);
                 userFields.family_name = reader.GetString(2);
                 userFields.email = reader.GetString(3);
                 userFields.tax_code = reader.GetString(4);
                 userFields.role = reader.GetString(5);
-                userFields.company_vat_number = reader.GetString(6);
             }
+            reader.Close();
+            DbCommand commandGetCompanyVatInfo = connection.CreateCommand();
+            //TODO get company info from db table
+            string companyTable = (userFields.role == "FA") ? "company_far" : "company_wsp";
+            string personTable = (userFields.role == "FA") ? "person_fa" : "person_wa";
+            commandGetCompanyVatInfo.CommandText = $@"
+                SELECT
+                    {companyTable}.vat_number
+                FROM {companyTable} inner join {personTable} on {companyTable}.vat_number = {personTable}.company_vat_number
+                    inner join person on person.account_id = {personTable}.account_id
+                WHERE person.global_id = $1
+            ";
+            Console.WriteLine(userFields.global_id);
+            commandGetCompanyVatInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(userFields.global_id)));
+            using DbDataReader readerCompanyVatInfo = commandGetCompanyVatInfo.ExecuteReader();
+            if(!readerCompanyVatInfo.HasRows) {
+                throw new AuthorizationException(AuthorizationException.ErrorCode.USER_NOT_FOUND, "User not found");
+            }
+            while(readerCompanyVatInfo.Read()) {
+                userFields.company_vat_number = readerCompanyVatInfo.GetString(0);
+            }
+            readerCompanyVatInfo.Close();
+            connection.Close();
             return Task.FromResult(User.Get(userFields));
-        } catch(Exception) {
+        } catch(Exception e) {
+            Console.WriteLine(e);
             throw;
         }
     }

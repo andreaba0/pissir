@@ -1,5 +1,7 @@
 import docker
 import os
+import time
+from utility import Assert, Group
 
 def setupBridgeAuthNetwork():
     client = docker.from_env()
@@ -8,7 +10,16 @@ def setupBridgeAuthNetwork():
         if network.name == "test_auth_network":
             print("Network already exists")
             return
-    client.networks.create("test_auth_network", driver="bridge")
+    #create network and assign ip range 172.10.0.0/16
+    client.networks.create(
+        "test_auth_network", 
+        driver="bridge",
+        ipam=docker.types.IPAMConfig(
+            pool_configs=[docker.types.IPAMPool(
+                subnet='172.10.0.0/16',
+            )]
+        )
+    )
 
 def runAuthDatabaseInstance():
     imageName = "test_auth_database"
@@ -32,16 +43,20 @@ def runAuthDatabaseInstance():
     container = client.containers.run(
         image, 
         detach=True, 
-        ports={'5432/tcp': 5432},
+        ports={'10201/tcp': 5432},
         environment=envVariable,
-        network="test_auth_network"
+    )
+    network = client.networks.get("test_auth_network")
+    network.connect(
+        container,
+        ipv4_address="172.10.0.3"
     )
     print(container.logs())
 
 def runAuthServerInstance():
     imageName = "test_auth_server"
     envVariable = {
-        "DOTNET_ENV_DATABASE_HOST": "localhost",
+        "DOTNET_ENV_DATABASE_HOST": "172.10.0.3",
         "DOTNET_ENV_DATABASE_PORT": "5432",
         "DOTNET_ENV_DATABASE_USER": "postgres",
         "DOTNET_ENV_DATABASE_PASSWORD": "postgres",
@@ -53,44 +68,61 @@ def runAuthServerInstance():
         for tag in container.image.tags:
             name = tag.split(':')[0]
             if name == imageName:
-                print("Auth server is already running")
-                return
+                container.stop()
+                container.remove()
+    baseImageName = "test_auth_server"
+    # delete old image
+    images = client.images.list()
+    for image in images:
+        for tag in image.tags:
+            name = tag.split(':')[0]
+            if name == baseImageName:
+                image.remove()
     currentPath = os.getcwd()
     dockerfilePath = currentPath + "/../backend"
-    print(dockerfilePath)
+    currentTimeStamp = str(int(time.time()))
+    newImageName = baseImageName + ":" + currentTimeStamp
     image, build_log = client.images.build(
         path=dockerfilePath,
         dockerfile="Dockerfile.backend.auth", 
-        tag="test_auth_server"
+        tag=newImageName
     )
     container = client.containers.run(
         image, 
         detach=True, 
-        ports={'5000/tcp': 5000},
-        environment=envVariable,
-        network="test_auth_network"
+        ports={'10200/tcp': 8000},
+        environment=envVariable
+    )
+    network = client.networks.get("test_auth_network")
+    network.connect(
+        container,
+        ipv4_address="172.10.0.2"
     )
     print(container.logs())
 
 def main():
+
     client = docker.from_env()
-    setupBridgeAuthNetwork()
     choice = 0
     while True:
         print("1. Run auth database")
         print("2. Run auth server")
         print("3. Run api database")
         print("4. Run api server")
-        print("5. Exit")
+        print("5. Run OAuth fake server")
+        print("6. Setup bridge network")
+        print("7. Exit")
         choice = int(input("Enter your choice: "))
-        if choice<1 or choice>5:
+        if choice<1 or choice>6:
             print("Choice must be in range {1,5}")
             continue
         if choice == 1:
             runAuthDatabaseInstance()
         if choice == 2:
             runAuthServerInstance()
-        if choice == 5:
+        if choice == 6:
+            setupBridgeAuthNetwork()
+        if choice == 7:
             break
 
 if __name__ == "__main__":

@@ -10,6 +10,9 @@ def gray():
 def normal():
     return "\u001B[0m"
 
+def white():
+    return "\u001B[37m"
+
 def tab():
     return " " * 4
 
@@ -45,13 +48,47 @@ class Assert:
 class Group:
     _list = []
     _motd = ""
+    _tierup = None
+    _tierdown = None
     def __init__(self, motd):
         Group._motd = motd
     def Add(self, method):
         Group._list.append(method)
     def Run(self):
         print("\n")
-        print(f"{gray()}{Group._motd}{normal()}")
+        print(f"{white()}{Group._motd}{normal()}")
+        self.__ExecuteTierUp()
         for method in Group._list:
-            method()
+            try:
+                method()
+            except Exception as e:
+                print(f"{red()} An exception occurred in a test method {normal()}")
+                print(f"{red()} Test suite cancelled {normal()}")
+                print(f"{' '*6} {red()} Error message: {normal()} {e}")
+        self.__ExecuteTierDown()
         print("\n")
+    
+    def TierUp(self, method):
+        Group._tierup = method
+        
+    def TierDown(self, method):
+        Group._tierdown = method
+
+    def __ExecuteTierUp(self):
+        if Group._tierup == None:
+            return
+        try:
+            Group._tierup()
+        except Exception as e:
+            print(f"{red()} An exception occurred in the tierup method {normal()}")
+            print(f"{red()} Test suite cancelled {normal()}")
+            print(f"{' '*6} {red()} Error message: {normal()} {e}")
+    def __ExecuteTierDown(self):
+        if Group._tierdown == None:
+            return
+        try:
+            Group._tierdown()
+        except Exception as e:
+            print(f"{red()} An exception occurred in the tierdown method {normal()}")
+            print(f"{red()} Data for next test suite may be inconsistent {normal()}")
+            print(f"{' '*6} {red()} Error message: {normal()} {e.message}")

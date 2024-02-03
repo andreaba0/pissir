@@ -2,6 +2,9 @@ import docker
 import os
 import time
 from utility import Assert, Group
+from auth import SignUpEntryPoint
+
+client = docker.from_env()
 
 #json object
 json = {
@@ -19,7 +22,10 @@ json = {
         "authDatabase": {
             "ip": "172.10.0.3",
             "exposed_port": 5432,
-            "host_port": 10201
+            "host_port": 10201,
+            "user": "postgres",
+            "password": "postgres",
+            "database": "auth"
         },
     },
     "network": {
@@ -28,8 +34,40 @@ json = {
     }
 }
 
+def testContainerList():
+    for container in client.containers.list(all=True):
+        container.stop()
+        container.wait()
+        container.remove(force=True)
+
+def TagIsInList(tagName, tagList):
+    for tag in tagList:
+        name = tag.split(':')[0]
+        if name == tagName:
+            return True
+    return False
+
+def deleteAllContainersByTagName(tagName):
+    toRemove = []
+    for container in client.containers.list(all=True):
+        if TagIsInList(tagName, container.image.tags):
+            toRemove.append(container)
+    for container in toRemove:
+        if container.status != "exited":
+            container.stop()
+            container.wait()
+    #prune container wheere label is image=tagName
+    client.containers.prune(filters={"label": "image=" + tagName})
+
+def deleteAllOldImagesByTagName(tagName):
+    images = client.images.list()
+    for image in images:
+        for tag in image.tags:
+            name = tag.split(':')[0]
+            if name == tagName:
+                image.remove()
+
 def setupBridgeAuthNetwork():
-    client = docker.from_env()
     networks = client.networks.list()
     for network in networks:
         if network.name == "test_auth_network":
@@ -53,23 +91,29 @@ def runAuthDatabaseInstance():
         "POSTGRES_USER": "postgres",
         "POSTGRES_DB": "auth",
     }
-    client=docker.from_env()
-    runningContainers = client.containers.list()
-    for container in runningContainers:
-        for tag in container.image.tags:
-            name = tag.split(':')[0]
-            if name == imageName:
-                print("Auth database server is already running")
-                return
+    deleteAllContainersByTagName(imageName)
+    baseImageName = imageName
+    deleteAllOldImagesByTagName(baseImageName)
     currentPath = os.getcwd()
     dockerfilePath = currentPath + "/../database/auth/"
+    currentTimeStamp = str(int(time.time()))
+    newImageName = baseImageName + ":" + currentTimeStamp
     print(dockerfilePath)
-    image, build_log = client.images.build(path=dockerfilePath, tag="test_auth_database")
+    image, build_log = client.images.build(
+        path=dockerfilePath,
+        dockerfile="Dockerfile", 
+        tag=newImageName,
+        labels={"image": baseImageName},
+        rm=True
+    )
     container = client.containers.run(
-        image, 
+        newImageName, 
         detach=True, 
         ports={'5432/tcp': 10201},
         environment=envVariable,
+        name=baseImageName,
+        auto_remove=True,
+        labels={"image": baseImageName}
     )
     network = client.networks.get("test_auth_network")
     network.connect(
@@ -87,22 +131,9 @@ def runAuthServerInstance():
         "DOTNET_ENV_DATABASE_PASSWORD": "postgres",
         "DOTNET_ENV_DATABASE_NAME": "auth",
     }
-    client=docker.from_env()
-    runningContainers = client.containers.list()
-    for container in runningContainers:
-        for tag in container.image.tags:
-            name = tag.split(':')[0]
-            if name == imageName:
-                container.stop()
-                container.remove()
-    baseImageName = "test_auth_server"
-    # delete old image
-    images = client.images.list()
-    for image in images:
-        for tag in image.tags:
-            name = tag.split(':')[0]
-            if name == baseImageName:
-                image.remove()
+    deleteAllContainersByTagName(imageName)
+    baseImageName = imageName
+    deleteAllOldImagesByTagName(baseImageName)
     currentPath = os.getcwd()
     dockerfilePath = currentPath + "/../backend"
     currentTimeStamp = str(int(time.time()))
@@ -110,13 +141,18 @@ def runAuthServerInstance():
     image, build_log = client.images.build(
         path=dockerfilePath,
         dockerfile="Dockerfile.backend.auth", 
-        tag=newImageName
+        tag=newImageName,
+        labels={"image": baseImageName},
+        rm=True
     )
     container = client.containers.run(
-        image, 
+        newImageName,
         detach=True, 
         ports={'8000/tcp': 10200},
-        environment=envVariable
+        environment=envVariable,
+        name=baseImageName,
+        auto_remove=True,
+        labels={"image": baseImageName}
     )
     network = client.networks.get("test_auth_network")
     network.connect(
@@ -127,22 +163,9 @@ def runAuthServerInstance():
 
 def runFakeOAuthProviderInstance():
     imageName = "test_fake_oauth_provider"
-    client=docker.from_env()
-    runningContainers = client.containers.list()
-    for container in runningContainers:
-        for tag in container.image.tags:
-            name = tag.split(':')[0]
-            if name == imageName:
-                container.stop()
-                container.remove()
-    baseImageName = "test_fake_oauth_provider"
-    # delete old image
-    images = client.images.list()
-    for image in images:
-        for tag in image.tags:
-            name = tag.split(':')[0]
-            if name == baseImageName:
-                image.remove()
+    deleteAllContainersByTagName(imageName)
+    baseImageName = imageName
+    deleteAllOldImagesByTagName(baseImageName)
     currentPath = os.getcwd()
     dockerfilePath = currentPath + "/../oauth_redirect"
     currentTimeStamp = str(int(time.time()))
@@ -150,12 +173,17 @@ def runFakeOAuthProviderInstance():
     image, build_log = client.images.build(
         path=dockerfilePath,
         dockerfile="Dockerfile", 
-        tag=newImageName
+        tag=newImageName,
+        labels={"image": baseImageName},
+        rm=True
     )
     container = client.containers.run(
-        image, 
+        newImageName, 
         detach=True, 
         ports={'8000/tcp': 10203},
+        name=baseImageName,
+        auto_remove=True,
+        labels={"image": baseImageName}
     )
     network = client.networks.get("test_auth_network")
     network.connect(
@@ -164,9 +192,21 @@ def runFakeOAuthProviderInstance():
     )
     print(container.logs())
 
+def TestRoutine():
+    SignUpEntryPoint(
+        json["server"]["authDatabase"]["ip"],
+        json["server"]["authDatabase"]["exposed_port"],
+        json["server"]["authDatabase"]["database"],
+        json["server"]["authDatabase"]["user"],
+        json["server"]["authDatabase"]["password"],
+        json["server"]["authServer"]["ip"],
+        json["server"]["authServer"]["exposed_port"]
+    )
+
 def main():
 
-    client = docker.from_env()
+    #testContainerList()
+    #return
     choice = 0
     while True:
         print("1. Run auth database")
@@ -175,20 +215,28 @@ def main():
         print("4. Run api server")
         print("5. Run OAuth fake server")
         print("6. Setup bridge network")
-        print("7. Exit")
+        print("7. Run test routine")
+        print("8. Exit")
         choice = int(input("Enter your choice: "))
-        if choice<1 or choice>7:
-            print("Choice must be in range {1,7}")
+        if choice<1 or choice>8:
+            print("Choice must be in range {1,8}")
             continue
         if choice == 1:
             runAuthDatabaseInstance()
+            continue
         if choice == 2:
             runAuthServerInstance()
+            continue
         if choice == 5:
             runFakeOAuthProviderInstance()
+            continue
         if choice == 6:
             setupBridgeAuthNetwork()
+            continue
         if choice == 7:
+            TestRoutine()
+            continue
+        if choice == 8:
             break
 
 if __name__ == "__main__":

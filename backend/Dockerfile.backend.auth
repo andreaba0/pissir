@@ -1,16 +1,9 @@
 from mcr.microsoft.com/dotnet/sdk:8.0 as build
 
-run mkdir /app
+run mkdir -p /app/backend/auth/src
 
-run mkdir /app/backend
-run mkdir /app/backend/auth
-run mkdir /app/backend/auth/src
+run mkdir -p /app/backend/library/OpenIdManager
 
-run mkdir /app/backend/library
-run mkdir /app/backend/library/MQTTPooledLibrary
-run mkdir /app/backend/library/OpenIdManager
-
-COPY ./library/MQTTPooledLibrary /app/backend/library/MQTTPooledLibrary
 COPY ./library/OpenIdManager /app/backend/library/OpenIdManager
 
 COPY ./auth/src /app/backend/auth/src
@@ -36,4 +29,4 @@ env DOTNET_ENVIRONMENT=Testing
 
 expose 8000
 
-CMD ["./auth_server"]
+entrypoint ["dotnet", "auth_server.dll"]

@@ -3,37 +3,36 @@ using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Security.Cryptography;
 using Interface.Utility;
-using Interface.Module.JsonWebToken;
 using Types;
 using Jose;
+using Module.KeyManager;
 
 namespace Module.JsonWebToken;
 
 public class JwtControl
 {
     private readonly IClockCustom _clockCustom;
-    private readonly IFetch _fetch;
+    private readonly HttpClient _httpClient;
     private string _backendKeyStoreUrl;
 
     public JwtControl(
         IClockCustom clockCustom,
-        IFetch fetch,
+        HttpClient fetch,
         string backendKeyStoreUrl
     )
     {
         this._clockCustom = clockCustom;
-        this._fetch = fetch;
+        this._httpClient = fetch;
         this._backendKeyStoreUrl = backendKeyStoreUrl;
     }
 
-    public bool GetClaims(
+    public User GetClaims(
         string token, 
-        out IdentityToken principal, 
-        out string error_message,
-        IKeyService _jwtKeyStore
+        Manager _jwtKeyStore
     )
     {
-        principal = null;
+        return null;
+        /*principal = null;
         error_message = string.Empty;
         
         IDictionary<string, object> headers = Jose.JWT.Headers(token);
@@ -61,6 +60,6 @@ public class JwtControl
         } catch(Exception ex) {
             error_message = "Generic error";
             return false;
-        }
+        }*/
     }
 }

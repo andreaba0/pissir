@@ -8,7 +8,7 @@ namespace Module.JsonWebToken;
 public class JwtKeyStoreTest {
 
     [Test]
-    public void TestKeyExpiration() {
+    public void KeyExpirationTest() {
         var clockMock = new Mock<IClockCustom>();
         JwtKeyStore store = new JwtKeyStore(clockMock.Object);
         KeyManager keyManager = new KeyManager();

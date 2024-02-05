@@ -8,6 +8,7 @@ using System.Data.Common;
 
 using Module.Accountant;
 using Module.JsonWebToken;
+using Module.KeyManager;
 using Utility;
 
 class Program
@@ -56,43 +57,33 @@ class Program
         //Shared channel used to send data to mqtt client pool
         Channel<IMqttBusPacket> mqttChannel = mqttPool.GetSharedInputChannel();
 
-        KeyService keyManager = new KeyService(
+        HttpClient httpClient = new HttpClient();
+        httpClient.Timeout = TimeSpan.FromSeconds(5);
+
+        RemoteManager remoteKeyManager = new RemoteManager(
             backendAuthUri,
-            new Fetch()
-        );
-
-
-        Accountant accountant = new Accountant(
-            dataSource,
-            mqttChannel
+            httpClient
         );
 
         WebServer webServer = new WebServer(
             dataSource,
             new JwtControl(
                 new ClockCustom(),
-                new Fetch(),
+                httpClient,
                 backendAuthUri
             ),
             new ClockCustom(),
-            keyManager
+            httpClient,
+            remoteKeyManager
         );
 
         Task mqttTask = Task.Factory.StartNew(() => mqttPool.RunAsync(
             cts.Token
         ), TaskCreationOptions.LongRunning);
-        Task accountantTask = Task.Factory.StartNew(() => accountant.RunAsync(
-            cts.Token
-        ), TaskCreationOptions.LongRunning);
-        Task webServerTask = Task.Factory.StartNew(() => webServer.runServer(), TaskCreationOptions.LongRunning);
-        Task keyManagerTask = Task.Factory.StartNew(() => keyManager.RunAsync(
-            cts.Token
-        ), TaskCreationOptions.LongRunning);
+        Task webServerTask = Task.Factory.StartNew(() => webServer.RunAsync(), TaskCreationOptions.LongRunning);
 
         mqttTask.Wait();
-        accountantTask.Wait();
         webServerTask.Wait();
-        keyManagerTask.Wait();
 
         Console.WriteLine("Exiting...");
         return 0;

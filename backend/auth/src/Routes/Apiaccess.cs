@@ -152,7 +152,7 @@ public class ApiAccess {
         }
     }
 
-    internal Task PostMethod_ACLReject(
+    internal static Task PostMethod_ACLReject(
         DbConnection connection,
         AccessRequestBody accessRequestBody,
         DbDataSource dataSource,
@@ -173,6 +173,10 @@ public class ApiAccess {
         {
             throw;
         }
+    }
+
+    public static Task PostMethod_Token() {
+        return Task.CompletedTask;
     }
 }
 

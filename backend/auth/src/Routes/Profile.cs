@@ -57,12 +57,30 @@ public class Profile
 
             string companyTable = (profile.role == "FA") ? "company_far" : "company_wsp";
             string personTable = (profile.role == "FA") ? "person_fa" : "person_wa";
-            DbCommand commandGetCompanyVatInfo = connection.CreateCommand();
+            Console.WriteLine("TRTFGDFGEHTG");
+            using DbCommand commandGetCompanyVatInfo = connection.CreateCommand();
             //TODO get company info from db table
+            commandGetCompanyVatInfo.CommandText = $@"
+                SELECT
+                    {companyTable}.vat_number
+                FROM {companyTable} inner join {personTable} on {companyTable}.vat_number = {personTable}.company_vat_number
+                    inner join person on person.account_id = {personTable}.account_id
+                WHERE person.global_id = $1
+            ";
+            commandGetCompanyVatInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(profile.id)));
+            using DbDataReader reader = commandGetCompanyVatInfo.ExecuteReader();
+            if (!reader.HasRows) throw new ProfileException(ProfileException.ErrorCode.USER_NOT_FOUND, "User not found");
+            reader.Read();
+            profile.company_vat_number = reader.GetString(0);
+            reader.Close();
             connection.Close();
             return profile;
         }
         catch (AuthenticationException)
+        {
+            throw;
+        }
+        catch (AuthorizationException)
         {
             throw;
         }
@@ -76,6 +94,7 @@ public class Profile
         }
         catch (Exception e)
         {
+            Console.WriteLine(e);
             throw new ProfileException(ProfileException.ErrorCode.GENERIC_ERROR, "Generic error", e);
         }
     }

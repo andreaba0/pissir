@@ -11,3 +11,4 @@ target/
 key*
 key*.*
 .vscode/
+__pycache__/

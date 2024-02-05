@@ -26,13 +26,12 @@ class Program
     }
     public static int Main(string[] args)
     {
+        Console.WriteLine($"Environment: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
         var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-#if DEVELOPMENT
-            .AddJsonFile("appsettings.Development.json");
-#else
-            .AddJsonFile("appsettings.json");
-#endif
+            .AddJsonFile("appsettings.json", optional:true, reloadOnChange:true)
+            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional:false, reloadOnChange:true)
+            .AddEnvironmentVariables();
         var configuration = builder.Build();
 
         string postgresHost = GetProperty(configuration, "database:host");

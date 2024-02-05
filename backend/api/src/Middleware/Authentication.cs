@@ -4,6 +4,9 @@ using Extension;
 using System.Text.RegularExpressions;
 using System.Security.Claims;
 
+using Types;
+using Jose;
+
 namespace Middleware;
 
 public static class Authentication
@@ -39,6 +42,10 @@ public static class Authentication
         error_message = string.Empty;
         return true;
     }
+
+    /*public OpenidToken VerifyToken(string jwt) {
+
+    }*/
 
    /*public static bool CheckTokenClaim(ClaimsPrincipal principal, out string error_message) {
         error_message = string.Empty;

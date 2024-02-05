@@ -45,7 +45,7 @@ public class LocalManager : Manager
             await using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                var id = reader.GetString(0);
+                var id = reader.GetGuid(0).ToString();
                 var d = (byte[])reader.GetValue(1);
                 var dp = (byte[])reader.GetValue(2);
                 var dq = (byte[])reader.GetValue(3);
@@ -142,7 +142,7 @@ public class QueryKeyService
         List<ProviderInfo>? providers = default(List<ProviderInfo>);
         while (true)
         {
-            Console.WriteLine("Querying jwks endpoint...");
+            Console.WriteLine("Querying jwks endpoint from database...");
             try
             {
                 providers = await QueryJwksEndpointAsync();

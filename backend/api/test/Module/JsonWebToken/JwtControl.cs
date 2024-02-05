@@ -13,7 +13,8 @@ class PresignedToken
     public string getToken1()
     {
         // iat: 1704070800, exp: 1704080800, kid: key1, sub: 1234567890, roles: [FAR]
-        return @"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImtleTEifQ.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZXMiOlsiRkFSIl0sImlhdCI6MTcwNDA2NzIwMCwiZXhwIjoxNzA0MDgwODAwfQ.rjm8GEuLzJOyMBHSOqreNC3BF5-z2u2jRoRB02ha2asubKOMz_pDVcXdiub7w33LkBorWaotVSDFg_f7mIjg7GEscQgLEzJ5ofmyBpmba3gqupUIdf4F1-K-1aaaH1Ult8m9NLxe-asdj1qY8It6okQz085ULwm6K3wgcb7WGNDyE1emE16k5_SCCdAXCR3D8fO0KphQvT02vYmfyTkS6I2_LGRENWi1HDjhbDz05vz3DlTMWr_hzYNwpvYGPAoARsmpUnFLkWTvTM8cjBfMDbVe7h8JwWDd-wSzPuBc8su6ZUxLwLChlhJWnN7Q15v9LCUi54GXI832NvCg-StFqQ";
+        //return @"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImtleTEifQ.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZXMiOlsiRkFSIl0sImlhdCI6MTcwNDA2NzIwMCwiZXhwIjoxNzA0MDgwODAwfQ.rjm8GEuLzJOyMBHSOqreNC3BF5-z2u2jRoRB02ha2asubKOMz_pDVcXdiub7w33LkBorWaotVSDFg_f7mIjg7GEscQgLEzJ5ofmyBpmba3gqupUIdf4F1-K-1aaaH1Ult8m9NLxe-asdj1qY8It6okQz085ULwm6K3wgcb7WGNDyE1emE16k5_SCCdAXCR3D8fO0KphQvT02vYmfyTkS6I2_LGRENWi1HDjhbDz05vz3DlTMWr_hzYNwpvYGPAoARsmpUnFLkWTvTM8cjBfMDbVe7h8JwWDd-wSzPuBc8su6ZUxLwLChlhJWnN7Q15v9LCUi54GXI832NvCg-StFqQ";
+        return @"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImtleTEifQ.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZXMiOlsiRkFSIl0sImlhdCI6MTcwNDA2NzIwMCwiZXhwIjoxNzA0MDgwODAwLCJuYmYiOjE3MDQwNjcyMDB9.LqmffZ0fuzGzO7793aEjAidIqYCDBHkTG0tofsQd0IKrLSM9LJs5wF9JOOi685x6lAQ8GItqqHFpcAR71eien2vF9FLAKQ6RK-C3EKG_GQ43FUKSivu2fiu6jTpUervmz8I2S8wHbNbm58AKSfw7YWScavjDAd73m9bcedgXxiVR4yO3VzpWStWCskBjJc5QtHr74Nh9CZr9nCfPPc6j4PT-UgtZCnmr0LY21seZCvrCpOJ7HNbD0DgkT8v1bhwDwKRbQ0RP_Co5DNLq2qugKaNcJCh5I3rpjF0mg8KpliB8PZRfmgxiyT6srdENedaHUb_4Jsx6302LDpUp1pWJxw";
     }
 
     public string getToken2()
@@ -27,7 +28,7 @@ public class JwtControlTest
 {
 
     [Test]
-    public async Task TestUpdateKeys()
+    public async Task UpdateKeysTest()
     {
         PresignedToken presignedToken = new PresignedToken();
         KeyManager keyManager = new KeyManager();
@@ -47,29 +48,33 @@ public class JwtControlTest
 
         {
             clockMock.Setup(x => x.UtcNow()).Returns(DateTimeOffset.FromUnixTimeSeconds(1704080700).DateTime);
-            (bool isOk, ClaimsPrincipal principal) = await jwtControl.GetClaims(presignedToken.getToken1());
+            bool isOk = jwtControl.GetClaims(presignedToken.getToken1(), out ClaimsPrincipal principal, out string message);
             Assert.IsTrue(isOk);
             Assert.IsNotNull(principal);
+            Assert.That(message, Is.Empty);
         }
 
         {
             clockMock.Setup(x => x.UtcNow()).Returns(DateTimeOffset.FromUnixTimeSeconds(1704080700).DateTime);
-            (bool isOk, ClaimsPrincipal principal) = await jwtControl.GetClaims(presignedToken.getToken2());
+            bool isOk = jwtControl.GetClaims(presignedToken.getToken2(), out ClaimsPrincipal principal, out string message);
             Assert.IsFalse(isOk);
             Assert.IsNull(principal);
+            Assert.That(message, Is.EqualTo("Key not found"));
         }
 
         {
             clockMock.Setup(x => x.UtcNow()).Returns(DateTimeOffset.FromUnixTimeSeconds(1704080801).DateTime);
-            (bool isOk, ClaimsPrincipal principal) = await jwtControl.GetClaims(presignedToken.getToken1());
+            bool isOk = jwtControl.GetClaims(presignedToken.getToken1(), out ClaimsPrincipal principal, out string message);
             Assert.IsFalse(isOk);
             Assert.IsNull(principal);
+            Assert.That(message, Is.EqualTo("Token expired"));
         }
 
         {
             clockMock.Setup(x => x.UtcNow()).Returns(DateTimeOffset.FromUnixTimeSeconds(1704080700).DateTime);
-            (bool isOk, ClaimsPrincipal principal) = await jwtControl.GetClaims(presignedToken.getToken1());
-            bool isOk2 = Authentication.CheckTokenClaim(principal, out string message);
+            bool isOk = jwtControl.GetClaims(presignedToken.getToken1(), out ClaimsPrincipal principal, out string message);
+            //bool isOk2 = Authentication.CheckTokenClaim(principal, out string message);
+            Assert.IsTrue(isOk);
         }
 
     }

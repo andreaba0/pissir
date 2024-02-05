@@ -1,49 +1,21 @@
-create table user_role (
-    role varchar(3) primary key check(role in ('WSP', 'FAR'))
-);
 create table industry_sector (
     sector_name varchar(2) primary key check(sector_name in ('WA', 'FA'))
 );
 create table person(
-    tax_code varchar(16) primary key,
-    name text not null,
-    surname text not null,
-    role varchar(3) not null,
-    unique (tax_code, role)
-);
-create table user_wsp(
-    tax_code varchar(16) primary key,
-    role varchar(3) not null check(role = 'WSP')
-);
-create table farmer(
-    tax_code varchar(16) primary key,
-    role varchar(3) not null check(role = 'FAR')
+    internal_id bigint primary key,
+    global_id uuid unique not null,
+    company_vat_number varchar(11) not null
 );
 create table company(
     vat_number varchar(11) primary key,
-    name text not null,
-    address text not null,
-    phone_number varchar(10) not null,
-    email text not null,
+    company_name text not null,
     industry_sector varchar(2) not null,
     unique (vat_number, industry_sector)
-);
-create table water_company(
-    vat_number varchar(11) primary key,
-    industry_sector varchar(2) not null check(industry_sector = 'WA')
-);
-create table farm(
-    vat_number varchar(11) primary key,
-    industry_sector varchar(2) not null check(industry_sector = 'FA')
-);
-create table work_relation(
-    tax_code varchar(16),
-    vat_number varchar(11),
-    primary key (tax_code, vat_number)
 );
 create table offer(
     id varchar(26) primary key,
     vat_number varchar(11) not null,
+    company_industry_sector varchar(2) not null check(company_industry_sector = 'WA'),
     publish_date date not null,
     price_liter float not null,
     qty float not null,
@@ -58,12 +30,13 @@ create table buy_order(
 create table farm_field(
     id varchar(26) primary key,
     vat_number varchar(11),
+    company_industry_sector varchar(2) not null check(company_industry_sector = 'FA'),
     square_meters float not null,
     crop_type text not null,
     irrigation_type text not null
 );
 create table irrigation_type(
-    name text primary key
+    irrigation_name text primary key
 );
 create table sensor_type(
     id text primary key
@@ -78,7 +51,7 @@ create table umdty_sensor_log(
     object_id varchar(26),
     sensor_type text,
     log_time timestamptz not null,
-    umdty float not null
+    umdty float not null check (umdty >= 0 and umdty <= 100)
 );
 create table tmp_sensor_log(
     object_id varchar(26),

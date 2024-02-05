@@ -13,8 +13,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\library\MQTTPooledLibrary\MQTTPooled\MQTTPooled.csproj" />
     <ProjectReference Include="..\..\library\OpenIdManager\src\OpenIdManager.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="appsettings.json" CopyToPublishDirectory="Never" />
+    <None Include="appsettings.Development.json" CopyToPublishDirectory="Never" />
+    <None Include="appsettings.Production.json" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
 </Project>

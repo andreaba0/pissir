@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <DefineConstants>$(DefineConstants);DEVELOPMENT</DefineConstants>
@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\library\MQTTPooledLibrary\MQTTPooled\MQTTPooled.csproj" />
+    <ProjectReference Include="..\..\library\OpenIdManager\src\OpenIdManager.csproj" />
   </ItemGroup>
 
 

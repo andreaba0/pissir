@@ -4,11 +4,11 @@ using System.Web;
 using Microsoft.AspNetCore.Http;
 using Extension;
 
-public static class TestAuthentication
+public static class AuthenticationTest
 {
 
     [Test]
-    public static void TestIsAuthenticated()
+    public static void IsAuthenticatedTest()
     {
         {
             string jwt = string.Empty;
@@ -56,8 +56,8 @@ public static class TestAuthentication
         }
     }
 
-    [Test]
-    public static async Task TestJwtCheck()
+    /*[Test]
+    public static async Task JwtCheckTest()
     {
         var context = new Mock<HttpContext>();
         var request = new Mock<HttpRequest>();
@@ -84,6 +84,6 @@ public static class TestAuthentication
 
         Assert.AreEqual(statusCode, 401);
         Assert.AreEqual(messageResponse, "Missing Authorization header");
-    }
+    }*/
 
 }

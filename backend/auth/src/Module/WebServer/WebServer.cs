@@ -16,9 +16,6 @@ using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 
-using MQTTConcurrent;
-using MQTTConcurrent.Message;
-
 using Module.KeyManager;
 
 namespace Module.WebServer;
@@ -54,51 +51,30 @@ public class WebServer
 
         app.MapPost("/openid/key", async context =>
         {
-            //create a new rsa key and insert the key parameters to database table rsa
-            var rsa = RSA.Create();
-            var parameters = rsa.ExportParameters(true);
-            var keyId = Guid.NewGuid().ToString();
-
-            //insert the key using Npgsql as DbDataSource without calling undeclared methods
-            await using var connection = await _dbDataSource.OpenConnectionAsync();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                INSERT INTO rsa (id, d, dp, dq, exponent, inverse_q, modulus, p, q, created_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
-            ";
-
-            DbParameter[] dbParameters = new DbParameter[] {
-                DbUtility.CreateParameter(connection, DbType.String, keyId),
-                DbUtility.CreateParameter(connection, DbType.Binary, parameters.D),
-                DbUtility.CreateParameter(connection, DbType.Binary, parameters.DP),
-                DbUtility.CreateParameter(connection, DbType.Binary, parameters.DQ),
-                DbUtility.CreateParameter(connection, DbType.Binary, parameters.Exponent),
-                DbUtility.CreateParameter(connection, DbType.Binary, parameters.InverseQ),
-                DbUtility.CreateParameter(connection, DbType.Binary, parameters.Modulus),
-                DbUtility.CreateParameter(connection, DbType.Binary, parameters.P),
-                DbUtility.CreateParameter(connection, DbType.Binary, parameters.Q),
-                DbUtility.CreateParameter(connection, DbType.DateTime, DateTime.UtcNow)
-            };
-            command.Parameters.AddRange(dbParameters);
-
-            Console.WriteLine(connection.State);
-
             try
             {
-                var value = await command.ExecuteScalarAsync();
-                //check if the key was inserted
-                if (value == null)
-                {
-                    context.Response.StatusCode = 500;
-                    await context.Response.WriteAsync("Internal Server Error");
-                    return;
-                }
-                context.Response.StatusCode = 201;
+                KeyRotator.PostMethod_Rotate(
+                    context.Request.Headers,
+                    _dbDataSource
+                ).Wait();
+                context.Response.StatusCode = 200;
                 await context.Response.WriteAsync("OK");
             }
-            catch (Exception ex)
+            catch (AuthenticationException e)
             {
-                Console.WriteLine(ex);
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException e)
+            {
+                Console.WriteLine(e);
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Internal Server Error");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception: " + e);
+                Console.WriteLine(e);
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync("Internal Server Error");
             }
@@ -123,8 +99,13 @@ public class WebServer
                 context.Response.StatusCode = 401;
                 await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
             }
-            catch (DbException)
+            catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync((e.Code != default(AuthorizationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException e)
             {
+                Console.WriteLine(e);
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync("Server error");
             }
@@ -186,6 +167,8 @@ public class WebServer
                     new DateTimeProvider(),
                     _remoteManager
                 ).Wait();
+                context.Response.StatusCode = 201;
+                await context.Response.WriteAsync("Created");
             }
             catch (AuthenticationException e)
             {
@@ -390,6 +373,7 @@ public class WebServer
             _queryKeyService.RunAsync(cancellationToken)
         };
         await Task.WhenAll(tasks);
+        Console.WriteLine("WebServer stopped");
 
         return 0;
     }

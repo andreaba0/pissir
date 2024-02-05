@@ -96,9 +96,9 @@ def testPartialBody():
         400,
         response.status_code
     )
-    Assert.Equals(
+    Assert.Contains(
         "Should provide the name of the missing field",
-        "company_vat_number is required",
+        ["company_category is required", "company_vat_number is required"],
         response.text
     )
 
@@ -119,7 +119,7 @@ def testWithMissingBody():
     )
 
 def testSignupAccepted():
-    token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InJzYWtleTEucGVtIn0.eyJpc3MiOiJodHRwczovL2FwcHdlYi5hbmRyZWFiYXJjaGlldHRvLml0IiwiYXVkIjoicGlzc2lyLXRlc3Qtc3VpdGUiLCJzdWIiOiIyMjIzMzM0NDQiLCJnaXZlbl9uYW1lIjoiTWlja2V5IiwiZmFtaWx5X25hbWUiOiJEb2UiLCJlbWFpbCI6Im1pY2tleS5kb2VAZ21haWwuY29tIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE4NTU1NTU1NTV9.Uzaa2H1yXanlIrYxqtc5p5YtLCkCjXrCE7xaLHP7_RDpHCcrQwWP_66-JzHwgOOp6wfUYU8X1TUGtRy_XYOks1L7r7feuB68QtaWuNmHQTOmybAcx74mHOqz7rB_zzTMJCykQCMfFsBfssM9Nhki3CI8_nIOeuhg8PVD9WAkESRiKOwGbV9oU294BhClGKzMYt_RkubDbmYiKiDIHfWQulQtc_BHdgQdZU-ohlmtDmcpPdDpoPJ0dlXTVJXWPuL3VHkh6RAvEOizrWOlXQ-31gf6pMV839XOSYCydP_6mPQ7UCF9nTXXHmHvdOT1eObio7PotijrHC-VnD5KDiVx8g"
+    token ="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InJzYWtleTEucGVtIn0.eyJpc3MiOiJodHRwczovL2FwcHdlYi5hbmRyZWFiYXJjaGlldHRvLml0IiwiYXVkIjoiaW50ZXJuYWxfd29ya3NwYWNlQGFwcHdlYi5hbmRyZWFiYXJjaGlldHRvLml0Iiwic3ViIjoiMjIyMzMzNDQ0IiwiZ2l2ZW5fbmFtZSI6Ik1pY2tleSIsImZhbWlseV9uYW1lIjoiRG9lIiwiZW1haWwiOiJtaWNrZXkuZG9lQGdtYWlsLmNvbSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxODU1NTU1NTU1fQ.qrtQeNjnHXSW3UZ1c2wT_dUG5_vMCz2dP_zFpfjp5O3qTDqqzqlD966seBC_igjFIMOiNbuM9V95ChmpmrUrRjAN2g4WmaqAbwkla_sTxzIQRHSgBgVHzLemnbGiWLW5iIJh2zakBEjEB4Vx829qtLzxmo9fVMaQQoHb80eA6C3-GnBt9DiHpGhSsksDgcyhQHdLC9MCDDtmA7sMsdnP3vpfPgjcmZ0J-X1-6oyUtHrDrc3m7JXnCMULxRFD74wIoeCTMWMgU4dDvi7zyuLbxS9VibcS8dzcF13etThwzfeglwmJyYr2SEDN2lRsOsfnkZO12FyKHIrrpfEMAzvxBQ"
     response = requests.post(
         f"http://{backendConfig['host']}:{backendConfig['port']}/service/apply",
         json={

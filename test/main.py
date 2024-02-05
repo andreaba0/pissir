@@ -3,6 +3,11 @@ import os
 import time
 from utility import Assert, Group
 from auth import SignUpEntryPoint
+import os
+import psycopg2
+
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 client = docker.from_env()
 
@@ -115,6 +120,9 @@ def runAuthDatabaseInstance():
         auto_remove=True,
         labels={"image": baseImageName}
     )
+    while(container.status != "running"):
+        time.sleep(10)
+        container.reload()
     network = client.networks.get("test_auth_network")
     network.connect(
         container,
@@ -203,40 +211,54 @@ def TestRoutine():
         json["server"]["authServer"]["exposed_port"]
     )
 
+def initAuthDatabase():
+    #connect to database and run auth/init_default.sql file
+    with open(os.path.join(__location__, 'auth/init_default.sql'), "r") as file:
+        setupSql = file.read()
+    backendConfig = json["server"]["fakeOAuthProvider"]
+    setupSql = setupSql.replace("<provider_uri>", f"http://{backendConfig['ip']}:{backendConfig['exposed_port']}/.well-known/openid-configuration")
+    #connect to database
+    databaseConfig = json["server"]["authDatabase"]
+    conn = psycopg2.connect(
+        host=databaseConfig["ip"],
+        port=databaseConfig["exposed_port"],
+        database=databaseConfig["database"],
+        user=databaseConfig["user"],
+        password=databaseConfig["password"]
+    )
+    cur = conn.cursor()
+    cur.execute(setupSql)
+    conn.commit()
+    cur.close()
+    conn.close()
+
 def main():
 
     #testContainerList()
     #return
     choice = 0
     while True:
-        print("1. Run auth database")
-        print("2. Run auth server")
-        print("3. Run api database")
-        print("4. Run api server")
-        print("5. Run OAuth fake server")
-        print("6. Setup bridge network")
-        print("7. Run test routine")
-        print("8. Exit")
+        print("1. Setup container workflow")
+        print("2. Setup container network")
+        print("3. Run auth test routine")
+        print("4. Exit")
         choice = int(input("Enter your choice: "))
-        if choice<1 or choice>8:
-            print("Choice must be in range {1,8}")
+        if choice<1 or choice>4:
+            print("Choice must be in range {1,4}")
             continue
         if choice == 1:
             runAuthDatabaseInstance()
-            continue
-        if choice == 2:
+            initAuthDatabase()
             runAuthServerInstance()
-            continue
-        if choice == 5:
             runFakeOAuthProviderInstance()
             continue
-        if choice == 6:
+        if choice == 2:
             setupBridgeAuthNetwork()
             continue
-        if choice == 7:
+        if choice == 3:
             TestRoutine()
             continue
-        if choice == 8:
+        if choice == 4:
             break
 
 if __name__ == "__main__":

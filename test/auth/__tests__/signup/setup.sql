@@ -1,50 +1,18 @@
-insert into user_role(
-    role_name
-) values (
-    'WA'
-), (
-    'FA'
-);
-
-insert into industry_sector(
-    sector_name
-) values (
-    'WSP'
-), (
-    'FAR'
-);
-
-insert into registered_provider(
-    provider_name,
-    configuration_uri
-) values (
-    'internal',
-    '<provider_uri>'
-);
-
-insert into allowed_audience(
-    registered_provider,
-    audience
-) values (
-    'internal',
-    '<audience>'
-);
-
 insert into user_account(
     id,
     registered_provider,
     sub
 ) values (
     1,
-    'internal',
+    'test_provider',
     '1234567890'
 ), (
     2,
-    'internal',
+    'test_provider',
     '0987654321'
 ), (
     3,
-    'internal',
+    'test_provider',
     '222333444'
 );
 

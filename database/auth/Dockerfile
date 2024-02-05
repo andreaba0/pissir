@@ -2,5 +2,4 @@ from postgres:14.0-alpine
 
 copy schema.sql /tmp/schema.sql
 copy alter.sql /tmp/alter.sql
-copy init_data.sql /tmp/init_data.sql
-run cat /tmp/schema.sql /tmp/alter.sql /tmp/init_data.sql > /docker-entrypoint-initdb.d/init.sql
+run cat /tmp/schema.sql /tmp/alter.sql > /docker-entrypoint-initdb.d/init.sql

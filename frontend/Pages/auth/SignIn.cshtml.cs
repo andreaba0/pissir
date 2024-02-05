@@ -41,7 +41,7 @@ public class SignInModel : PageModel
                 Response.Cookies.Append("Provider", provider, new CookieOptions
                 {
                     Path = "/",
-                    Expires = DateTime.Now.AddMinutes(1),
+                    Expires = DateTime.Now.AddSeconds(10),
                     HttpOnly = true,
                     Secure = false,
                 });

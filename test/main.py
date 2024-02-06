@@ -5,6 +5,7 @@ from utility import Assert, Group
 from auth import SignUpEntryPoint
 import os
 import psycopg2
+import re
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -121,20 +122,52 @@ def runAuthDatabaseInstance():
         labels={"image": baseImageName}
     )
     while(container.status != "running"):
-        time.sleep(10)
+        time.sleep(1)
         container.reload()
     network = client.networks.get("test_auth_network")
     network.connect(
         container,
-        ipv4_address="172.10.0.3"
+        ipv4_address=json["server"]["authDatabase"]["ip"]
     )
-    print(container.logs())
+    postgresIsRunning = False
+    while not postgresIsRunning:
+        (code, out) = container.exec_run("netstat -an", stdout=True)
+        asciiOut = out.decode("ascii")
+        regexString = r"^(?P<proto>((tcp)|(udp)))( )+[0-9]+( )+[0-9]+( )+(?P<local_address>([0-9.:]+))( )+(?P<foreign_address>[0-9.:*]+)( )+(?P<state>[A-Z]+)( )+$"
+        regexIter = re.finditer(regexString, asciiOut, flags=re.MULTILINE)
+        for i, match in enumerate(regexIter):
+            print(f"Iteration number {i}")
+            print(match.group("proto"))
+            print(match.group("local_address"))
+            print(match.group("foreign_address"))
+            print(match.group("state"))
+            if match.group("local_address") == "0.0.0.0:5432":
+                if match.group("state") == "LISTEN":
+                    postgresIsRunning = True
+                    break
+        time.sleep(1)
+    privateIpAssigned = False
+    while not privateIpAssigned:
+        (code, out) = container.exec_run("ip addr", stdout=True)
+        asciiOut = out.decode("ascii")
+        regexString = r"^[0-9]+: (?P<if_name>[a-zA-Z0-9]+(@[a-z-A-Z0-9]+)?:)(.*?)state (?P<state>([A-Z]+)) +\n(.* ?)\n( +)[a-z]+ (?P<ip>[0-9.?]+\/[0-9]+) brd (?P<broadcast>[0-9.?]+)"
+        regexIter = re.finditer(regexString, asciiOut, flags=re.MULTILINE)
+        for match in regexIter:
+            print(match.group("if_name"))
+            print(match.group("state"))
+            print(match.group("ip"))
+            print(match.group("broadcast"))
+            if match.group("ip") == json["server"]["authDatabase"]["ip"] + "/16":
+                if match.group("state") == "UP":
+                    privateIpAssigned = True
+                    break
+        time.sleep(1)
 
 def runAuthServerInstance():
     imageName = "test_auth_server"
     envVariable = {
-        "DOTNET_ENV_DATABASE_HOST": "172.10.0.3",
-        "DOTNET_ENV_DATABASE_PORT": "5432",
+        "DOTNET_ENV_DATABASE_HOST": json["server"]["authDatabase"]["ip"],
+        "DOTNET_ENV_DATABASE_PORT": json["server"]["authDatabase"]["exposed_port"],
         "DOTNET_ENV_DATABASE_USER": "postgres",
         "DOTNET_ENV_DATABASE_PASSWORD": "postgres",
         "DOTNET_ENV_DATABASE_NAME": "auth",
@@ -165,7 +198,7 @@ def runAuthServerInstance():
     network = client.networks.get("test_auth_network")
     network.connect(
         container,
-        ipv4_address="172.10.0.2"
+        ipv4_address=json["server"]["authServer"]["ip"]
     )
     print(container.logs())
 
@@ -196,7 +229,7 @@ def runFakeOAuthProviderInstance():
     network = client.networks.get("test_auth_network")
     network.connect(
         container,
-        ipv4_address="172.10.0.4"
+        ipv4_address=json["server"]["fakeOAuthProvider"]["ip"]
     )
     print(container.logs())
 
@@ -249,8 +282,8 @@ def main():
         if choice == 1:
             runAuthDatabaseInstance()
             initAuthDatabase()
-            runAuthServerInstance()
             runFakeOAuthProviderInstance()
+            runAuthServerInstance()
             continue
         if choice == 2:
             setupBridgeAuthNetwork()

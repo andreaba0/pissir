@@ -12,3 +12,4 @@ key*
 key*.*
 .vscode/
 __pycache__/
+test_build/

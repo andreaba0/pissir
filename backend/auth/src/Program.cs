@@ -42,6 +42,12 @@ class Program
 
         CancellationTokenSource cts = new CancellationTokenSource();
 
+        Console.CancelKeyPress += (sender, a) => {
+            Console.WriteLine("Exiting...");
+            a.Cancel = true;
+            cts.Cancel();
+        };
+
         //Shared thread safe instances
         DbDataSource dataSource = NpgsqlDataSource.Create($"host={postgresHost};port={postgresPort};database={postgresDatabaseName};username={postgresUsername};password={postgresPassword};Pooling=true;");
 

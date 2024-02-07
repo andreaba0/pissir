@@ -146,6 +146,35 @@ def testSignupAccepted():
         response.text
     )
 
+def testRejectIfAlreadyApplied():
+    token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InJzYWtleTEucGVtIn0.eyJpc3MiOiJodHRwczovL2FwcHdlYi5hbmRyZWFiYXJjaGlldHRvLml0IiwiYXVkIjoiaW50ZXJuYWxfd29ya3NwYWNlQGFwcHdlYi5hbmRyZWFiYXJjaGlldHRvLml0Iiwic3ViIjoiMjIyMzMzNDQ0IiwiZ2l2ZW5fbmFtZSI6IkpvaG4iLCJmYW1pbHlfbmFtZSI6IkRvZSIsImVtYWlsIjoiam9obi5kb2VAZ21haWwuY29tIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE4NTU1NTU1NTV9.M2DNUFOx343haTRadShaNGEMTii5pCKmMIebBOzu5UvEzhvV3AUioGxVirqz8VQ0arw_-jT9Bwj2WxCJJALtp-bD6md4BzRlhJDpHKNLs_vVOPxDG2CtiebCVyggtG1XykAv_huz4NWv0T97nLWQDXnmS6NlxaWiB5gwiKy1QuwGZMBufw2UlPAyu4B7KFIP8_76U8snRh-1TfrL4V3763m7tXWu_CpYA7sIIFZZpyhxOipghp-e8LIY2iWMxO4ty9TCKZuxYYo-G4MK3sj_ggWT2RsffoNlEQD4r2_Cl1im78aJM7DM712g9cUDCMWSuhGyCVeAAbB0SHEsZbmqvw"
+    response = requests.post(
+        f"http://{backendConfig['host']}:{backendConfig['port']}/service/apply",
+        json={
+            "given_name": "John",
+            "family_name": "Doe",
+            "email": "john.doe@gmail.com",
+            "tax_code": "1234567890123456",
+            "company_vat_number": "12345678901",
+            "company_category": "WA",
+        },
+        timeout=2,
+        headers={
+            "Authorization": f"bearer {token}"
+        }
+    )
+    Assert.Equals(
+        "Should reject the request",
+        400,
+        response.status_code
+    )
+    Assert.Equals(
+        "Should provide the expected message",
+        "Application already exists",
+        response.text
+    )
+
+
 
 def SignUpEntryPoint(
     database_ip,
@@ -171,6 +200,7 @@ def SignUpEntryPoint(
     testSuite.Add(testWithMissingBody)
     testSuite.Add(testPartialBody)
     testSuite.Add(testSignupAccepted)
+    testSuite.Add(testRejectIfAlreadyApplied)
     testSuite.TierDown(TierDownMethod)
     testSuite.Run()
     return

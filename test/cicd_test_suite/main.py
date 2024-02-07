@@ -131,6 +131,7 @@ def runAuthDatabaseInstance():
     ct = Container(container)
     ct.WaitRunningProcessOnPort("tcp", "0.0.0.0:5432", "LISTEN")
     ct.WaitIpAssignment(json["server"]["authDatabase"]["ip"], 16)
+    ct.WaitPostgresStartingUp(json["server"]["authDatabase"]["ip"], json["server"]["authDatabase"]["exposed_port"])
 
 def runAuthServerInstance():
     imageName = "test_auth_server"
@@ -217,11 +218,8 @@ def TestRoutine():
     )
 
 def initAuthDatabase():
-    #connect to database and run auth/init_default.sql file
-    with open(os.path.join(__location__, 'auth/init_default.sql'), "r") as file:
-        setupSql = file.read()
     backendConfig = json["server"]["fakeOAuthProvider"]
-    setupSql = setupSql.replace("<provider_uri>", f"http://{backendConfig['ip']}:{backendConfig['exposed_port']}/.well-known/openid-configuration")
+    provider_uri = f"http://{backendConfig['ip']}:{backendConfig['exposed_port']}/.well-known/openid-configuration"
     #connect to database
     databaseConfig = json["server"]["authDatabase"]
     conn = psycopg2.connect(
@@ -232,9 +230,23 @@ def initAuthDatabase():
         password=databaseConfig["password"]
     )
     cur = conn.cursor()
-    cur.execute(setupSql)
-    conn.commit()
+    cur.execute('''
+        insert into user_role (role_name) values('WA'), ('FA')
+    ''')
+    cur.execute('''
+        insert into industry_sector(sector_name) values('WSP'), ('FAR')
+    ''')
+    cur.execute('''
+        insert into registered_provider(provider_name, configuration_uri) values('test_provider', '{provider_uri}')
+    '''.format(provider_uri=provider_uri))
+    cur.execute('''
+        insert into 
+            allowed_audience(registered_provider, audience) 
+        values
+            ('test_provider', 'internal_workspace@appweb.andreabarchietto.it')
+    ''')
     cur.close()
+    conn.commit()
     conn.close()
 
 def main():

@@ -5,6 +5,8 @@ class ColorPrint:
         'OKBLUE': '\033[94m',
         'OKGREEN': '\033[92m',
         'WARNING': '\033[93m',
+        'YELLOW': '\033[33m',
+        'GREEN': '\033[32m',
         'FAIL': '\033[91m',
         'ENDC': '\033[0m',
         'BOLD': '\033[1m',

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "test"
+name = "cicd_test_suite"
 version = "0.1.0"
 description = ""
 authors = ["andreaba0 <andreabarchietto01@gmail.com>"]

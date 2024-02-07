@@ -1,0 +1,32 @@
+from mcr.microsoft.com/dotnet/sdk:8.0 as build
+
+run mkdir -p /app/backend/auth/src
+
+run mkdir -p /app/backend/library/OpenIdManager
+
+COPY ./library/OpenIdManager /app/backend/library/OpenIdManager
+
+COPY ./auth/src /app/backend/auth/src
+
+workdir /app/backend/auth/src
+
+env ASPNETCORE_ENVIRONMENT=Testing
+env DOTNET_ENVIRONMENT=Testing
+
+run dotnet restore
+
+run dotnet build -o /app_compiled
+run dotnet publish -o /publish_compiled
+
+from mcr.microsoft.com/dotnet/aspnet:8.0
+copy --from=build /publish_compiled /app_compiled
+copy --from=build /app/backend/auth/src/appsettings.json /app_compiled
+copy --from=build /app/backend/auth/src/appsettings.Testing.json /app_compiled
+workdir /app_compiled
+
+env ASPNETCORE_ENVIRONMENT=Testing
+env DOTNET_ENVIRONMENT=Testing
+
+expose 8000
+
+entrypoint ["dotnet", "auth_server.dll"]

@@ -5,7 +5,7 @@ import os
 import psycopg2
 import re
 from utility import Container
-from backend.auth import EntryPoint
+from runner.auth_backend.main import EntryPoint
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -142,6 +142,7 @@ def runAuthServerInstance():
         "DOTNET_ENV_DATABASE_USER": "postgres",
         "DOTNET_ENV_DATABASE_PASSWORD": "postgres",
         "DOTNET_ENV_DATABASE_NAME": "auth",
+        "INITIAL_DATE": "01/01/2024 00:00:00",
     }
     deleteAllContainersByTagName(imageName)
     baseImageName = imageName

@@ -113,13 +113,12 @@ class TestSuite:
             ColorPrint.print(
                 8,
                 [
-                    ('GRAY', f"General statistics:")
+                    ('GRAY', f"Generic statistics:")
                 ],
                 [
 
-                    ('OKGREEN', f"Passed: {passed}")
-                ],
-                [
+                    ('OKGREEN', f"Passed: {passed}"),
+                    ('GRAY', " | "),
                     ('FAIL', f"Failed: {failed}")
-                ]
+                ],
             )

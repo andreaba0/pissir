@@ -5,6 +5,7 @@ import os
 import psycopg2
 import re
 from utility import Container
+from backend.auth import EntryPoint
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -99,8 +100,8 @@ def runAuthDatabaseInstance():
     deleteAllContainersByTagName(imageName)
     baseImageName = imageName
     deleteAllOldImagesByTagName(baseImageName)
-    currentPath = os.getcwd()
-    dockerfilePath = currentPath + "/../database/auth/"
+    currentPath = __location__
+    dockerfilePath = currentPath + "/../../database/auth/"
     currentTimeStamp = str(int(time.time()))
     newImageName = baseImageName + ":" + currentTimeStamp
     print(dockerfilePath)
@@ -145,8 +146,8 @@ def runAuthServerInstance():
     deleteAllContainersByTagName(imageName)
     baseImageName = imageName
     deleteAllOldImagesByTagName(baseImageName)
-    currentPath = os.getcwd()
-    dockerfilePath = currentPath + "/../backend"
+    currentPath = __location__
+    dockerfilePath = currentPath + "/../../backend"
     currentTimeStamp = str(int(time.time()))
     newImageName = baseImageName + ":" + currentTimeStamp
     image, build_log = client.images.build(
@@ -176,12 +177,19 @@ def runAuthServerInstance():
     print(container.logs())
 
 def runFakeOAuthProviderInstance():
+    server_ip = json["server"]["fakeOAuthProvider"]["ip"]
+    server_port = json["server"]["fakeOAuthProvider"]["exposed_port"]
     imageName = "test_fake_oauth_provider"
+    envVariable = {
+        "OAUTH_PROVIDER_PORT": server_port,
+        "OAUTH_BIND_IP": "0.0.0.0",
+        "OAUTH_PROVIDER_DOMAIN": "{ip}:{port}".format(ip=server_ip, port=server_port),
+    }
     deleteAllContainersByTagName(imageName)
     baseImageName = imageName
     deleteAllOldImagesByTagName(baseImageName)
-    currentPath = os.getcwd()
-    dockerfilePath = currentPath + "/../oauth_redirect"
+    currentPath = __location__
+    dockerfilePath = currentPath + "/../../fake_oauth_server"
     currentTimeStamp = str(int(time.time()))
     newImageName = baseImageName + ":" + currentTimeStamp
     image, build_log = client.images.build(
@@ -195,19 +203,23 @@ def runFakeOAuthProviderInstance():
         newImageName, 
         detach=True, 
         ports={'8000/tcp': 10203},
+        environment=envVariable,
         name=baseImageName,
         auto_remove=True,
         labels={"image": baseImageName}
     )
+    ct = Container(container)
     network = client.networks.get("test_auth_network")
     network.connect(
         container,
         ipv4_address=json["server"]["fakeOAuthProvider"]["ip"]
     )
+    ct.WaitRunningProcessOnPort("tcp", f"0.0.0.0:{server_port}", "LISTEN")
+    ct.WaitIpAssignment(json["server"]["fakeOAuthProvider"]["ip"], 16)
     print(container.logs())
 
 def TestRoutine():
-    SignUpEntryPoint(
+    EntryPoint(
         json["server"]["authDatabase"]["ip"],
         json["server"]["authDatabase"]["exposed_port"],
         json["server"]["authDatabase"]["database"],
@@ -250,9 +262,6 @@ def initAuthDatabase():
     conn.close()
 
 def main():
-
-    #testContainerList()
-    #return
     choice = 0
     while True:
         print("1. Setup container workflow")

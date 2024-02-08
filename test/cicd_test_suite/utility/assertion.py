@@ -85,8 +85,7 @@ class TestSuite:
             passed = 0
             failed = 0
             for assertion in scope.assertions:
-                #new motd string of max length 20
-                motd = assertion['motd'][:20] + '...' if len(assertion['motd']) > 20 else assertion['motd']
+                motd = assertion['motd'][:50] + '...' if len(assertion['motd']) > 50 else assertion['motd'].ljust(53)
                 text = 'PASS' if assertion['has_passed'] else 'FAIL'
                 color = 'OKGREEN' if assertion['has_passed'] else 'FAIL'
                 ColorPrint.print(

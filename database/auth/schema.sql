@@ -75,7 +75,7 @@ create table presentation_letter (
     email text not null,
     tax_code varchar(16) not null,
     company_vat_number varchar(11) not null,
-    company_industry_sector varchar(2) not null,
+    company_industry_sector varchar(3) not null,
     created_at timestamptz not null default now(),
     primary key (user_account)
 );

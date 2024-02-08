@@ -37,7 +37,7 @@ app.get("/.well-known/openid-configuration", (req, res) => {
     userinfo_endpoint: "https://appweb.andreabarchietto.it/v1/userinfo",
     revocation_endpoint: "https://appweb.andreabarchietto.it/revoke",
     jwks_uri:
-      `https://${process.env.DOMAIN}/.well-known/oauth/openid/jwks/`,
+      `http://${process.env.OAUTH_PROVIDER_DOMAIN}/.well-known/oauth/openid/jwks/`,
     response_types_supported: [
       "code",
       "token",
@@ -85,6 +85,6 @@ app.get("/.well-known/oauth/openid/jwks/", (req, res) => {
     });
 });
 
-app.listen(process.env.PORT, () => {
-    console.log(`Server is running on port ${process.env.PORT}`);
+app.listen(process.env.OAUTH_PROVIDER_PORT, process.env.OAUTH_BIND_IP, () => {
+    console.log(`Server is running on port ${process.env.OAUTH_PROVIDER_PORT}`);
 })

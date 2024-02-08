@@ -4,6 +4,9 @@ build/
 bin/
 obj/
 appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+appsettings.Testing.json
 appsettings.json
 frontend/wwwroot/css/
 *.pem

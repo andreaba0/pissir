@@ -90,11 +90,11 @@ def test2(scope):
 
     conn = getPostgresConnection()
     cur = conn.cursor()
-    cur.execute('''
-        delete from presentation_letter
-    ''')
+    cur.execute('''delete from presentation_letter''')
+    cur.execute('''delete from user_account''')
     cur.close()
     conn.commit()
+    conn.close()
 
     Assertion.Equals(
         scope,
@@ -186,11 +186,11 @@ def test3(scope):
 
     conn = getPostgresConnection()
     cur = conn.cursor()
-    cur.execute('''
-        delete from presentation_letter
-    ''')
+    cur.execute('''delete from presentation_letter''')
+    cur.execute('''delete from user_account''')
     cur.close()
     conn.commit()
+    conn.close()
     
 
 def EntryPoint(

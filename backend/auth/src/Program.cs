@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Channels;
+using System.Text.RegularExpressions;
 
 using Npgsql;
 
@@ -54,6 +55,26 @@ class Program
         HttpClient httpClient = new HttpClient();
         httpClient.Timeout = TimeSpan.FromSeconds(5);
 
+        string initialDate = Environment.GetEnvironmentVariable("INITIAL_DATE") ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+        Regex dateRegex = new Regex("^(?<day>[0-9]{2})/(?<month>[0-9]{2})/(?<year>[0-9]{4}) (?<hour>[0-9]{2}):(?<minute>[0-9]{2}):(?<second>[0-9]{2})$");
+        Match match = dateRegex.Match(initialDate);
+        if(!match.Success) {
+            throw new Exception("Invalid date format");
+        }
+        DateTime startDate = new DateTime(
+            int.Parse(match.Groups["year"].Value),
+            int.Parse(match.Groups["month"].Value),
+            int.Parse(match.Groups["day"].Value),
+            int.Parse(match.Groups["hour"].Value),
+            int.Parse(match.Groups["minute"].Value),
+            int.Parse(match.Groups["second"].Value)
+        );
+
+        IDateTimeProvider dateTimeProvider = new DateTimeProvider(
+            startDate
+        );
+        Console.WriteLine($"Start date: {startDate}");
+
         ISharedStorage dbHasChanged = new SharedStorage((bool)false);
 
         RemoteJwksHub remoteJwksHub = new RemoteJwksHub(
@@ -66,7 +87,8 @@ class Program
             new QueryKeyService(
                 dataSource,
                 remoteJwksHub
-            )
+            ),
+            dateTimeProvider
         );
         Task webServerTask = Task.Factory.StartNew(() => webServer.RunAsync(cts.Token), TaskCreationOptions.LongRunning).Unwrap();
 

@@ -26,8 +26,9 @@ public class WebServer
     private Manager _keyManager;
     private readonly IRemoteJwksHub _remoteManager;
     private readonly QueryKeyService _queryKeyService;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public WebServer(DbDataSource dbDataSource, IRemoteJwksHub remoteManager, QueryKeyService queryKeyService)
+    public WebServer(DbDataSource dbDataSource, IRemoteJwksHub remoteManager, QueryKeyService queryKeyService, IDateTimeProvider dateTimeProvider)
     {
         _dbDataSource = dbDataSource;
         _remoteManager = remoteManager;
@@ -35,6 +36,7 @@ public class WebServer
             _dbDataSource
         );
         _queryKeyService = queryKeyService;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<int> RunAsync(CancellationToken cancellationToken = default)
@@ -87,7 +89,7 @@ public class WebServer
                 Profile profile = Profile.GetMethod(
                     context.Request.Headers,
                     _dbDataSource,
-                    new DateTimeProvider(),
+                    _dateTimeProvider,
                     _remoteManager
                 );
                 var json = JsonSerializer.Serialize(profile);
@@ -164,7 +166,7 @@ public class WebServer
                     context.Request.Headers,
                     context.Request.Body,
                     _dbDataSource,
-                    new DateTimeProvider(),
+                    _dateTimeProvider,
                     _remoteManager
                 ).Wait();
                 context.Response.StatusCode = 201;
@@ -200,7 +202,7 @@ public class WebServer
                     context.Request.Headers,
                     context.Request.Query,
                     _dbDataSource,
-                    new DateTimeProvider(),
+                    _dateTimeProvider,
                     _remoteManager
                 );
                 context.Response.StatusCode = 200;
@@ -236,7 +238,7 @@ public class WebServer
                 Task<string> applicationTask = Application.GetMethod_MyApplication(
                     context.Request.Headers,
                     _dbDataSource,
-                    new DateTimeProvider(),
+                    _dateTimeProvider,
                     _remoteManager
                 );
                 context.Response.StatusCode = 200;
@@ -273,7 +275,7 @@ public class WebServer
                     context.Request.Headers,
                     context.Request.RouteValues,
                     _dbDataSource,
-                    new DateTimeProvider(),
+                    _dateTimeProvider,
                     _remoteManager
                 ).Wait();
             }
@@ -330,7 +332,7 @@ public class WebServer
                 Task<string> companyTask = Company.GetMethod_CompanyInfo(
                     context.Request.Headers,
                     _dbDataSource,
-                    new DateTimeProvider(),
+                    _dateTimeProvider,
                     _remoteManager
                 );
                 context.Response.StatusCode = 200;

@@ -616,7 +616,6 @@ public class Application
             personCommand.CommandText = @"
                 INSERT INTO 
                     person (
-                        company_vat_number,
                         given_name,
                         family_name,
                         email,
@@ -630,11 +629,9 @@ public class Application
                     $3,
                     $4,
                     $5,
-                    $6,
-                    $7
+                    $6
                 )
             ";
-            personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.company_vat_number));
             personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.given_name));
             personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.family_name));
             personCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, application.email));
@@ -658,7 +655,7 @@ public class Application
                 INSERT INTO 
                     " + userTable + @" (
                         account_id,
-                        person_role,
+                        role_name,
                         company_vat_number
                     )
                 VALUES (

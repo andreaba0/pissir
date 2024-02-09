@@ -26,12 +26,16 @@ class TestSuite:
         self.assertions = []
         self.tierup = None
         self.tierdown = None
+        self.middletier = None
     
     def set_tierup(self, fn):
         self.tierup = fn
     
     def set_tierdown(self, fn):
         self.tierdown = fn
+    
+    def set_middletier(self, fn):
+        self.middletier = fn
     
     def add_assertion(self, assertion):
         self.assertions.append(assertion)
@@ -48,11 +52,24 @@ class TestSuite:
                     ]
                 )
                 return
-            
+        
+        if self.middletier:
+            try:
+                self.middletier()
+            except Exception as e:
+                ColorPrint.print(
+                    4,
+                    [
+                        ('FAIL', f"Middletier failed: {e}, skipping test")
+                    ]
+                )
+                return
         for assertion in self.assertions:
             try:
                 self.scopes.append(TestScope())
                 assertion(self.scopes[-1])
+                if self.middletier:
+                    self.middletier()
             except Exception as e:
                 ColorPrint.print(
                     4,

@@ -136,6 +136,7 @@ def runAuthDatabaseInstance():
 
 def runAuthServerInstance():
     imageName = "test_auth_server"
+    volumeName = "test_auth_server_log"
     envVariable = {
         "DOTNET_ENV_DATABASE_HOST": json["server"]["authDatabase"]["ip"],
         "DOTNET_ENV_DATABASE_PORT": json["server"]["authDatabase"]["exposed_port"],
@@ -151,12 +152,17 @@ def runAuthServerInstance():
     dockerfilePath = currentPath + "/../../backend"
     currentTimeStamp = str(int(time.time()))
     newImageName = baseImageName + ":" + currentTimeStamp
+    #create volume if not exists
+    volumes = client.volumes.list()
+    if not any(volume.name == volumeName for volume in volumes):
+        client.volumes.create(volumeName)
+
     image, build_log = client.images.build(
         path=dockerfilePath,
         dockerfile="Dockerfile.backend.auth", 
         tag=newImageName,
         labels={"image": baseImageName},
-        rm=True
+        rm=False
     )
     container = client.containers.run(
         newImageName,
@@ -165,7 +171,8 @@ def runAuthServerInstance():
         environment=envVariable,
         name=baseImageName,
         auto_remove=True,
-        labels={"image": baseImageName}
+        labels={"image": baseImageName},
+        volumes={volumeName: {"bind": "/shared_log", "mode": "rw"}}
     )
     ct = Container(container)
     ct.WaitRunningProcessOnPort("tcp", "0.0.0.0:8000", "LISTEN")
@@ -267,11 +274,12 @@ def main():
     while True:
         print("1. Setup container workflow")
         print("2. Setup container network")
-        print("3. Run auth test routine")
-        print("4. Exit")
+        print("3. Rebuild auth server instance")
+        print("4. Run auth test routine")
+        print("5. Exit")
         choice = int(input("Enter your choice: "))
-        if choice<1 or choice>4:
-            print("Choice must be in range {1,4}")
+        if choice<1 or choice>5:
+            print("Choice must be in range {1,5}")
             continue
         if choice == 1:
             runAuthDatabaseInstance()
@@ -283,9 +291,12 @@ def main():
             setupBridgeAuthNetwork()
             continue
         if choice == 3:
-            TestRoutine()
+            runAuthServerInstance()
             continue
         if choice == 4:
+            TestRoutine()
+            continue
+        if choice == 5:
             break
 
 if __name__ == "__main__":

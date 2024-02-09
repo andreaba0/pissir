@@ -191,6 +191,27 @@ def test3(scope):
     cur.close()
     conn.commit()
     conn.close()
+
+def clearDatabase():
+    conn = getPostgresConnection()
+    cur = conn.cursor()
+    cur.execute('''delete from presentation_letter''')
+    cur.execute('''delete from person_fa''')
+    cur.execute('''delete from person_wa''')
+    cur.execute('''delete from person''')
+    cur.execute('''delete from company_far''')
+    cur.execute('''delete from company_wsp''')
+    cur.execute('''delete from company''')
+    cur.execute('''delete from user_account''')
+    cur.close()
+    conn.commit()
+    conn.close()
+
+def TierUp():
+    clearDatabase()
+
+def TierDown():
+    clearDatabase()
     
 
 def EntryPoint(
@@ -212,6 +233,8 @@ def EntryPoint(
 
 
     suite = TestSuite()
+    suite.set_tierup(TierUp)
+    suite.set_tierdown(TierDown)
     suite.add_assertion(test1)
     suite.add_assertion(test2)
     suite.add_assertion(test3)

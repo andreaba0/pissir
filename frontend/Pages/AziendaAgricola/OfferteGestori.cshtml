@@ -91,7 +91,7 @@
                                     <form method="post" asp-page-handler="OrdineAcquisto">
                                         <div class="form-group">
                                             <label for="colturaSelect">Seleziona la coltura per la quale acquistare le risorse</label>
-                                            <select class="form-control" id="colturaSelect" name="colturaId" required>
+                                            <select class="form-control" id="colturaSelect_@offerta.Id" name="colturaId" required>
                                                 <option value="null">Seleziona la coltura</option>
                                                 @foreach (var coltura in Model.Colture)
                                                 {
@@ -117,25 +117,25 @@
 
                                         <h5>Stime campo</h5>
                                         <small>• Vengono visualizzate le stime dei fabbisogni idrici del campo selezionato.</small>
-                                        <div class="coltura-info">
+                                        <div class="coltura-info_@offerta.Id">
                                         </div>
                                         <script>
                                             $(document).ready(function () {
                                                 // Aggiungi questo script alla tua pagina
-                                                document.getElementById("colturaSelect").addEventListener("change", function () {
+                                                document.getElementById("colturaSelect_@offerta.Id").addEventListener("change", function () {
                                                     var selectedOption = this.options[this.selectedIndex];
                                                     updateColturaInfo(selectedOption);
                                                 });
 
                                                 $('#modalOrdine\@offerta.Id').on('shown.bs.modal', function () {
                                                     // Ottieni l'opzione attualmente selezionata
-                                                    var selectedOption = document.getElementById("colturaSelect").options[document.getElementById("colturaSelect").selectedIndex];
+                                                    var selectedOption = document.getElementById("colturaSelect_@offerta.Id").options[document.getElementById("colturaSelect").selectedIndex];
                                                     // Aggiorna le stime quando la modale viene aperta
                                                     updateColturaInfo(selectedOption);
                                                 });
 
                                                 function updateColturaInfo(selectedOption) {
-                                                    var colturaInfoDiv = document.querySelector('.coltura-info');
+                                                    var colturaInfoDiv = document.querySelector('.coltura-info_@offerta.Id');
                                                     var values = selectedOption.value.split('-').map(function (item) {
                                                         return item.trim();
                                                     });

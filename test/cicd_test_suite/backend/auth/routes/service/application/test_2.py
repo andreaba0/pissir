@@ -75,7 +75,7 @@ def test1(scope):
 
     Assertion.Equals(
         scope,
-        "Should accept the request the first time",
+        "Should return a success status code",
         200,
         response.status_code
     )
@@ -85,6 +85,65 @@ def test1(scope):
         "Should return the correct presentation letter",
         presentation_id,
         data["id"]
+    )
+
+    conn = getPostgresConnection()
+    cur = conn.cursor()
+    cur.execute('''delete from presentation_letter''')
+    cur.execute('''delete from user_account''')
+    cur.close()
+    conn.commit()
+    conn.close()
+
+def test2(scope):
+    scope.set_header('Test user get non existent application')
+
+    conn = getPostgresConnection()
+    cur = conn.cursor()
+    cur.execute('''
+        insert into user_account (registered_provider, sub) values('test_provider', '1234567890')
+        returning id
+    ''')
+    user_id = cur.fetchone()[0]
+    cur.close()
+    conn.commit()
+    conn.close()
+    
+    token = JWTRegistry.generate({
+        "kid": "key1",
+        "alg": "RS256",
+        "typ": "JWT",
+    }, {
+        "sub": "1234567890",
+        "given_name": "Mickey",
+        "family_name": "Doe",
+        "email": "mickey.doe@gmail.com",
+        "iss": "https://appweb.andreabarchietto.it",
+        "aud": "internal_workspace@appweb.andreabarchietto.it",
+        "iat": 1316239022,
+        "exp": 1899999999
+    })
+    response = requests.get(
+        f"http://{backendConfig['host']}:{backendConfig['port']}/service/my_application",
+        timeout=2,
+        headers={
+            "Authorization": f"bearer {token}"
+        }
+    )
+    data = response.text
+
+    Assertion.Equals(
+        scope,
+        "Should return a not found status code",
+        404,
+        response.status_code
+    )
+
+    Assertion.Equals(
+        scope,
+        "Should return an explanation message",
+        "Not Found",
+        data
     )
 
     conn = getPostgresConnection()
@@ -116,5 +175,6 @@ def EntryPoint(
 
     suite = TestSuite()
     suite.add_assertion(test1)
+    suite.add_assertion(test2)
     suite.run()
     suite.print_stats()

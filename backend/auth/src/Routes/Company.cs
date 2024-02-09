@@ -48,21 +48,17 @@ public class Company
             DbCommand commandGetCompanyProfile = connection.CreateCommand();
             commandGetCompanyProfile.CommandText = @"
                 SELECT
-                    company_vat_number,
+                    vat_number,
                     company_name,
                     working_email_address,
                     working_phone_number,
                     working_address
                 FROM
-                    " + userTable + @"
-                    inner join company on " + userTable + @".company_vat_number = " + companyTable + @".vat_number
-                    inner join company on company.vat_number on " + companyTable + @".vat_number = company.vat_number
+                    company
                 WHERE
-                    account_id = (SELECT id FROM user_account WHERE sub=$1 and registered_provider=$2) and role_name=$3
+                    vat_number = $1
             ";
-            commandGetCompanyProfile.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, token.sub));
-            commandGetCompanyProfile.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, providerName));
-            commandGetCompanyProfile.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.role));
+            commandGetCompanyProfile.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
             Company company = new Company();
             using (DbDataReader reader = commandGetCompanyProfile.ExecuteReader())
             {
@@ -70,10 +66,11 @@ public class Company
                 if (reader.Read())
                 {
                     company.vat_number = reader.GetString(0);
-                    company.company_name = reader.GetString(1);
-                    company.working_email_address = reader.GetString(2);
-                    company.working_phone_number = reader.GetString(3);
-                    company.working_address = reader.GetString(4);
+                    company.company_name = (reader.IsDBNull(1)) ? null : reader.GetString(1);
+                    company.working_email_address = (reader.IsDBNull(2)) ? null : reader.GetString(2);
+                    company.working_phone_number = (reader.IsDBNull(3)) ? null : reader.GetString(3);
+                    company.working_address = (reader.IsDBNull(4)) ? null : reader.GetString(4);
+                    company.industry_sector = (user.role == "FA") ? "FAR" : "WSP";
                     return Task.FromResult(JsonSerializer.Serialize(company));
                 }
             }
@@ -108,36 +105,36 @@ public class Company
             Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
             string providerName = remoteJwksHub.GetIssuerName(token.iss);
             //expect body to be a json of type Company
-            Company company = JsonSerializer.Deserialize<Company>(body) ?? throw new CompanyException(CompanyException.ErrorCode.INVALID_REQUEST_BODY, "Invalid request body");
+            Company company = JsonSerializer.DeserializeAsync<Company>(body).Result ?? throw new CompanyException(CompanyException.ErrorCode.INVALID_REQUEST_BODY, "Invalid request body");
             using DbConnection connection = dataSource.OpenConnection();
 
-            DbCommand commandGetCompanyInfo = connection.CreateCommand();
+            DbCommand commandPatchCompanyInfo = connection.CreateCommand();
 
             List<string> updateList = new List<string>();
             //foreach property in company add to updateList a string in format "property_name=$1"
             int index = 1;
-            if (company.company_name != null)
+            if (company.company_name != default(string))
             {
                 updateList.Add("company_name=$" + index);
-                commandGetCompanyInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, company.company_name));
+                commandPatchCompanyInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, company.company_name));
                 index++;
             }
-            if (company.working_email_address != null)
+            if (company.working_email_address != default(string))
             {
                 updateList.Add("working_email_address=$" + index);
-                commandGetCompanyInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, company.working_email_address));
+                commandPatchCompanyInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, company.working_email_address));
                 index++;
             }
-            if (company.working_phone_number != null)
+            if (company.working_phone_number != default(string))
             {
                 updateList.Add("working_phone_number=$" + index);
-                commandGetCompanyInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, company.working_phone_number));
+                commandPatchCompanyInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, company.working_phone_number));
                 index++;
             }
-            if (company.working_address != null)
+            if (company.working_address != default(string))
             {
                 updateList.Add("working_address=$" + index);
-                commandGetCompanyInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, company.working_address));
+                commandPatchCompanyInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, company.working_address));
                 index++;
             }
             if (updateList.Count == 0) throw new CompanyException(CompanyException.ErrorCode.INVALID_REQUEST_BODY, "Request should update at least one field");
@@ -148,32 +145,19 @@ public class Company
             string companyTable = (user.role == "FA") ? "company_far" : "company_wsp";
             string userTable = (companyTable == "company_wsp") ? "person_wa" : "person_fa";
 
-            DbCommand commandUpdateCompanyInfo = connection.CreateCommand();
-            commandUpdateCompanyInfo.CommandText = @"
+            commandPatchCompanyInfo.CommandText = $@"
                 UPDATE
                     company
                 SET
-                    " + updateString + @"
+                    {updateString}
                 WHERE
-                    vat_number = (
-                        SELECT
-                            company_vat_number
-                        FROM
-                            " + userTable + @"
-                        WHERE
-                            account_id = (SELECT id FROM user_account WHERE sub=$1 and registered_provider=$2)
-                    )
+                    vat_number = '{user.company_vat_number}'
                 RETURNING
-                    count(company.vat_number)
+                    company.vat_number
             ";
-            commandUpdateCompanyInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, token.sub));
-            commandUpdateCompanyInfo.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, providerName));
-            using (DbDataReader reader = commandUpdateCompanyInfo.ExecuteReader())
+            using (DbDataReader reader = commandPatchCompanyInfo.ExecuteReader())
             {
                 if (!reader.HasRows) throw new CompanyException(CompanyException.ErrorCode.NOT_FOUND, "Company not found");
-                reader.Read();
-                int count = reader.GetInt32(0);
-                if (count == 0) throw new CompanyException(CompanyException.ErrorCode.NOT_FOUND, "Company not found");
             }
 
 
@@ -195,8 +179,9 @@ public class Company
         {
             throw;
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            Console.WriteLine(e);
             throw new CompanyException(CompanyException.ErrorCode.GENERIC_ERROR, "Generic error");
         }
     }

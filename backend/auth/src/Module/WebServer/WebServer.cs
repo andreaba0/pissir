@@ -359,6 +359,43 @@ public class WebServer
             }
         });
 
+        app.MapPatch("/company", async context => {
+            try
+            {
+                Company.PatchMethod_CompanyInfo(
+                    context.Request.Headers,
+                    context.Request.Body,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                ).Wait();
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync("OK");
+            }
+            catch (AuthenticationException e)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException e)
+            {
+                Console.WriteLine(e);
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+            catch (Routes.CompanyException e)
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync((e.Code != default(Routes.CompanyException.ErrorCode)) ? e.Message : "");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+        });
+
         app.MapGet("/company/{id}", async context =>
         {
             context.Response.StatusCode = 200;

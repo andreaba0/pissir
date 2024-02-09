@@ -80,8 +80,12 @@ public class Profile
         {
             throw;
         }
-        catch (AuthorizationException)
+        catch (AuthorizationException e)
         {
+            if (e.Code == AuthorizationException.ErrorCode.USER_NOT_FOUND)
+            {
+                throw new ProfileException(ProfileException.ErrorCode.USER_NOT_FOUND, "User not found", e);
+            }
             throw;
         }
         catch (ProfileException)

@@ -257,8 +257,16 @@ public class WebServer
             }
             catch (Routes.ApplicationException e)
             {
-                context.Response.StatusCode = 400;
-                await context.Response.WriteAsync((e.Code != default(Routes.ApplicationException.ErrorCode)) ? e.Message : "");
+                if(e.Code == Routes.ApplicationException.ErrorCode.APPLICATION_NOT_FOUND)
+                {
+                    context.Response.StatusCode = 404;
+                    await context.Response.WriteAsync("Not Found");
+                }
+                else
+                {
+                    context.Response.StatusCode = 400;
+                    await context.Response.WriteAsync((e.Code != default(Routes.ApplicationException.ErrorCode)) ? e.Message : "");
+                }
             }
             catch (Exception)
             {
@@ -302,18 +310,6 @@ public class WebServer
         });
 
         app.MapPost("/apiaccess", async context =>
-        {
-            context.Response.StatusCode = 200;
-            await context.Response.WriteAsync("OK");
-        });
-
-        app.MapGet("/apiaccess", async context =>
-        {
-            context.Response.StatusCode = 200;
-            await context.Response.WriteAsync("OK");
-        });
-
-        app.MapGet("/apiaccess/{id}", async context =>
         {
             context.Response.StatusCode = 200;
             await context.Response.WriteAsync("OK");

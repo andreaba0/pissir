@@ -80,9 +80,6 @@ create table presentation_letter (
     primary key (user_account)
 );
 
-/*
-    4 byte + 8 byte = 12 byte per row
-*/
 create table api_acl (
     person_fa bigserial not null,
     sdate timestamptz not null,
@@ -93,9 +90,9 @@ create table api_acl (
 create table api_acl_request (
     acl_id uuid not null primary key,
     person_fa bigint not null,
-    sdate date not null,
-    edate date not null check(edate > sdate),
-    created_at timestamptz not null default now(),
+    sdate timestamptz not null,
+    edate timestamptz not null check(edate > sdate),
+    created_at timestamptz not null default now()
 );
 
 create table rsa (

@@ -85,15 +85,17 @@ create table presentation_letter (
 */
 create table api_acl (
     person_fa bigserial not null,
-    date_allowed date not null,
-    primary key (person_fa, date_allowed)
+    sdate timestamptz not null,
+    edate timestamptz not null check(edate > sdate),
+    primary key (person_fa, sdate, edate)
 );
 
 create table api_acl_request (
-    acl_id bigserial not null primary key,
+    acl_id uuid not null primary key,
     person_fa bigint not null,
-    date_start date not null,
-    date_end date not null check(date_end >= date_start)
+    sdate date not null,
+    edate date not null check(edate > sdate),
+    created_at timestamptz not null default now(),
 );
 
 create table rsa (

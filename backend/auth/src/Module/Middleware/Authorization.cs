@@ -82,6 +82,7 @@ public class AuthorizationException : Exception {
         INVALID_DATE = 1,
         INVALID_COMPANY_VAT_NUMBER = 2,
         USER_NOT_FOUND = 3,
+        UNAUTHORIZED = 4
     }
     public ErrorCode Code { get; } = default(ErrorCode);
     public AuthorizationException(ErrorCode errorCode, string message) : base(message) {

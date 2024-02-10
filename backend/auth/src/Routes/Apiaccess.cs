@@ -28,6 +28,9 @@ public class ApiAccess {
         public DateTime? date_start { get; set; } = null;
         public DateTime? date_end { get; set; } = null;
         public string? acl_id { get; set; } = null;
+        public string? first_name { get; set; } = null;
+        public string? last_name { get; set; } = null;
+        public string? company_vat_number { get; set; } = null;
     }
 
     public static Task PostMethod_ACLRequest(
@@ -93,7 +96,7 @@ public class ApiAccess {
     ) {
         try {
             string limit = query["count_per_page"].Count > 0 ? query["count_per_page"].ToString() : "10";
-            string offset = query["page_number"].Count > 0 ? query["page_number"].ToString() : "0";
+            string page_number = query["page_number"].Count > 0 ? query["page_number"].ToString() : "0";
             string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
             string id_token = Authentication.ParseBearerToken(bearer_token);
             Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
@@ -109,12 +112,17 @@ public class ApiAccess {
                 SELECT 
                     acl_id,
                     sdate,
-                    edate
+                    edate,
+                    p.given_name,
+                    p.family_name,
+                    pfa.company_vat_number
                 FROM 
-                    api_acl_request
+                    api_acl_request inner join person as p on api_acl_request.person_fa = p.account_id
+                    inner join person_fa as pfa on api_acl_request.person_fa = pfa.account_id
                 order by created_at asc
                 limit $1 offset $2
             ";
+            int offset = int.Parse(limit) * int.Parse(page_number);
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(limit)));
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(offset)));
             List<AccessRequestRow> accessRequests = new List<AccessRequestRow>();
@@ -125,6 +133,9 @@ public class ApiAccess {
                     accessRequest.acl_id = reader.GetGuid(0).ToString();
                     accessRequest.date_start = reader.GetDateTime(1);
                     accessRequest.date_end = reader.GetDateTime(2);
+                    accessRequest.first_name = reader.GetString(3);
+                    accessRequest.last_name = reader.GetString(4);
+                    accessRequest.company_vat_number = reader.GetString(5);
                     accessRequests.Add(accessRequest);
                 }
             }

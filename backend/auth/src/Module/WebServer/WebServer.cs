@@ -338,8 +338,9 @@ public class WebServer
                 context.Response.StatusCode = 403;
                 await context.Response.WriteAsync((e.Code != default(AuthorizationException.ErrorCode)) ? e.Message : "");
             }
-            catch (DbException)
+            catch (DbException e)
             {
+                Console.WriteLine(e);
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync("Server error");
             }

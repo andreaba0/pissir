@@ -286,11 +286,17 @@ public class WebServer
                     _dateTimeProvider,
                     _remoteManager
                 ).Wait();
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync("OK");
             }
             catch (AuthenticationException e)
             {
                 context.Response.StatusCode = 401;
                 await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync((e.Code != default(AuthorizationException.ErrorCode)) ? e.Message : "");
             }
             catch (DbException)
             {
@@ -309,16 +315,122 @@ public class WebServer
             }
         });
 
+        app.MapGet("/apiaccess", async context => {
+            try
+            {
+                Task<List<ApiAccess.AccessRequestRow>> apiAccessTask = ApiAccess.GetMethod_ACLRequest(
+                    context.Request.Headers,
+                    context.Request.Query,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                context.Response.StatusCode = 200;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(JsonSerializer.Serialize(await apiAccessTask));
+            }
+            catch (AuthenticationException e)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync((e.Code != default(AuthorizationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+            catch (Routes.ApiAccessException e)
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync((e.Code != default(Routes.ApiAccessException.ErrorCode)) ? e.Message : "");
+            }
+            catch (Exception)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+        });
+
         app.MapPost("/apiaccess", async context =>
         {
-            context.Response.StatusCode = 200;
-            await context.Response.WriteAsync("OK");
+            try {
+                ApiAccess.PostMethod_ACLRequest(
+                    context.Request.Headers,
+                    context.Request.Body,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                ).Wait();
+                context.Response.StatusCode = 201;
+                await context.Response.WriteAsync("Created");
+            }
+            catch (AuthenticationException e)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync((e.Code != default(AuthorizationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+            catch (Routes.ApiAccessException e)
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync((e.Code != default(Routes.ApiAccessException.ErrorCode)) ? e.Message : "");
+            }
+            catch (Exception)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
         });
 
         app.MapPost("/apiaccess/{id}/{action}", async context =>
         {
-            context.Response.StatusCode = 200;
-            await context.Response.WriteAsync("OK");
+            try {
+                ApiAccess.PostMethod_ACLAction(
+                    context.Request.Headers,
+                    context.Request.RouteValues,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                ).Wait();
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync("OK");
+            }
+            catch (AuthenticationException e)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync((e.Code != default(AuthorizationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+            catch (Routes.ApiAccessException e)
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync((e.Code != default(Routes.ApiAccessException.ErrorCode)) ? e.Message : "");
+            }
+            catch (Exception)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
         });
 
         app.MapGet("/company", async context =>

@@ -20,15 +20,21 @@ namespace Routes;
 public class ApiAccess {
 
     internal class AccessRequestBody {
-        public DateTime? from { get; set; } = null;
-        public DateTime? to { get; set; } = null;
+        public DateTime? date_start { get; set; } = null;
+        public DateTime? date_end { get; set; } = null;
+    }
+
+    public class AccessRequestRow {
+        public DateTime? date_start { get; set; } = null;
+        public DateTime? date_end { get; set; } = null;
+        public string? acl_id { get; set; } = null;
     }
 
     public static Task PostMethod_ACLRequest(
         IHeaderDictionary headers,
         Stream body,
         DbDataSource dataSource,
-        DateTimeProvider dateTimeProvider,
+        IDateTimeProvider dateTimeProvider,
         IRemoteJwksHub remoteJwksHub
     ) {
         try {
@@ -38,30 +44,37 @@ public class ApiAccess {
 
             User user = AuthorizationService.GetUser(remoteJwksHub, dataSource, token.sub, remoteJwksHub.GetIssuerName(token.iss)).Result;
 
-            AccessRequestBody accessRequestBody = JsonSerializer.Deserialize<AccessRequestBody>(body) ?? throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_REQUEST_BODY, "Invalid request body");
+            AccessRequestBody accessRequestBody = JsonSerializer.DeserializeAsync<AccessRequestBody>(body, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
+            }).Result ?? throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_REQUEST_BODY, "Invalid request body");
 
-            if(accessRequestBody.from == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "from is required");
-            if(accessRequestBody.to == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "to is required");
-            if(accessRequestBody.from > accessRequestBody.to) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE_RANGE, "from must be less than to");
+            if(accessRequestBody.date_start == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "start date is required");
+            if(accessRequestBody.date_end == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "end date is required");
+            if(accessRequestBody.date_start > accessRequestBody.date_end) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE_RANGE, "start date must be smaller than end date");
 
 
 
             using DbConnection connection = dataSource.OpenConnection();
 
             if(user.role != "FA" && user.role != "WA") throw new ProfileException(ProfileException.ErrorCode.UNKNOW_USER_ROLE, "Unknow user role");
-
-            //check that from - to is less than 3 months
-            if(accessRequestBody.to - accessRequestBody.from > TimeSpan.FromDays(90)) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE_RANGE, "date range is too large, max 3 months");
+            if(user.role == "FA") throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User is not authorized to perform this action");
 
             DbCommand command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO api_access_request (user_id, from_date, to_date)
-                VALUES ($1, $2, $3)
+                INSERT INTO api_access_request (acl_id, user_id, sdate, edate)
+                VALUES ($1, (
+                    SELECT id
+                    FROM person_fa
+                    WHERE global_id=$2
+                ), $3, $4)
             ";
 
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.global_id));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, accessRequestBody.from));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, accessRequestBody.to));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.NewGuid()));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, user.global_id));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, accessRequestBody.date_start));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, accessRequestBody.date_end));
 
             command.ExecuteNonQuery();
 
@@ -71,15 +84,61 @@ public class ApiAccess {
         }
     }
 
-    public static Task GetMethod_ACLRequest() {
-        return Task.FromResult(default(string));
+    public static Task<List<AccessRequestRow>> GetMethod_ACLRequest(
+        IHeaderDictionary headers,
+        IQueryCollection query,
+        DbDataSource dataSource,
+        IDateTimeProvider dateTimeProvider,
+        IRemoteJwksHub remoteJwksHub
+    ) {
+        try {
+            string limit = query["count_per_page"].Count > 0 ? query["count_per_page"].ToString() : "10";
+            string offset = query["page_number"].Count > 0 ? query["page_number"].ToString() : "0";
+            string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+            string id_token = Authentication.ParseBearerToken(bearer_token);
+            Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
+
+            User user = AuthorizationService.GetUser(remoteJwksHub, dataSource, token.sub, remoteJwksHub.GetIssuerName(token.iss)).Result;
+
+            if(user.role != "FA" && user.role != "WA") throw new ProfileException(ProfileException.ErrorCode.UNKNOW_USER_ROLE, "Unknow user role");
+            if(user.role == "FA") throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User is not authorized to perform this action");
+
+            using DbConnection connection = dataSource.OpenConnection();
+            DbCommand command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT 
+                    acl_id,
+                    sdate,
+                    edate
+                FROM 
+                    api_acl_request
+                order by created_at asc
+                limit $1 offset $2
+            ";
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(limit)));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(offset)));
+            List<AccessRequestRow> accessRequests = new List<AccessRequestRow>();
+            using (DbDataReader reader = command.ExecuteReader()) {
+                if(!reader.HasRows) throw new ApiAccessException(ApiAccessException.ErrorCode.GENERIC_ERROR, "No access requests found");
+                while(reader.Read()) {
+                    AccessRequestRow accessRequest = new AccessRequestRow();
+                    accessRequest.acl_id = reader.GetGuid(0).ToString();
+                    accessRequest.date_start = reader.GetDateTime(1);
+                    accessRequest.date_end = reader.GetDateTime(2);
+                    accessRequests.Add(accessRequest);
+                }
+            }
+            return Task.FromResult(accessRequests);
+        } catch(Exception) {
+            throw;
+        }
     }
 
     public static Task PostMethod_ACLAction(
         IHeaderDictionary headers,
-        Stream body,
+        RouteValueDictionary query,
         DbDataSource dataSource,
-        DateTimeProvider dateTimeProvider,
+        IDateTimeProvider dateTimeProvider,
         IRemoteJwksHub remoteJwksHub
     ) {
         try {
@@ -87,13 +146,26 @@ public class ApiAccess {
             string id_token = Authentication.ParseBearerToken(bearer_token);
             Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
 
+            string acl_id = query["id"].ToString() ?? string.Empty;
+            string action = query["action"].ToString() ?? string.Empty;
+
+            if(action != "accept" && action != "reject") throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_ACTION, "Invalid action");
+
             User user = AuthorizationService.GetUser(remoteJwksHub, dataSource, token.sub, remoteJwksHub.GetIssuerName(token.iss)).Result;
 
-            AccessRequestBody accessRequestBody = JsonSerializer.Deserialize<AccessRequestBody>(body) ?? throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_REQUEST_BODY, "Invalid request body");
+            if(user.role != "FA" && user.role != "WA") throw new ProfileException(ProfileException.ErrorCode.UNKNOW_USER_ROLE, "Unknow user role");
+            if(user.role == "FA") throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User is not authorized to perform this action");
 
-            if(accessRequestBody.from == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "from is required");
-            if(accessRequestBody.to == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "to is required");
-            if(accessRequestBody.from > accessRequestBody.to) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE_RANGE, "from must be less than to");
+            using (DbConnection connection = dataSource.OpenConnection()) {
+                if(action=="accept") PostMethod_ACLAccept(
+                    connection,
+                    acl_id
+                ); 
+                else if(action=="reject") PostMethod_ACLReject(
+                    connection,
+                    acl_id
+                );
+            }
         
             return Task.CompletedTask;
         }
@@ -104,9 +176,6 @@ public class ApiAccess {
 
     internal static Task PostMethod_ACLAccept(
         DbConnection connection,
-        AccessRequestBody accessRequestBody,
-        DbDataSource dataSource,
-        string userId,
         string aclId
     ) {
         try {
@@ -114,23 +183,34 @@ public class ApiAccess {
             transactionInit.CommandText = "BEGIN";
             transactionInit.ExecuteNonQuery();
 
-            //check if to and from are != null
-            if(accessRequestBody.from == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "from is required");
-            if(accessRequestBody.to == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "to is required");
-            int numberOfDays = (int)(accessRequestBody.to - accessRequestBody.from).Value.TotalDays;
-            for(int i=0;i<numberOfDays;i+=10) {
-                int step = (numberOfDays - i > 10) ? 10 : numberOfDays - i;
-                DbCommand command = connection.CreateCommand();
-                command.CommandText = @"
-                    INSERT INTO api_acl (user_id, date_allowed)
-                    $1, select date(generate_series($2, $3, interval '1 day'))
-                    ON CONFLICT DO NOTHING
-                ";
-                command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, userId));
-                command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, accessRequestBody.from.Value.AddDays(i)));
-                command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, accessRequestBody.from.Value.AddDays(i+step)));
-                command.ExecuteNonQuery();
+            DbCommand deleteCommand = connection.CreateCommand();
+            deleteCommand.CommandText = @"
+                DELETE FROM api_acl_request
+                WHERE acl_id=$1
+                RETURNING sdate, edate, person_fa
+            ";
+            deleteCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, aclId));
+
+            AccessRequestBody accessRequestBody = new AccessRequestBody();
+            string? person_fa = string.Empty;
+            using (DbDataReader reader = deleteCommand.ExecuteReader()) {
+                if(!reader.HasRows) throw new ApiAccessException(ApiAccessException.ErrorCode.GENERIC_ERROR, "ACL not found");
+                while(reader.Read()) {
+                    accessRequestBody.date_start = reader.GetDateTime(0);
+                    accessRequestBody.date_end = reader.GetDateTime(1);
+                    person_fa = reader.GetInt64(2).ToString();
+                }
             }
+
+            DbCommand insertCommand = connection.CreateCommand();
+            insertCommand.CommandText = @"
+                INSERT INTO api_acl (person_fa, sdate, edate)
+                VALUES ($1, $2, $3)
+            ";
+            insertCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int64, long.Parse(person_fa)));
+            insertCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, accessRequestBody.date_start));
+            insertCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, accessRequestBody.date_end));
+            insertCommand.ExecuteNonQuery();
 
             DbCommand transactionEnd = connection.CreateCommand();
             transactionEnd.CommandText = "COMMIT";
@@ -154,9 +234,6 @@ public class ApiAccess {
 
     internal static Task PostMethod_ACLReject(
         DbConnection connection,
-        AccessRequestBody accessRequestBody,
-        DbDataSource dataSource,
-        string userId,
         string aclId
     ) {
         try {
@@ -186,7 +263,8 @@ public class ApiAccessException : Exception {
         INVALID_DATE = 1,
         INVALID_COMPANY_VAT_NUMBER = 2,
         INVALID_DATE_RANGE = 3,
-        INVALID_REQUEST_BODY = 4
+        INVALID_REQUEST_BODY = 4,
+        INVALID_ACTION = 5
     }
     public ErrorCode Code { get; } = default(ErrorCode);
     public ApiAccessException(ErrorCode errorCode, string message) : base(message) {

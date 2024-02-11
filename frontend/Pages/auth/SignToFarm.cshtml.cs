@@ -31,6 +31,10 @@ namespace frontend.Pages.auth
                 // Controllo utente autenticato
                 if (!HttpContext.Request.Cookies.TryGetValue("Token", out string token)) return RedirectToPage("/auth/SignIn");
 
+                // Controllo utente autenticato
+                if (await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/DatiAccount");
+                
+                
                 //IDictionary<string, string> payload = await GetPayloadFromToken(token);
                 IDictionary<string, string> payload = new Dictionary<string, string>();
 

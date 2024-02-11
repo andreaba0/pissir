@@ -1,4 +1,5 @@
 .bin/
+.vs/
 node_modules/
 build/
 bin/

@@ -31,6 +31,7 @@ public class ApiAccess {
         public string? first_name { get; set; } = null;
         public string? last_name { get; set; } = null;
         public string? company_vat_number { get; set; } = null;
+        public string? email { get; set; } = null;
     }
 
     public static Task PostMethod_ACLRequest(
@@ -115,7 +116,8 @@ public class ApiAccess {
                     edate,
                     p.given_name,
                     p.family_name,
-                    pfa.company_vat_number
+                    pfa.company_vat_number,
+                    p.email
                 FROM 
                     api_acl_request inner join person as p on api_acl_request.person_fa = p.account_id
                     inner join person_fa as pfa on api_acl_request.person_fa = pfa.account_id
@@ -123,11 +125,11 @@ public class ApiAccess {
                 limit $1 offset $2
             ";
             int offset = int.Parse(limit) * (int.Parse(page_number)-1);
+            if(offset < 0) offset = 0;
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(limit)));
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, offset));
             List<AccessRequestRow> accessRequests = new List<AccessRequestRow>();
             using (DbDataReader reader = command.ExecuteReader()) {
-                if(!reader.HasRows) throw new ApiAccessException(ApiAccessException.ErrorCode.GENERIC_ERROR, "No access requests found");
                 while(reader.Read()) {
                     AccessRequestRow accessRequest = new AccessRequestRow();
                     accessRequest.acl_id = reader.GetGuid(0).ToString();
@@ -136,6 +138,7 @@ public class ApiAccess {
                     accessRequest.first_name = reader.GetString(3);
                     accessRequest.last_name = reader.GetString(4);
                     accessRequest.company_vat_number = reader.GetString(5);
+                    accessRequest.email = reader.GetString(6);
                     accessRequests.Add(accessRequest);
                 }
             }
@@ -200,7 +203,7 @@ public class ApiAccess {
                 WHERE acl_id=$1
                 RETURNING sdate, edate, person_fa
             ";
-            deleteCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, aclId));
+            deleteCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(aclId)));
 
             AccessRequestBody accessRequestBody = new AccessRequestBody();
             string? person_fa = string.Empty;

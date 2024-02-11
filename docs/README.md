@@ -33,12 +33,17 @@ O, se viene usato Poetry:
 ```console
 ~$ poetry run cicd_test_suite/main.py
 ```
+Una volta avviata l'applicazione, gli step da eseguire sono i seguenti:
+1. Setup del network tra container
+2. Setup dei container
+3. Esecuzione dei test
+Segliere dal menu del programma l'opzione in base allo step che si sta per eseguire
 Il progetto, per essere eseguito, necessita oltre alle varie dipendenze, anche di Docker, software usato per la gestione dei container che conterranno le varie parti sotto test.
 > :warning: **Docker per eseguire e gestire i container necessita dei permessi di root**. Per evitare di eseguire l'intera applicazione Python con permessi di root potrebbe essere necessario assegnare l'utente al gruppo Docker. Istruzioni presenti al link: [Docker without sudo](https://docs.docker.com/engine/install/linux-postinstall/)
 
 
 ## Struttura del backend Auth
-Nella cartella backend/auth si trova il codice sorgente della parte di backend relativa al progetti di Applicazioni Web. Nella cartella src si trova il sorgente del backend, mentre nella cartella test di trova il progetto per lo unit test di alcune parti del sorgente. Come scritto in precedenza il component testing effettivo viene fatto con Docker tramite un programma scritto in Python.
+Nella cartella backend/auth si trova il codice sorgente della parte di backend relativa al progetto di Applicazioni Web. Nella cartella src si trova il sorgente del backend, mentre nella cartella test di trova il progetto per lo unit test di alcune parti del sorgente. Come scritto in precedenza il component testing effettivo viene fatto con Docker tramite un programma scritto in Python.
 Per eseguire correttamente il software nella cartella src serve creare i/il file:
 ```
 appsettings.<environment>.json
@@ -69,7 +74,7 @@ Il contenuto di tali file prevede:
   }
 }
 ```
-La modifica di Http.Url potrebbe causare funzionamenti anomali quando vengono eseguiti i test di component. Tali anomalie sono causate dal fatto che il programma Python si aspetta che il backend eseguito all'interno del container rimanga in ascolto sulla porta 8000.<br />
+La modifica di Http.Url potrebbe causare funzionamenti anomali quando vengono eseguiti i test di componente. Tali anomalie sono causate dal fatto che il programma Python si aspetta che il backend eseguito all'interno del container rimanga in ascolto sulla porta 8000.<br />
 Quando viene eseguito il backend auth risulta necessario impostare altri parametri, come la connessione al DB:
 ```json
 {
@@ -83,6 +88,10 @@ Quando viene eseguito il backend auth risulta necessario impostare altri paramet
     "database": "database"
   }
 }
+```
+Per eseguire il software in ambiente linux con annessa la variabile d'ambiente desiderata, eseguire il comando:
+```console
+export ASPNETCORE_ENVIRONMENT="Development" dotnet run|watch|build
 ```
 
 

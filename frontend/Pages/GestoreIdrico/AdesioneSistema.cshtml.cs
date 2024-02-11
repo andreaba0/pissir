@@ -16,24 +16,28 @@ namespace frontend.Pages.GestoreIdrico
         public async Task<IActionResult> OnGet()
         {
 
-            /*
+
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+                Console.WriteLine(ApiReq.utente.Role);
 
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="WSP") { throw new Exception("Unauthorized"); }
+                if (ApiReq.utente.Role!="WA") { throw new Exception("Unauthorized"); }
 
                 RichiesteUtenti = await ApiReq.GetRichiesteUtentiFromApi(HttpContext);
                 RichiestePeriodo = await ApiReq.GetRichiestePeriodoFromApi(HttpContext);
+
+                return Page();
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
+            
 
             // Simula dati di richieste
             RichiesteUtenti = GetSimulatedRichiesteUtenti();
@@ -76,7 +80,7 @@ namespace frontend.Pages.GestoreIdrico
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante la l'accettazione/rifiuto della richiesta. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante la l'accettazione/rifiuto della richiesta. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -87,7 +91,7 @@ namespace frontend.Pages.GestoreIdrico
             */
 
             TempData["Messaggio"] = "Richiesta adesione con id: " + id + " impostata con stato: " + action;
-            TempData["MessaggioErrore"] = "Errore durante la l'accettazione/rifiuto della richiesta. Riprova più tardi.";
+            TempData["MessaggioErrore"] = "Errore durante la l'accettazione/rifiuto della richiesta. Riprova piï¿½ tardi.";
 
             return RedirectToPage();
         }
@@ -125,7 +129,7 @@ namespace frontend.Pages.GestoreIdrico
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante la conferma del periodo. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante la conferma del periodo. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -136,7 +140,7 @@ namespace frontend.Pages.GestoreIdrico
             */
 
             TempData["Messaggio"] = "Richiesta periodo con id: " + id + " impostata con stato: " + action;
-            TempData["MessaggioErrore"] = "Errore durante la conferma del periodo. Riprova più tardi.";
+            TempData["MessaggioErrore"] = "Errore durante la conferma del periodo. Riprova piï¿½ tardi.";
 
             return RedirectToPage();
         }

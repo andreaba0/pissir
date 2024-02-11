@@ -12,7 +12,7 @@ namespace frontend.Pages
     public static class ApiReq
     {
         // Variabili comuni alle classi
-        public static readonly string urlGenerico = "http://localhost";
+        public static readonly string urlGenerico = "http://localhost:8000";
         public static readonly HttpClient httpClient = new();
         public static Utente? utente { get; set; }
 
@@ -533,7 +533,7 @@ namespace frontend.Pages
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
             // Controllo utente autorizzato
-            if (utente.Role != "WSP") { throw new Exception("Unauthorized"); }
+            if (utente.Role != "WA") { throw new Exception("Unauthorized"); }
 
             string urlTask = urlGenerico + "/service/application";
 
@@ -566,7 +566,7 @@ namespace frontend.Pages
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
 
             // Controllo utente autorizzato
-            if (utente.Role != "WSP") { throw new Exception("Unauthorized"); }
+            if (utente.Role != "WA") { throw new Exception("Unauthorized"); }
 
             string urlTask = urlGenerico + "/apiaccess";
 
@@ -577,6 +577,7 @@ namespace frontend.Pages
 
             if (response.IsSuccessStatusCode)
             {
+                Console.WriteLine("\n\n\n\nOK\n\n\n\n\n\n");
                 // Legge e deserializza i dati dalla risposta
                 string responseData = await response.Content.ReadAsStringAsync();
                 List<UtentePeriodo>? listaUtenti = JsonConvert.DeserializeObject<List<UtentePeriodo>>(responseData);
@@ -587,6 +588,8 @@ namespace frontend.Pages
             }
             else
             {
+                Console.WriteLine("\n\n\n\nNO\n\n\n\n\n\n");
+                Console.WriteLine(await response.Content.ReadAsStringAsync());
                 throw new HttpRequestException($"{response.StatusCode}");
             }
         }

@@ -15,7 +15,7 @@ public class SignInModel : PageModel
         "response_type=code&" +
         "state=1234567890qwerty&" +
         "redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/google&" +
-        "client_id=218970200448-62ddcs49ilsub6a1r1l2k2vpd84elkqs.apps.googleusercontent.com";
+        "client_id=330493585576-us7lib6fpk4bg0j1vcti09l0jpso2o4k.apps.googleusercontent.com";
 
     string authFacebook = "https://www.facebook.com/v18.0/dialog/oauth?" +
         "scope=openid&" +
@@ -29,6 +29,7 @@ public class SignInModel : PageModel
     {
         try
         {
+            Console.WriteLine("Provider: " + Request.Query["provider"]);
             string? provider = Request.Query["provider"];
             string? code = Request.Query["code"];
 
@@ -98,8 +99,8 @@ public class SignInModel : PageModel
             {
                 case "google":
                     tokenEndpoint = "https://oauth2.googleapis.com/token";
-                    clientId = "218970200448-62ddcs49ilsub6a1r1l2k2vpd84elkqs.apps.googleusercontent.com";
-                    clientSecret = "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";
+                    clientId = "330493585576-us7lib6fpk4bg0j1vcti09l0jpso2o4k.apps.googleusercontent.com";
+                    clientSecret = "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";
                     redirectUri = "https://appweb.andreabarchietto.it/localhost_redirect/oauth/google";
                     break;
 
@@ -165,7 +166,7 @@ public class SignInModel : PageModel
                         }
                         else
                         {
-                            // Gestisci il caso in cui "expires_in" non è presente o non è un numero valido
+                            // Gestisci il caso in cui "expires_in" non ï¿½ presente o non ï¿½ un numero valido
                             TempData["MessaggioErrore"] = "Expires_in non presente o non valido. Autenticazione fallita.";
                             return RedirectToPage();
                         }
@@ -197,7 +198,7 @@ public class SignInModel : PageModel
                                 }
                                 else
                                 {
-                                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare piï¿½ tardi.";
                                 }
                                 
                                 return RedirectToPage("/Error");
@@ -210,7 +211,7 @@ public class SignInModel : PageModel
                     }
                     else
                     {
-                        // Gestisci il caso in cui il token non è presente nella risposta
+                        // Gestisci il caso in cui il token non ï¿½ presente nella risposta
                         TempData["MessaggioErrore"] = "Access Token non presente o non valido. Autenticazione fallita.";
                         return RedirectToPage();
                     }
@@ -223,7 +224,7 @@ public class SignInModel : PageModel
         }
         catch (Exception ex)
         {
-            ViewData["MessaggioErrore"] = "Si è verificato un errore durante l'accesso. " + ex.ToString();
+            ViewData["MessaggioErrore"] = "Si ï¿½ verificato un errore durante l'accesso. " + ex.ToString();
             return RedirectToPage("/Error");
         }
         

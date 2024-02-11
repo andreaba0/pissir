@@ -9,5 +9,20 @@ namespace frontend.Models
 
         [JsonProperty("date_end")]
         public string DataFine { get; set; }
+
+        [JsonProperty("id")]
+        public string Id { get; set; }
+
+        [JsonProperty("given_name")]
+        public string Nome { get; set; }
+
+        [JsonProperty("family_name")]
+        public string Cognome { get; set; }
+
+        [JsonProperty("email")]
+        public string Email { get; set; }
+
+        [JsonProperty("company_vat_number")]
+        public string PartitaIva { get; set; }
     }
 }

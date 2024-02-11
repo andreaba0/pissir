@@ -58,32 +58,37 @@ public class ApiAccess {
             if(accessRequestBody.date_end == null) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE, "end date is required");
             if(accessRequestBody.date_start > accessRequestBody.date_end) throw new ApiAccessException(ApiAccessException.ErrorCode.INVALID_DATE_RANGE, "start date must be smaller than end date");
 
-
-
             using DbConnection connection = dataSource.OpenConnection();
 
             if(user.role != "FA" && user.role != "WA") throw new ProfileException(ProfileException.ErrorCode.UNKNOW_USER_ROLE, "Unknow user role");
-            if(user.role == "FA") throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User is not authorized to perform this action");
+            if(user.role == "WA") throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User is not authorized to perform this action");
 
             DbCommand command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO api_access_request (acl_id, user_id, sdate, edate)
+                INSERT INTO api_acl_request (acl_id, person_fa, sdate, edate)
                 VALUES ($1, (
-                    SELECT id
-                    FROM person_fa
+                    SELECT account_id
+                    FROM person
                     WHERE global_id=$2
                 ), $3, $4)
             ";
 
+            Console.WriteLine(accessRequestBody.date_start);
+            Console.WriteLine(accessRequestBody.date_end);
+
+            DateTime sdate = DateTime.SpecifyKind(accessRequestBody.date_start.Value, DateTimeKind.Utc);
+            DateTime edate = DateTime.SpecifyKind(accessRequestBody.date_end.Value, DateTimeKind.Utc);
+
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.NewGuid()));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, user.global_id));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, accessRequestBody.date_start));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, accessRequestBody.date_end));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(user.global_id)));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, sdate));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, edate));
 
             command.ExecuteNonQuery();
 
             return Task.CompletedTask;
-        } catch(Exception) {
+        } catch(Exception e) {
+            Console.WriteLine(e);
             throw;
         }
     }
@@ -183,7 +188,8 @@ public class ApiAccess {
         
             return Task.CompletedTask;
         }
-        catch(Exception) {
+        catch(Exception e) {
+            Console.WriteLine(e);
             throw;
         }
     }
@@ -240,8 +246,9 @@ public class ApiAccess {
             rollbackCommand.ExecuteNonQuery();
             throw;
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            Console.WriteLine(e);
             throw;
         }
     }
@@ -253,10 +260,10 @@ public class ApiAccess {
         try {
             DbCommand deleteCommand = connection.CreateCommand();
             deleteCommand.CommandText = @"
-                DELETE FROM api_access_request
+                DELETE FROM api_acl_request
                 WHERE acl_id=$1
             ";
-            deleteCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, aclId));
+            deleteCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(aclId)));
             deleteCommand.ExecuteNonQuery();
             return Task.CompletedTask;
         }

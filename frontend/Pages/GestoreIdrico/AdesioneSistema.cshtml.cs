@@ -21,7 +21,6 @@ namespace frontend.Pages.GestoreIdrico
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-                Console.WriteLine(ApiReq.utente.Role);
 
                 // Controllo utente autorizzato
                 if (ApiReq.utente.Role!="WA") { throw new Exception("Unauthorized"); }
@@ -33,7 +32,6 @@ namespace frontend.Pages.GestoreIdrico
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
@@ -101,14 +99,14 @@ namespace frontend.Pages.GestoreIdrico
         {
             string urlTask = ApiReq.urlGenerico + $"/apiaccess/{id}/{action}";
 
-            /*
+            
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="WSP") { throw new Exception("Unauthorized"); }
+                if (ApiReq.utente.Role!="WA") { throw new Exception("Unauthorized"); }
 
                 // Imposta il token
                 ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -119,7 +117,7 @@ namespace frontend.Pages.GestoreIdrico
                 var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
                 // Esegue la chiamata PUT
-                HttpResponseMessage response = await ApiReq.httpClient.PutAsync(urlTask, content);
+                HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -137,10 +135,10 @@ namespace frontend.Pages.GestoreIdrico
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
+            
 
-            TempData["Messaggio"] = "Richiesta periodo con id: " + id + " impostata con stato: " + action;
-            TempData["MessaggioErrore"] = "Errore durante la conferma del periodo. Riprova pi� tardi.";
+            //TempData["Messaggio"] = "Richiesta periodo con id: " + id + " impostata con stato: " + action;
+            //TempData["MessaggioErrore"] = "Errore durante la conferma del periodo. Riprova pi� tardi.";
 
             return RedirectToPage();
         }

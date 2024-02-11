@@ -10,13 +10,13 @@ namespace frontend.Models
         [JsonProperty("date_end")]
         public string DataFine { get; set; }
 
-        [JsonProperty("id")]
+        [JsonProperty("acl_id")]
         public string Id { get; set; }
 
-        [JsonProperty("given_name")]
+        [JsonProperty("first_name")]
         public string Nome { get; set; }
 
-        [JsonProperty("family_name")]
+        [JsonProperty("last_name")]
         public string Cognome { get; set; }
 
         [JsonProperty("email")]

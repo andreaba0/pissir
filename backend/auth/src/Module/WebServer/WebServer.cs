@@ -424,6 +424,7 @@ public class WebServer
             }
             catch (Routes.ApiAccessException e)
             {
+                Console.WriteLine(e);
                 context.Response.StatusCode = 400;
                 await context.Response.WriteAsync((e.Code != default(Routes.ApiAccessException.ErrorCode)) ? e.Message : "");
             }

@@ -169,7 +169,7 @@ public class Application
                 throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "tax_code is required");
             if (application.company_category == null)
                 throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "company_category is required");
-            if (application.company_category != "WA" && application.company_category != "FA")
+            if (application.company_category != "WSP" && application.company_category != "FAR")
                 throw new ApplicationException(ApplicationException.ErrorCode.UNKNOW_COMPANY_INDUSTRY_SECTOR, "Unknow company industry sector");
 
             string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
@@ -177,11 +177,11 @@ public class Application
             Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
             string providerName = remoteJwksHub.GetIssuerName(token.iss);
 
-            if(token.given_name != application.given_name) 
+            if(token.given_name!=string.Empty && token.given_name != application.given_name) 
                 throw new ApplicationException(ApplicationException.ErrorCode.BODY_FIELD_DOES_NOT_MATCH_JWT_FIELD, "Body field given_name does not match provider field given_name");
-            if(token.family_name != application.family_name)
+            if(token.family_name!=string.Empty && token.family_name != application.family_name)
                 throw new ApplicationException(ApplicationException.ErrorCode.BODY_FIELD_DOES_NOT_MATCH_JWT_FIELD, "Body field family_name does not match provider field family_name");
-            if(token.email != application.email)
+            if(token.email!=string.Empty && token.email != application.email)
                 throw new ApplicationException(ApplicationException.ErrorCode.BODY_FIELD_DOES_NOT_MATCH_JWT_FIELD, "Body field email does not match provider field email");
 
             using (DbConnection connection = dataSource.OpenConnection())
@@ -341,9 +341,11 @@ public class Application
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, token.sub));
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, providerName));
             string limit = query["count_per_page"].Count > 0 ? query["count_per_page"].ToString() : "10";
-            string offset = query["page_number"].Count > 0 ? query["page_number"].ToString() : "0";
+            string page_number = query["page_number"].Count > 0 ? query["page_number"].ToString() : "0";
+            int offset = int.Parse(limit) * (int.Parse(page_number)-1);
+            if (offset < 0) offset = 0;
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(limit)));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(offset)));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, offset));
             command.Prepare();
             List<Application> applications = new List<Application>();
             using (DbDataReader reader = command.ExecuteReader())

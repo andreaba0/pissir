@@ -122,9 +122,9 @@ public class ApiAccess {
                 order by created_at asc
                 limit $1 offset $2
             ";
-            int offset = int.Parse(limit) * int.Parse(page_number);
+            int offset = int.Parse(limit) * (int.Parse(page_number)-1);
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(limit)));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, int.Parse(offset)));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, offset));
             List<AccessRequestRow> accessRequests = new List<AccessRequestRow>();
             using (DbDataReader reader = command.ExecuteReader()) {
                 if(!reader.HasRows) throw new ApiAccessException(ApiAccessException.ErrorCode.GENERIC_ERROR, "No access requests found");

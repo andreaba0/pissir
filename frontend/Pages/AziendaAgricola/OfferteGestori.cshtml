@@ -127,15 +127,15 @@
                                                     updateColturaInfo(selectedOption);
                                                 });
 
-                                                $('#modalOrdine\@offerta.Id').on('shown.bs.modal', function () {
+                                                $('#modalOrdine\\@offerta.Id').on('shown.bs.modal', function () {
                                                     // Ottieni l'opzione attualmente selezionata
-                                                    var selectedOption = document.getElementById("colturaSelect_@offerta.Id").options[document.getElementById("colturaSelect").selectedIndex];
+                                                    var selectedOption = document.getElementById("colturaSelect_\\@offerta.Id").options[document.getElementById("colturaSelect").selectedIndex];
                                                     // Aggiorna le stime quando la modale viene aperta
                                                     updateColturaInfo(selectedOption);
                                                 });
 
                                                 function updateColturaInfo(selectedOption) {
-                                                    var colturaInfoDiv = document.querySelector('.coltura-info_@offerta.Id');
+                                                    var colturaInfoDiv = document.querySelector('.coltura-info_\\@offerta.Id');
                                                     var values = selectedOption.value.split('-').map(function (item) {
                                                         return item.trim();
                                                     });

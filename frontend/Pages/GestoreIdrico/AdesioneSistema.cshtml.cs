@@ -52,14 +52,14 @@ namespace frontend.Pages.GestoreIdrico
         {
             string urlTask = ApiReq.urlGenerico + $"/service/application/{id}/{action}";
 
-            /*
+            
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="WSP") { throw new Exception("Unauthorized"); }
+                if (ApiReq.utente.Role!="WA") { throw new Exception("Unauthorized"); }
 
                 // Imposta il token
                 ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
@@ -88,10 +88,10 @@ namespace frontend.Pages.GestoreIdrico
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
+            
 
-            TempData["Messaggio"] = "Richiesta adesione con id: " + id + " impostata con stato: " + action;
-            TempData["MessaggioErrore"] = "Errore durante la l'accettazione/rifiuto della richiesta. Riprova pi� tardi.";
+            //TempData["Messaggio"] = "Richiesta adesione con id: " + id + " impostata con stato: " + action;
+            //TempData["MessaggioErrore"] = "Errore durante la l'accettazione/rifiuto della richiesta. Riprova pi� tardi.";
 
             return RedirectToPage();
         }

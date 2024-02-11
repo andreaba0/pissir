@@ -401,7 +401,7 @@ public class Application
             if (applicationId == string.Empty) throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Application id is required");
             string action = query?["action"]?.ToString() ?? string.Empty;
             if (action == string.Empty) throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Action is required");
-            if (action != "approve" && action != "reject") throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Invalid action");
+            if (action != "accept" && action != "reject") throw new ApplicationException(ApplicationException.ErrorCode.INVALID_APPLICATION, "Invalid action");
             string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
             string id_token = Authentication.ParseBearerToken(bearer_token);
             Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
@@ -433,7 +433,7 @@ public class Application
                     }
                 }
 
-                if (action == "approve")
+                if (action == "accept")
                 {
                     ManageApplication_TransactionApprove(
                         token,

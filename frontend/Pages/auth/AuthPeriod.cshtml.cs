@@ -13,7 +13,6 @@ namespace frontend.Pages.auth
     {
         public async Task<IActionResult> OnGet()
         {
-            /*
             try
             {
                 // Controllo utente autenticato
@@ -24,7 +23,13 @@ namespace frontend.Pages.auth
 
                 if (ApiReq.utente == null)
                 {
-                    ViewData["ErrorMessage"] = "Si � verificato un errore durante l'accesso. ";
+                    ViewData["ErrorMessage"] = "Si &egrave; verificato un errore durante l'accesso. ";
+                    return RedirectToPage("/Error");
+                }
+                if(ApiReq.utente.Role != "FA")
+                {
+                    TempData["MessaggioErrore"] = "Non sei autorizzato a visualizzare questa pagina. ";
+                    ViewData["ErrorMessage"] = "Non sei autorizzato a visualizzare questa pagina. ";
                     return RedirectToPage("/Error");
                 }
             }
@@ -33,7 +38,7 @@ namespace frontend.Pages.auth
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
+            
 
 
             return Page();           

@@ -18,14 +18,19 @@ namespace frontend.Pages.GestoreIdrico
 
         public async Task<IActionResult> OnGet()
         {
-            /*
+            
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="WSP") { throw new Exception("Unauthorized"); }
+                if (ApiReq.utente.Role!="WA") { throw new Exception("Unauthorized"); }
+
+                // Simula i dati di esempio
+                SimulaDatiDiEsempio();
+
+                return Page();
 
                 OfferteInserite = await ApiReq.GetOfferteIdricheFromApi(HttpContext);
                 LimitiAcquistoPerAzienda = await ApiReq.GetLimitiPerAziendaFromApi(HttpContext);
@@ -37,7 +42,7 @@ namespace frontend.Pages.GestoreIdrico
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
+            
 
             // Simula i dati di esempio
             SimulaDatiDiEsempio();
@@ -61,22 +66,22 @@ namespace frontend.Pages.GestoreIdrico
             // Ottenere la data odierna
             DateTime today = DateTime.Now.Date;
 
-            // Controllare se la data è posteriore a quella odierna
+            // Controllare se la data ï¿½ posteriore a quella odierna
             if (date < today)
             {
-                TempData["MessaggioErrore"] = "La data di inizio non può essere posteriore a oggi.";
+                TempData["MessaggioErrore"] = "La data di inizio non puï¿½ essere posteriore a oggi.";
                 return RedirectToPage();
             }
 
             if (float.Parse(quantitaAcqua) <= 0.0f)
             {
-                TempData["MessaggioErrore"] = "Quantità acqua erroneamente impostata.";
+                TempData["MessaggioErrore"] = "Quantitï¿½ acqua erroneamente impostata.";
                 return RedirectToPage();
             }
 
             if (float.Parse(prezzoAcqua) <= 0.0f)
             {
-                TempData["MessaggioErrore"] = "Quantità acqua erroneamente impostata.";
+                TempData["MessaggioErrore"] = "Quantitï¿½ acqua erroneamente impostata.";
                 return RedirectToPage();
             }
 
@@ -108,12 +113,12 @@ namespace frontend.Pages.GestoreIdrico
                 if (response.IsSuccessStatusCode)
                 {
                     // Imposta un messaggio di successo
-                    TempData["Messaggio"] = $"Inserimento offerta effettuato con successo! Quantità: {quantitaAcqua}L - Data disponibilità: {dataDisp} - Prezzo: {prezzoAcqua}€/L";
+                    TempData["Messaggio"] = $"Inserimento offerta effettuato con successo! Quantitï¿½: {quantitaAcqua}L - Data disponibilitï¿½: {dataDisp} - Prezzo: {prezzoAcqua}ï¿½/L";
                 }
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -123,8 +128,8 @@ namespace frontend.Pages.GestoreIdrico
             }
             */
 
-            TempData["Messaggio"] = $"Inserimento offerta effettuato con successo! Quantità: {quantitaAcqua}L - Data disponibilità: {dataDisp} - Prezzo: {prezzoAcqua}€/L";
-            TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
+            TempData["Messaggio"] = $"Inserimento offerta effettuato con successo! Quantitï¿½: {quantitaAcqua}L - Data disponibilitï¿½: {dataDisp} - Prezzo: {prezzoAcqua}ï¿½/L";
+            TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova piï¿½ tardi.";
 
             return RedirectToPage();
         }
@@ -136,7 +141,7 @@ namespace frontend.Pages.GestoreIdrico
 
             if (float.Parse(nuovaQuantita) <= 0.0f)
             {
-                TempData["MessaggioErrore"] = "Quantità acqua erroneamente impostata.";
+                TempData["MessaggioErrore"] = "Quantitï¿½ acqua erroneamente impostata.";
                 return RedirectToPage();
             }
 
@@ -166,12 +171,12 @@ namespace frontend.Pages.GestoreIdrico
                 if (response.IsSuccessStatusCode)
                 {
                     // Imposta un messaggio di successo
-                    TempData["Messaggio"] = $"Modifica dell'offerta con ID: {offertaId} effettuata con successo! Quantità: {nuovaQuantita}L.";
+                    TempData["Messaggio"] = $"Modifica dell'offerta con ID: {offertaId} effettuata con successo! Quantitï¿½: {nuovaQuantita}L.";
                 }
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -181,8 +186,8 @@ namespace frontend.Pages.GestoreIdrico
             }
             */
 
-            TempData["Messaggio"] = $"Modifica dell'offerta con ID: {offertaId} effettuata con successo! Quantità: {nuovaQuantita}L.";
-            TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
+            TempData["Messaggio"] = $"Modifica dell'offerta con ID: {offertaId} effettuata con successo! Quantitï¿½: {nuovaQuantita}L.";
+            TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova piï¿½ tardi.";
 
             return RedirectToPage();
         }
@@ -215,7 +220,7 @@ namespace frontend.Pages.GestoreIdrico
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante l'eliminazione dell'offerta. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante l'eliminazione dell'offerta. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -226,7 +231,7 @@ namespace frontend.Pages.GestoreIdrico
             */
 
             TempData["Messaggio"] = $"Eliminazione dell'offerta con ID: {offertaId} effettuata con successo!";
-            TempData["MessaggioErrore"] = "Errore durante l'eliminazione dell'offerta. Riprova più tardi.";
+            TempData["MessaggioErrore"] = "Errore durante l'eliminazione dell'offerta. Riprova piï¿½ tardi.";
 
             return RedirectToPage();
         }
@@ -249,17 +254,17 @@ namespace frontend.Pages.GestoreIdrico
             // Ottenere la data odierna
             DateTime today = DateTime.Now.Date;
 
-            // Controllare se la data di inizio è posteriore a quella odierna
+            // Controllare se la data di inizio ï¿½ posteriore a quella odierna
             if (startDate < today)
             {
-                TempData["MessaggioErrore"] = "La data di inizio non può essere posteriore a oggi.";
+                TempData["MessaggioErrore"] = "La data di inizio non puï¿½ essere posteriore a oggi.";
                 return RedirectToPage();
             }
 
-            // Controllare se la data di fine è precedente alla data di inizio
+            // Controllare se la data di fine ï¿½ precedente alla data di inizio
             if (endDate < startDate)
             {
-                TempData["MessaggioErrore"] = "La data di fine non può essere precedente alla data di inizio.";
+                TempData["MessaggioErrore"] = "La data di fine non puï¿½ essere precedente alla data di inizio.";
                 return RedirectToPage();
             }
 
@@ -296,7 +301,7 @@ namespace frontend.Pages.GestoreIdrico
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova più tardi.";
+                    TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -307,7 +312,7 @@ namespace frontend.Pages.GestoreIdrico
             */
 
             TempData["MessaggioLimite"] = $"Modifica limite di vendita giornaliero a {limiteAcqua} per il periodo {dataInizio} - {dataFine} effettuata con successo!";
-            TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova più tardi.";
+            TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova piï¿½ tardi.";
 
             return RedirectToPage();
         }
@@ -330,17 +335,17 @@ namespace frontend.Pages.GestoreIdrico
             // Ottenere la data odierna
             DateTime today = DateTime.Now.Date;
 
-            // Controllare se la data di inizio è posteriore a quella odierna
+            // Controllare se la data di inizio ï¿½ posteriore a quella odierna
             if (startDate < today)
             {
-                TempData["MessaggioErrore"] = "La data di inizio non può essere posteriore a oggi.";
+                TempData["MessaggioErrore"] = "La data di inizio non puï¿½ essere posteriore a oggi.";
                 return RedirectToPage();
             }
 
-            // Controllare se la data di fine è precedente alla data di inizio
+            // Controllare se la data di fine ï¿½ precedente alla data di inizio
             if (endDate < startDate)
             {
-                TempData["MessaggioErrore"] = "La data di fine non può essere precedente alla data di inizio.";
+                TempData["MessaggioErrore"] = "La data di fine non puï¿½ essere precedente alla data di inizio.";
                 return RedirectToPage();
             }
 
@@ -378,7 +383,7 @@ namespace frontend.Pages.GestoreIdrico
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova più tardi.";
+                    TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -389,7 +394,7 @@ namespace frontend.Pages.GestoreIdrico
             */
 
             TempData["MessaggioLimite"] = $"Modifica limite per l'azienda con P.Iva {partitaIvaAzienda} a {nuovoLimite} per il periodo {dataInizio} - {dataFine} effettuata con successo!";
-            TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova più tardi.";
+            TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova piï¿½ tardi.";
 
             return RedirectToPage();
         }

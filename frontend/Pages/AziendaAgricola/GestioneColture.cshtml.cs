@@ -16,14 +16,20 @@ namespace frontend.Pages.AziendaAgricola
         // Chiamata API per lista colture
         public async Task<IActionResult> OnGet()
         {
-            /*
+            
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }
+                if (ApiReq.utente.Role!="FA") { return RedirectToPage("/DatiAccount"); }
+
+                // Simulazione dati
+                Colture = GetListaColture();
+                ColtureStock = GetStockColture();
+
+                return Page();
 
                 // Chiamata alle API per ottenere i dati
                 Colture = await ApiReq.GetColtureAziendaFromApi(HttpContext);
@@ -34,7 +40,7 @@ namespace frontend.Pages.AziendaAgricola
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
+            
 
             // Simulazione dati
             Colture = GetListaColture();
@@ -85,7 +91,7 @@ namespace frontend.Pages.AziendaAgricola
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -95,7 +101,7 @@ namespace frontend.Pages.AziendaAgricola
             }
             */
 
-            TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova più tardi.";
+            TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova piï¿½ tardi.";
 
             return RedirectToPage();
         }
@@ -139,7 +145,7 @@ namespace frontend.Pages.AziendaAgricola
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante la modifica. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante la modifica. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -149,7 +155,7 @@ namespace frontend.Pages.AziendaAgricola
             }
             */
 
-            TempData["MessaggioErrore"] = "Errore durante la modifica. Riprova più tardi.";
+            TempData["MessaggioErrore"] = "Errore durante la modifica. Riprova piï¿½ tardi.";
 
             await OnGet();
             return RedirectToPage();
@@ -184,7 +190,7 @@ namespace frontend.Pages.AziendaAgricola
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante l'eliminazione della coltura. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante l'eliminazione della coltura. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -194,7 +200,7 @@ namespace frontend.Pages.AziendaAgricola
             }
             */
 
-            TempData["MessaggioErrore"] = "Errore durante l'eliminazione della coltura. Riprova più tardi.";
+            TempData["MessaggioErrore"] = "Errore durante l'eliminazione della coltura. Riprova piï¿½ tardi.";
 
             return RedirectToPage();
         }

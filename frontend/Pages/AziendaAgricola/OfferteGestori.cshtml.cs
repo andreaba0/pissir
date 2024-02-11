@@ -17,14 +17,22 @@ namespace frontend.Pages.AziendaAgricola
 
         public async Task<IActionResult> OnGet()
         {
-            /*
+            
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role != "FAR") { throw new Exception("Unauthorized"); }
+                if (ApiReq.utente.Role != "FA") { return RedirectToPage("/DatiAccount"); }
+
+                // Simulazione dati
+                Offerte = GetListaOfferte();
+                Colture = GetListaColture();
+                CampiAcquaStimata = GetAcquaSitmata();
+                LimiteAcquistoAzienda = 500.0f;
+
+                return Page();
 
                 // Chiamate alle API
                 Offerte = await ApiReq.GetOfferteIdricheFromApi(HttpContext);
@@ -37,7 +45,7 @@ namespace frontend.Pages.AziendaAgricola
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
+            
 
             // Simulazione dati
             Offerte = GetListaOfferte();
@@ -103,7 +111,7 @@ namespace frontend.Pages.AziendaAgricola
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante l'acquisto. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante l'acquisto. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -114,7 +122,7 @@ namespace frontend.Pages.AziendaAgricola
             */
 
             TempData["Messaggio"] = $"Risorse idriche acquistate ( {quantitaAcquisto}L ) dall'offerta con ID: {offertaId} per il campo con ID: {colturaId}";
-            TempData["MessaggioErrore"] = "Errore durante l'acquisto. Riprova più tardi.";
+            TempData["MessaggioErrore"] = "Errore durante l'acquisto. Riprova piï¿½ tardi.";
 
             
             return RedirectToPage();

@@ -13,14 +13,19 @@ namespace frontend.Pages.GestoreIdrico
 
         public async Task<IActionResult> OnGet()
         {
-            /*
+            
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="WSP") { throw new Exception("Unauthorized"); }
+                if (ApiReq.utente.Role!="WA") { throw new Exception("Unauthorized"); }
+
+                // Simulazione dati
+                Acquisti = GetListaAcquisti();
+
+                return Page();
 
                 Acquisti = await ApiReq.GetStoricoVenditeFromApi(HttpContext);
             }
@@ -29,7 +34,7 @@ namespace frontend.Pages.GestoreIdrico
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
+            
 
             // Simulazione dati
             Acquisti = GetListaAcquisti();

@@ -94,7 +94,7 @@
             <label>Cognome:</label> <input id="cognome" name="cognome" type="text" class="form-control" readonly value="@ApiReq.utente.Cognome">
             <br />
             <label>Ruolo:</label> <input id="ruolo" name="ruolo" type="text" class="form-control" readonly 
-                value="@if(ApiReq.utente.Role=="WSP") 
+                value="@if(ApiReq.utente.Role=="WA") 
                         {
                          <text>Gestore Idrico</text>
 }                       else {
@@ -107,7 +107,6 @@
                     <h5>Informazioni azienda</h5>
                     <div style="display: flex; justify-content: flex-end;">
                         <button type="button" id="btnModifica" class="btn btn-primary" onclick="abilitaModifica()">Modifica Azienda</button>
-
                         <button type="submit" id="btnInviaModifiche" class="btn btn-primary" style="display: none; margin-right:0.5em;">Invia modifiche</button>
                         <button type="button" id="btnAnnullaModifica" class="btn btn-secondary" style="display: none;" onclick="annullaModifica()">Annulla Modifica</button>
                     </div>
@@ -123,7 +122,7 @@
                 <br />
                 <label>Email:</label> <input id="emailAzienda" name="emailAzienda" type="text" disabled value="@Model.azienda?.Email" class="editable-field form-control">
                 <br />
-                <label>Categoria:</label> <input id="categoria" name="categoria" type="text" disabled value="@if(Model.azienda?.Categoria=="WA"){
+                <label>Categoria:</label> <input id="categoria" name="categoria" type="text" disabled value="@if(Model.azienda?.Categoria=="WSP"){
                 <text>Azienda Idrica</text>
                 } else {
                 <text>Azienda Agricola</text>

@@ -14,14 +14,19 @@ namespace frontend.Pages.AziendaAgricola
 
         public async Task<IActionResult> OnGet()
         {
-            /*
+            
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }
+                if (ApiReq.utente.Role!="FA") { return RedirectToPage("/DatiAccount"); }
+
+                // Simulazione dati
+                StoricoConsumi = GetStoricoConsumi();
+
+                return Page();
 
                 StoricoConsumi = await ApiReq.GetStoricoConsumiFromApi(HttpContext);
             }
@@ -30,7 +35,7 @@ namespace frontend.Pages.AziendaAgricola
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
+            
 
             // Simulazione dati
             StoricoConsumi = GetStoricoConsumi();

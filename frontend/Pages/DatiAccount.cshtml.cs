@@ -14,7 +14,7 @@ namespace frontend.Pages
         
         public async Task<IActionResult> OnGet()
         {
-            /*
+            
             try
             {
                 // Controllo utente autenticato
@@ -22,6 +22,8 @@ namespace frontend.Pages
 
                 // Chiamata alle API per ottenere i dati
                 azienda = await ApiReq.GetAziendaDataFromApi(HttpContext);
+                Console.WriteLine("Azienda: " + azienda);
+                return Page();
 
             }
             catch (Exception ex) 
@@ -29,9 +31,9 @@ namespace frontend.Pages
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
+            
 
-            azienda = GetAziendaTest();
+            //azienda = GetAziendaTest();
             
             // Continua con la generazione della pagina
             return Page();
@@ -41,7 +43,7 @@ namespace frontend.Pages
         {
             string urlTask = ApiReq.urlGenerico + "/company";
 
-            /*
+            
             try
             {
                 // Controllo utente autenticato
@@ -54,10 +56,10 @@ namespace frontend.Pages
                 var requestBody = new
                 {
                     vat_number = partitaIva,
-                    name = nomeAzienda,
-                    address = indirizzo,
-                    phone = telefono,
-                    email = emailAzienda,
+                    company_name = nomeAzienda,
+                    working_address = indirizzoAzienda,
+                    working_phone_number = telefonoAzienda,
+                    working_email = emailAzienda,
                     industry_sector = categoria
                 };
 
@@ -76,7 +78,7 @@ namespace frontend.Pages
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante l'aggiornamento dei dati dell'azienda. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante l'aggiornamento dei dati dell'azienda. Riprova piï¿½ tardi.";
                 }
             }
             catch (Exception ex)
@@ -84,10 +86,10 @@ namespace frontend.Pages
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
-            string datiAggiornati2 = $"Nome Azienda: {nomeAzienda}, Indirizzo: {indirizzoAzienda}, Telefono: {telefonoAzienda}, Email: {emailAzienda}";
-            TempData["Messaggio"] = $"Aggiornamento dei dati dell'azienda {datiAggiornati2} effettuato con successo!"; TempData["MessaggioErrore"] = "Errore durante l'aggiornamento dei dati dell'azienda. Riprova più tardi.";
-            TempData["MessaggioErrore"] = "Errore durante l'aggiornamento dei dati dell'azienda. Riprova più tardi.";
+            
+            //string datiAggiornati2 = $"Nome Azienda: {nomeAzienda}, Indirizzo: {indirizzoAzienda}, Telefono: {telefonoAzienda}, Email: {emailAzienda}";
+            //TempData["Messaggio"] = $"Aggiornamento dei dati dell'azienda {datiAggiornati2} effettuato con successo!"; TempData["MessaggioErrore"] = "Errore durante l'aggiornamento dei dati dell'azienda. Riprova piï¿½ tardi.";
+            //TempData["MessaggioErrore"] = "Errore durante l'aggiornamento dei dati dell'azienda. Riprova piï¿½ tardi.";
 
             return RedirectToPage();
         }

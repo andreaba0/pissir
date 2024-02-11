@@ -6,6 +6,7 @@ import psycopg2
 import re
 from utility import Container
 from runner.auth_backend.main import EntryPoint
+from multiprocessing import Pool
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -121,15 +122,13 @@ def runAuthDatabaseInstance():
         auto_remove=True,
         labels={"image": baseImageName}
     )
-    while(container.status != "running"):
-        time.sleep(1)
-        container.reload()
     network = client.networks.get("test_auth_network")
     network.connect(
         container,
         ipv4_address=json["server"]["authDatabase"]["ip"]
     )
     ct = Container(container)
+    ct.WaitTillRunning()
     ct.WaitRunningProcessOnPort("tcp", "0.0.0.0:5432", "LISTEN")
     ct.WaitIpAssignment(json["server"]["authDatabase"]["ip"], 16)
     ct.WaitPostgresStartingUp(json["server"]["authDatabase"]["ip"], json["server"]["authDatabase"]["exposed_port"])
@@ -175,6 +174,7 @@ def runAuthServerInstance():
         volumes={volumeName: {"bind": "/shared_log", "mode": "rw"}}
     )
     ct = Container(container)
+    ct.WaitTillRunning()
     ct.WaitRunningProcessOnPort("tcp", "0.0.0.0:8000", "LISTEN")
     network = client.networks.get("test_auth_network")
     network.connect(
@@ -222,6 +222,7 @@ def runFakeOAuthProviderInstance():
         container,
         ipv4_address=json["server"]["fakeOAuthProvider"]["ip"]
     )
+    ct.WaitTillRunning()
     ct.WaitRunningProcessOnPort("tcp", f"0.0.0.0:{server_port}", "LISTEN")
     ct.WaitIpAssignment(json["server"]["fakeOAuthProvider"]["ip"], 16)
     print(container.logs())
@@ -268,6 +269,10 @@ def initAuthDatabase():
     cur.close()
     conn.commit()
     conn.close()
+
+def runDBInstanceWithSetup():
+    runAuthDatabaseInstance()
+    initAuthDatabase()
 
 def main():
     choice = 0

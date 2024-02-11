@@ -124,6 +124,8 @@ def clearDatabase():
     conn = getPostgresConnection()
     cur = conn.cursor()
     cur.execute('''delete from presentation_letter''')
+    cur.execute('''delete from api_acl''')
+    cur.execute('''delete from api_acl_request''')
     cur.execute('''delete from person_fa''')
     cur.execute('''delete from person_wa''')
     cur.execute('''delete from person''')

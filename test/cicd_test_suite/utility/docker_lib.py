@@ -87,3 +87,20 @@ class Container:
                 return
             time.sleep(1)
         raise Exception("Time for postgres to start timed out")
+    
+    def WaitTillRunning(self, timeout=30):
+        currentTime = 0
+        while(self.container.status != "running"):
+            currentTime += 1
+            if currentTime > timeout:
+                raise Exception("Time for container to start timed out")
+            time.sleep(1)
+            ColorPrint.print(0, [
+                ("GRAY", f"State of container {self.container.name}: "),
+                ("YELLOW", "Waiting for container to start")
+            ])
+            self.container.reload()
+        ColorPrint.print(0, [
+            ("GRAY", f"State of container {self.container.name}: "),
+            ("GREEN", "Running")
+        ])

@@ -1,15 +1,32 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Page"] = "Index";
 }
+<link rel="stylesheet" href="~/css/index.css" />
 
-<div class="text-center">
-    <h1 class="display-4 text-red-500 text-4xl">
-        Welcome
-        @if (@Model.Name!=null) {
-        <h3>@Model.Name</h3>
-        }
-    </h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+
+<div class="text-center background-container">
+    <img src="~/media/images/sistema-idrico.jpeg" class="background-image" alt="Sistema Idrico Image">
+    <div class="background-overlay"></div>
+    <div class="content">
+        <h5>
+            @if (@Model.Welcome != null)
+            {
+                @Model.Welcome
+            }
+        </h5>
+        <br>
+        <a class="link-login" href="/auth/SignIn">
+            Accedi o registrati
+            <img style="display:inline-block; height:25px; padding-bottom:5px;" src="~/media/images/login.svg" alt="Login" class="login-icon">
+        </a>
+
+
+        <br /><br />
+       
+        <a class="link-login" href="/AziendaAgricola/GestioneColture">Pagine riservate</a><br />
+                
+
+    </div>
 </div>

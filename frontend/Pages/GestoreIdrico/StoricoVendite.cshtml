@@ -1,0 +1,53 @@
+﻿@page
+@model frontend.Pages.GestoreIdrico.StoricoVenditeModel
+@{
+    ViewData["Page"] = "Storico Vendite";
+}
+
+<link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#tabStoricoVendite').DataTable();
+    });
+</script>
+
+<div style="margin: 1em;">
+    <h4>Storico vendite</h4>
+    <small>• Vengono visualizzate tutte le offerte d'acqua vendute alle aziende agricole.</small>
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+    <table class="table" id="tabStoricoVendite">
+        <thead>
+            <tr>
+                <th>ID Offerta</th>
+                <th>Partita IVA azienda compratrice</th>
+                <th>ID Campo</th>
+                <th>Quantità venduta (litri)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Acquisti != null || Model.Acquisti.Count!=0)
+            {
+                @foreach (var acquisto in Model.Acquisti)
+                {
+                    <tr>
+                        <td>@acquisto.IdOfferta</td>
+                        <td>@acquisto.PartitaIva</td>
+                        <td>@acquisto.IdCampo</td>
+                        <td>@acquisto.Quantita</td>
+                    </tr>
+                }
+
+            }
+            else
+            {
+                <label>Nessuna vendita effettuata</label>
+            }
+        </tbody>
+    </table>
+</div>
+

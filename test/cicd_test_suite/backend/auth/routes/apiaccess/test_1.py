@@ -114,14 +114,19 @@ def test1(scope):
         edate2 = sdate2 + datetime.timedelta(days=random.randint(1, 365))
         user.addAclRequest(sdate1, edate1)
         user.addAclRequest(sdate2, edate2)
-    for user in users:
-        print(f"{user.given_name} {user.family_name} {user.email} {user.tax_code} {user.company.name}")
-        print(user.company.vat_number)
-        print(f"date1: {user.acl_requests[0]['start_date']} - {user.acl_requests[0]['end_date']}")
-        print(f"date2: {user.acl_requests[1]['start_date']} - {user.acl_requests[1]['end_date']}")
 
     conn = getPostgresConnection()
     cur = conn.cursor()
+    cur.execute('''
+        insert into company (vat_number, industry_sector) values
+        ('{vat_number}', '{industry_sector}')
+        ON CONFLICT DO NOTHING
+    '''.format(vat_number=user.company.vat_number, industry_sector=user.company.industry_sector))
+    cur.execute('''
+        insert into company_far (vat_number, industry_sector) values
+        ('{vat_number}', 'FAR')
+        ON CONFLICT DO NOTHING
+    '''.format(vat_number=user.company.vat_number))
     for user in users:
         cur.execute('''
             insert into user_account (registered_provider, sub) values
@@ -144,32 +149,9 @@ def test1(scope):
         ))
         user.setGlobalId(cur.fetchone()[0])
         cur.execute('''
-            insert into company (vat_number, industry_sector) values
-            ('{vat_number}', '{industry_sector}')
-            ON CONFLICT DO NOTHING
-        '''.format(vat_number=user.company.vat_number, industry_sector=user.company.industry_sector))
-        cur.execute('''
-            insert into company_far (vat_number, industry_sector) values
-            ('{vat_number}', 'FAR')
-            ON CONFLICT DO NOTHING
-        '''.format(vat_number=user.company.vat_number))
-        cur.execute('''
             insert into person_fa (account_id, role_name, company_vat_number) values
             ({user_id}, 'FA', '{vat_number}')
         '''.format(user_id=user.internal_id, vat_number=user.company.vat_number))
-
-        cur.execute('''
-            insert into api_acl_request(acl_id, person_fa, sdate, edate, created_at) values
-            ('{uuid}', {user_id}, '{sdate}', '{edate}', '{created_at}')
-            returning acl_id
-        '''.format(
-            uuid=uuid.uuid4(),
-            user_id=user.internal_id,
-            sdate=user.acl_requests[0]["start_date"],
-            edate=user.acl_requests[0]["end_date"],
-            created_at=DateGenerator.get()
-        ))
-        dateRequests.append(cur.fetchone()[0])
 
         cur.execute('''
             insert into api_acl_request(acl_id, person_fa, sdate, edate, created_at) values
@@ -242,7 +224,7 @@ def test1(scope):
     })
     response = requests.get(
         f"http://{backendConfig['host']}:{backendConfig['port']}/apiaccess",
-        params = {"count_per_page": 5, "page_number": 18},
+        params = {"count_per_page": 5, "page_number": 1},
         timeout=2,
         headers={
             "Authorization": f"bearer {token}"
@@ -257,15 +239,37 @@ def test1(scope):
     )
 
     data = response.json()
-    print(data)
-    print(len(data))
-    print(dateRequests)
 
     Assertion.Equals(
         scope,
         "Response should be in ascending order",
         data[0]["acl_id"],
         dateRequests[0]
+    )
+
+    response = requests.get(
+        f"http://{backendConfig['host']}:{backendConfig['port']}/apiaccess",
+        params = {"count_per_page": 5, "page_number": 2},
+        timeout=2,
+        headers={
+            "Authorization": f"bearer {token}"
+        }
+    )
+
+    Assertion.Equals(
+        scope,
+        "Should return a success status code",
+        200,
+        response.status_code
+    )
+
+    data = response.json()
+
+    Assertion.Equals(
+        scope,
+        "Response page 2 should be in ascending order",
+        data[0]["acl_id"],
+        dateRequests[5]
     )
 
 def TierUp():

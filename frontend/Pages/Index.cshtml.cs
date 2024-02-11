@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging;
 
 namespace frontend.Pages;
 
@@ -7,15 +8,15 @@ public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
 
-    public string? Name {get;set;}
+    public string? Welcome {get;set;}
 
     public IndexModel(ILogger<IndexModel> logger)
     {
         _logger = logger;
     }
 
-    public void getMethod()
+    public void OnGet()
     {
-        Name = "Andrea";
+        Welcome = "Benvenuto nel sistema di gestione dell'acqua per aziende idriche e gestori.";
     }
 }

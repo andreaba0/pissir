@@ -209,6 +209,23 @@ paths:
                 type: string
                 example: Unauthorized
   /apiaccess:
+    get:
+          summary: Get a list of all API access requests
+          description: Returns a list of all requests for API access
+          responses:
+            '200':
+              description: Returns a list of API access requests
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ApiAccessRequests'
+            '401':
+              description: Unauthorized
+              content:
+                text/plain:
+                  schema:
+                    type: string
+                    example: Unauthorized  
     post:
       summary: Request access to API server
       description: Request access to API server
@@ -350,7 +367,7 @@ components:
         role:
           type: string
           description: User role
-          enum: [GSI, FAR]
+          enum: [WSP, FAR]
         company:
           type: string
           description: Company vat number
@@ -376,7 +393,7 @@ components:
         company_category:
           type: string
           description: Company category
-          enum: [GSI, FAR]
+          enum: [WSP, FAR]
     Applications:
       type: array
       items:
@@ -405,7 +422,7 @@ components:
         company_category:
           type: string
           description: Company category
-          enum: [GSI, FAR]
+          enum: [WSP, FAR]
     Company:
       type: object
       properties:
@@ -427,7 +444,7 @@ components:
         industry_sector:
           type: string
           description: Company industry sector
-          enum: [GSI, FAR]
+          enum: [WSP, FAR]
     ApiAccess:
       type: object
       required:
@@ -442,24 +459,36 @@ components:
           type: string
           description: Date end
           format: date-time
-    GetApiAccess:
+    ApiAccessRequests:
       type: array
       items:
-        type: object
-        properties:
-          request_id:
-            type: string
-            format: uuid
-            description: Request id
-          user_id:
-            type: string
-            format: uuid
-            description: User id
-          date_start:
-            type: string
-            description: Date start
-            format: date-time
-          date_end:
-            type: string
-            description: Date end
-            format: date-time
+        $ref: '#/components/schemas/ApiAccessRequest'
+    ApiAccessRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          description: API access request id
+        email:
+          type: string
+          description: User email
+        tax_code:
+          type: string
+          description: User tax code
+        given_name:
+          type: string
+          description: User name
+        family_name:
+          type: string
+          description: User surname
+        company_vat_number:
+          type: string
+          description: Company vat number
+        date_start:
+          type: string
+          description: Date start
+          format: date-time
+        date_end:
+          type: string
+          description: Date end
+          format: date-time

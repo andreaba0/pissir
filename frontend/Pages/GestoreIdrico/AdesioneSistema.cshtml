@@ -1,0 +1,137 @@
+﻿@page
+@model frontend.Pages.GestoreIdrico.AdesioneSistemaModel
+@{
+    ViewData["Page"] = "Adesione Sistema";
+}
+
+<link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
+
+<div style="margin: 1em;">
+
+    <h4>Adesione Sistema</h4>
+    <small>• Elenco delle richieste di adesione per utenti e richieste del periodo di accesso ai servizi.</small>
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+    @if (TempData.ContainsKey("Messaggio"))
+    {
+        <div class="alert alert-info" role="alert">
+            @TempData["Messaggio"]
+        </div>
+    }
+
+    @if (TempData.ContainsKey("MessaggioErrore"))
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["MessaggioErrore"]
+        </div>
+    }
+
+    <h5>Richieste di adesione - Utenti</h5>
+    @if (Model.RichiesteUtenti == null || Model.RichiesteUtenti.Count == 0)
+    {
+        <label>Nessuna richiesta in attesa.</label>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Email</th>
+                    <th>Codice Fiscale</th>
+                    <th>Nome</th>
+                    <th>Cognome</th>
+                    <th>Partita Iva Azienda</th>
+                    <th>Tipo Azienda</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var utenteAp in Model.RichiesteUtenti)
+                {
+                    <tr>
+                        <td>@utenteAp.Id</td>
+                        <td>@utenteAp.Email</td>
+                        <td>@utenteAp.CodiceFiscale</td>
+                        <td>@utenteAp.Nome</td>
+                        <td>@utenteAp.Cognome</td>
+                        <td>@utenteAp.PartitaIva</td>
+                        <td>
+
+                            @if (utenteAp.TipoAzienda == "WSP")
+                            {
+                                <text>Idrica</text>
+                            }
+                            else if (utenteAp.TipoAzienda == "FAR")
+                            {
+                                <text>Agricola</text>
+                            }
+                            else
+                            {
+                                <text>Errore</text>
+                            }
+                        </td>
+                        <td>
+                            <form method="post" asp-page-handler="ConfermaUtente">
+                                <input type="hidden" class="form-control" id="id" name="id" value="@utenteAp.Id" readonly>
+                                <button type="submit" class="btn btn-primary" name="action" value="accept">Accetta</button>
+                                <button type="submit" class="btn btn-danger" name="action" value="reject">Rifiuta</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+    
+    <h5>Richieste di accesso - Utenti per periodo</h5>
+    @if (Model.RichiestePeriodo == null || Model.RichiestePeriodo.Count == 0)
+    {
+        <label>Nessuna richiesta in attesa.</label>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Email</th>
+                    <th>Codice Fiscale</th>
+                    <th>Nome</th>
+                    <th>Cognome</th>
+                    <th>Partita Iva Azienda</th>
+                    <th>Data Inizio</th>
+                    <th>Data Fine</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var utentePeriodo in Model.RichiestePeriodo)
+                {
+                    <tr>
+                        <td>@utentePeriodo.Id</td>
+                        <td>@utentePeriodo.Email</td>
+                        <td>@utentePeriodo.CodiceFiscale</td>
+                        <td>@utentePeriodo.Nome</td>
+                        <td>@utentePeriodo.Cognome</td>
+                        <td>@utentePeriodo.PartitaIva</td>
+                        <td>@utentePeriodo.DataInizio</td>
+                        <td>@utentePeriodo.DataFine</td>
+                        <td>
+                            <form method="post" asp-page-handler="ConfermaUtentePeriodo">
+                                <input type="hidden" class="form-control" id="id" name="id" value="@utentePeriodo.Id" readonly>
+                                <button type="submit" class="btn btn-primary" name="action" value="accept">Accetta </button>
+                                <button type="submit" class="btn btn-danger" name="action" value="reject">Rifiuta</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    
+
+
+</div>

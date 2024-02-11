@@ -1,0 +1,52 @@
+﻿@page
+@model frontend.Pages.AziendaAgricola.StoricoOrdiniModel
+@{
+    ViewData["Page"] = "Storico Ordini";
+}
+<link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#tabStoricoOrdini').DataTable();
+    });
+</script>
+
+<div style="margin: 1em;">
+    <h4>Storico ordini</h4>
+    <small>• Viene visualizzato tutto lo storico degli ordini d'acqua dell'azienda agricola.</small>
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+    <table id="tabStoricoOrdini" class="table">
+        <thead>
+            <tr>
+                <th>Id Offerta</th>
+                <th>Partita Iva</th>
+                <th>Id Campo</th>
+                <th>Quantità ordinata (litri)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.StoricoOrdini != null)
+            {
+                @foreach (var ordine in Model.StoricoOrdini)
+                {
+                    <tr>
+                        <td>@ordine.IdOfferta</td>
+                        <td>@ordine.PartitaIva</td>
+                        <td>@ordine.IdCampo</td>
+                        <td>@ordine.Quantita</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <label>Nessun ordine presente</label>
+                <br />
+            }
+
+
+        </tbody>
+    </table>
+</div>

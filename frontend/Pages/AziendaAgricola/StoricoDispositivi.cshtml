@@ -1,0 +1,119 @@
+﻿@page
+@model frontend.Pages.AziendaAgricola.StoricoDispositiviModel
+@{
+    ViewData["Page"] = "Storico Dispositivi";
+}
+<link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#storicoSensori').DataTable();
+        $('#storicoAttuatori').DataTable();
+    });
+</script>
+
+
+<div style="margin: 1em;">
+    <h4>Storico dispositivi</h4>
+    <small>• Viene visualizzato lo storico delle misurazioni dei sensori e le azioni degli attuatori.</small>
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+    <div class="row">
+        <div class="col">
+            <h4>Misure Sensori</h4>
+            <table class="table" id="storicoSensori">
+                <thead>
+                    <tr>
+                        <th>ID sensore</th>
+                        <th>Tipo sensore</th>
+                        <th>Data/Ora misurazione</th>
+                        <th>Misura</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.SensoriLogs)
+                    {
+                        <tr>
+                            <td>@log.Id</td>
+                            <td>
+                                @if (log.Tipo == "temperature")
+                                {
+                                    <text>
+                                        Temperatura
+                                    </text>
+                                }
+                                else if (log.Tipo == "humidity")
+                                {
+                                    <text>
+                                        Umidità
+                                    </text>
+                                }
+                                else
+                                {
+                                    <text>
+                                        ERROR
+                                    </text>
+                                }
+                            </td>
+                            <td>@log.Time</td>
+                            <td>
+                                @if(log.Tipo == "temperature")
+                                {
+                                    <text>
+                                        @log.Misura °C
+                                    </text>
+                                }
+                                else if(log.Tipo == "humidity")
+                                {
+                                    <text>
+                                        @log.Misura %
+                                    </text>
+                                }
+                                else
+                                {
+                                    <text>
+                                        ERROR
+                                    </text>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="col">
+            <h4>Azioni Attuatori</h4>
+            <table class="table" id="storicoAttuatori">
+                <thead>
+                    <tr>
+                        <th>ID attuatore</th>
+                        <th>Data/Ora attivazione</th>
+                        <th>Stato (Attivo/Disattivo)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.AttuatoriLogs)
+                    {
+                        <tr>
+                            <td>@log.Id</td>
+                            <td>@log.Time</td>
+                                @if (log.Attivo == true)
+                                {
+                                    <td>Attivo</td>
+                                }
+                                else
+                                {
+                                    <td>Disattivo</td>
+                                }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+    </div>
+    
+</div>

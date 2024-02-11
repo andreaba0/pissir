@@ -1,0 +1,198 @@
+﻿@page
+@using Newtonsoft.Json
+@model frontend.Pages.GestoreIdrico.ConsumiAziendeModel
+@{
+    ViewData["Page"] = "Consumi Aziende";
+}
+<link rel="stylesheet" href="~/css/table.css" asp-append-version="true" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#tabConsumiAziende').DataTable();
+    });
+</script>
+
+<div style="margin: 1em;">
+    <h4>Consumi aziende</h4>
+    <small>• Vengono visualizzati tutti i consumi idrici delle aziende agricole a cui si è venduto l'acqua.</small>
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+
+    <canvas id="consumiAziendeChart" height="1"></canvas><br />
+    <div id="graphics"></div>
+
+    <hr style="margin-top: 0.5em; margin-bottom: 1em;">
+    <h5>Tabella Generale</h5>
+    <table id="tabConsumiAziende" class="table">
+        <thead>
+            <tr>
+                <th>Partita IVA</th>
+                <th>Campo</th>
+                <th>Data</th>
+                <th>Quantità Prenotata (litri)</th>
+                <th>Quantità Utilizzata (litri)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.consumiAziende != null)
+            {
+                @foreach (var consumo in Model.consumiAziende)
+                {
+                    <tr>
+                        <td>@consumo.PartitaIva</td>
+                        <td>@consumo.Campo</td>
+                        <td>@consumo.Data</td>
+                        <td>@consumo.QuantitaPrenotata</td>
+                        <td>@consumo.LitriConsumati</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <label>Nessun consumo presente</label>
+                <br />
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var consumiData = @Html.Raw(JsonConvert.SerializeObject(Model.consumiAziende));
+
+        var consumiPerAzienda = {};
+        consumiData.forEach(function (consumo) {
+            var aziendaKey = consumo.company_vat_number; // Change from consumo.PartitaIva to consumo.company_vat_number
+            if (!consumiPerAzienda[aziendaKey]) {
+                consumiPerAzienda[aziendaKey] = [];
+            }
+            consumiPerAzienda[aziendaKey].push({
+                data: consumo.data,
+                quantitaPrenotata: consumo.amount_ordered,
+                litriConsumati: consumo.amount_used,
+                campo: consumo.field_id // Change from consumo.Campo to consumo.field_id
+            });
+        });
+
+        var graphicsDiv = document.getElementById('graphics');
+
+        Object.keys(consumiPerAzienda).forEach(function (aziendaKey) {
+            var aziendaData = consumiPerAzienda[aziendaKey];
+
+            var aziendaTitle = document.createElement('h5');
+            aziendaTitle.innerHTML = 'Azienda con Partita IVA: ' + aziendaKey + ' - Periodo: ' + getFormattedDateRange(aziendaData[0].data, aziendaData[aziendaData.length - 1].data);
+            graphicsDiv.appendChild(aziendaTitle);
+
+            var chartDiv = document.createElement('div');
+            chartDiv.className = 'chart-container';
+            graphicsDiv.appendChild(chartDiv);
+
+            var canvasId = 'consumiAziendeChart_' + aziendaKey;
+            var newCanvas = document.createElement('canvas');
+            newCanvas.id = canvasId;
+            newCanvas.height = 60;
+            chartDiv.appendChild(newCanvas);
+
+            // Sezione per la quantità prenotata e usata giornaliera
+            var labels = aziendaData.map(function (consumo) {
+                return 'Data: ' + consumo.data + ' - Campo: ' + consumo.campo;
+            });
+
+            var datasetPrenotato = {
+                label: 'Quantità Prenotata',
+                data: aziendaData.map(function (consumo) {
+                    return consumo.quantitaPrenotata;
+                }),
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            };
+
+            var datasetConsumato = {
+                label: 'Litri Consumati',
+                data: aziendaData.map(function (consumo) {
+                    return consumo.litriConsumati;
+                }),
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            };
+
+            var chartData = {
+                labels: labels,
+                datasets: [datasetPrenotato, datasetConsumato]
+            };
+
+            var ctx = newCanvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Sezione per il totale consumato e totale erogato
+            var totalPrenotato = aziendaData.reduce(function (acc, consumo) {
+                return acc + consumo.quantitaPrenotata;
+            }, 0);
+
+            var totalConsumato = aziendaData.reduce(function (acc, consumo) {
+                return acc + consumo.litriConsumati;
+            }, 0);
+
+            var totalDataset = {
+                label: 'Totale',
+                data: [totalPrenotato, totalConsumato],
+                backgroundColor: 'rgba(0, 50, 150, 0.2)',
+                borderColor: 'rgba(0, 50, 150, 1)',
+                borderWidth: 1
+            };
+
+            var totalCanvasId = 'consumiTotaliChart_' + aziendaKey;
+            var totalCanvas = document.createElement('canvas');
+            totalCanvas.id = totalCanvasId;
+            totalCanvas.height = 40;
+            chartDiv.appendChild(totalCanvas);
+
+            var totalCtx = totalCanvas.getContext('2d');
+            new Chart(totalCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Totale Prenotato', 'Totale Consumato'],
+                    datasets: [totalDataset]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Spazio a capo dopo ogni sezione di un'azienda
+            graphicsDiv.appendChild(document.createElement('br'));
+
+            // Aggiunta della linea dopo il grafico
+            var hrLine = document.createElement('hr');
+            hrLine.style.marginTop = '0.5em';
+            hrLine.style.marginBottom = '1em';
+            graphicsDiv.appendChild(hrLine);
+        });
+    });
+
+    function getFormattedDateRange(startDate, endDate) {
+        return startDate + ' - ' + endDate;
+    }
+</script>
+
+
+

@@ -89,7 +89,7 @@ def test1(scope):
         "exp": 1899999999
     })
     response = requests.post(
-        f"http://{backendConfig['host']}:{backendConfig['port']}/service/application/{presentation_id}/approve",
+        f"http://{backendConfig['host']}:{backendConfig['port']}/service/application/{presentation_id}/accept",
         timeout=2,
         headers={
             "Authorization": f"bearer {token}"

@@ -1,7 +1,7 @@
 class PostgresSuite:
     def clearDatabase(conn):
         cur = conn.cursor()
-        cur.execute('''delete from presentation_letter''')
+        cur.execute('''delete from presentation_letter returning user_account''')
         cur.execute('''delete from api_acl''')
         cur.execute('''delete from api_acl_request''')
         cur.execute('''delete from person_fa''')

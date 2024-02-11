@@ -38,7 +38,7 @@ def test1(scope):
             "email": "mickey.doe@gmail.com",
             "tax_code": "MCDMCK01A01F205Z",
             "company_vat_number": "12345678901",
-            "company_category": "WA",
+            "company_category": "WSP",
         },
         timeout=2
     )
@@ -80,7 +80,7 @@ def test2(scope):
             "email": "mickey.doe@gmail.com",
             "tax_code": "MCDMCK01A01F205Z",
             "company_vat_number": "12345678901",
-            "company_category": "WA",
+            "company_category": "WSP",
         },
         timeout=2,
         headers={
@@ -134,7 +134,7 @@ def test3(scope):
             "email": "mickey.doe@gmail.com",
             "tax_code": "MCDMCK01A01F205Z",
             "company_vat_number": "12345678901",
-            "company_category": "WA",
+            "company_category": "WSP",
         },
         timeout=2,
         headers={
@@ -163,7 +163,7 @@ def test3(scope):
             "email": "mickey.doe@gmail.com",
             "tax_code": "MCDMCK01A01F205Z",
             "company_vat_number": "12345678901",
-            "company_category": "WA",
+            "company_category": "WSP",
         },
         timeout=2,
         headers={

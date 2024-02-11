@@ -247,9 +247,63 @@ def test1(scope):
         dateRequests[0]
     )
 
+    userFAR = users[0]
+    token = JWTRegistry.generate({
+        "kid": "key1",
+        "alg": "RS256",
+        "typ": "JWT",
+    }, {
+        "sub": userFAR.sub,
+        "given_name": userFAR.given_name,
+        "family_name": userFAR.family_name,
+        "email": userFAR.email,
+        "iss": "https://appweb.andreabarchietto.it",
+        "aud": "internal_workspace@appweb.andreabarchietto.it",
+        "iat": 1316239022,
+        "exp": 1899999999
+    })
     response = requests.get(
         f"http://{backendConfig['host']}:{backendConfig['port']}/apiaccess",
         params = {"count_per_page": 5, "page_number": 2},
+        timeout=2,
+        headers={
+            "Authorization": f"bearer {token}"
+        }
+    )
+
+    Assertion.Equals(
+        scope,
+        "Should return error if user is not authorized",
+        403,
+        response.status_code
+    )
+
+    data = response.text
+
+    Assertion.Equals(
+        scope,
+        "Response should display an error message",
+        data,
+        "User is not authorized to perform this action"
+    )
+
+    token = JWTRegistry.generate({
+        "kid": "key1",
+        "alg": "RS256",
+        "typ": "JWT",
+    }, {
+        "sub": userWSP.sub,
+        "given_name": userWSP.given_name,
+        "family_name": userWSP.family_name,
+        "email": userWSP.email,
+        "iss": "https://appweb.andreabarchietto.it",
+        "aud": "internal_workspace@appweb.andreabarchietto.it",
+        "iat": 1316239022,
+        "exp": 1899999999
+    })
+    response = requests.get(
+        f"http://{backendConfig['host']}:{backendConfig['port']}/apiaccess",
+        params = {"count_per_page": 5, "page_number": 1},
         timeout=2,
         headers={
             "Authorization": f"bearer {token}"
@@ -267,15 +321,217 @@ def test1(scope):
 
     Assertion.Equals(
         scope,
-        "Response page 2 should be in ascending order",
+        "Response should be in ascending order",
         data[0]["acl_id"],
-        dateRequests[5]
+        dateRequests[0]
     )
+
+
+
+
+
+
+
+
+
+def test2(scope):
+    scope.set_header('Test should approve an api request')
+
+    dateRequests = []
+    internalIds = []
+
+    #create 10 users profile with faker
+    fake = Faker('it_IT')
+    Faker.seed(0)
+
+    users = []
+    people = []
+    company_far = FakeCompany.createCompany(fake, "FAR")
+    company_wsp = FakeCompany.createCompany(fake, "WSP")
+    userWSP = FakeUser.createUser(fake, company_wsp)
+    for _ in range(2):
+        user = FakeUser.createUser(fake, company_far)
+        users.append(user)
+        sdate1 = datetime.datetime(2023, random.randint(1, 12), random.randint(1, 28))
+        edate1 = sdate1 + datetime.timedelta(days=random.randint(1, 365))
+        sdate2 = datetime.datetime(2023, random.randint(1, 12), random.randint(1, 28))
+        edate2 = sdate2 + datetime.timedelta(days=random.randint(1, 365))
+        user.addAclRequest(sdate1, edate1)
+        user.addAclRequest(sdate2, edate2)
+
+    conn = getPostgresConnection()
+    cur = conn.cursor()
+    cur.execute('''
+        insert into company (vat_number, industry_sector) values
+        ('{vat_number}', '{industry_sector}')
+        ON CONFLICT DO NOTHING
+    '''.format(vat_number=user.company.vat_number, industry_sector=user.company.industry_sector))
+    cur.execute('''
+        insert into company_far (vat_number, industry_sector) values
+        ('{vat_number}', 'FAR')
+        ON CONFLICT DO NOTHING
+    '''.format(vat_number=user.company.vat_number))
+    for user in users:
+        cur.execute('''
+            insert into user_account (registered_provider, sub) values
+            ('test_provider', '{user_sub}')
+            returning id
+        '''.format(user_sub=user.sub))
+        user_id = cur.fetchone()[0]
+        user.internalId(user_id)
+        internalIds.append(user_id)
+        cur.execute('''
+            insert into person (tax_code, account_id, given_name, family_name, email, person_role) values
+            ('{user_taxcode}', {user_id}, '{user_fname}', '{user_lname}', '{user_mail}', '{user_role}')
+            returning global_id
+        '''.format(
+            user_taxcode=user.tax_code,
+            user_id=user.internal_id,
+            user_fname=user.given_name,
+            user_lname=user.family_name,
+            user_mail=user.email,
+            user_role=user.company.getRole()
+        ))
+        user.setGlobalId(cur.fetchone()[0])
+        cur.execute('''
+            insert into person_fa (account_id, role_name, company_vat_number) values
+            ({user_id}, 'FA', '{vat_number}')
+        '''.format(user_id=user.internal_id, vat_number=user.company.vat_number))
+
+        cur.execute('''
+            insert into api_acl_request(acl_id, person_fa, sdate, edate, created_at) values
+            ('{uuid}', {user_id}, '{sdate}', '{edate}', '{created_at}')
+            returning acl_id
+        '''.format(
+            uuid=uuid.uuid4(),
+            user_id=user.internal_id,
+            sdate=user.acl_requests[0]["start_date"],
+            edate=user.acl_requests[0]["end_date"],
+            created_at=DateGenerator.get()
+        ))
+        dateRequests.append(cur.fetchone()[0])
+        #end for LOOP
+    
+    cur.execute('''
+        insert into user_account (registered_provider, sub) values
+        ('test_provider', '{user_sub}')
+        returning id
+    '''.format(user_sub=userWSP.sub))
+    userWSP.internalId(cur.fetchone()[0])
+    cur.execute('''
+        insert into person (tax_code, account_id, given_name, family_name, email, person_role) values
+        ('{tax_code}', {user_id}, '{first_name}', '{last_name}', '{mail}', '{user_role}')
+        returning global_id
+    '''.format(
+        tax_code=userWSP.tax_code,
+        user_id=userWSP.internal_id,
+        first_name=userWSP.given_name,
+        last_name=userWSP.family_name,
+        mail=userWSP.email,
+        user_role=userWSP.company.getRole()
+    ))
+    userWSP.setGlobalId(cur.fetchone()[0])
+    cur.execute('''
+        insert into company (
+            vat_number, 
+            industry_sector
+        ) values
+        ('{vat_number}', 'WSP')
+    '''.format(vat_number=userWSP.company.vat_number))
+    cur.execute('''
+        insert into company_wsp (vat_number, industry_sector) values
+        ('{vat_number}', 'WSP')
+    '''.format(vat_number=userWSP.company.vat_number))
+    cur.execute('''
+        insert into person_wa (account_id, role_name, company_vat_number) values
+        ({user_id}, 'WA', '{vat_number}')
+    '''.format(
+        user_id=userWSP.internal_id,
+        vat_number=userWSP.company.vat_number
+    ))
+    cur.close()
+    conn.commit()
+    conn.close()
+    
+    token = JWTRegistry.generate({
+        "kid": "key1",
+        "alg": "RS256",
+        "typ": "JWT",
+    }, {
+        "sub": userWSP.sub,
+        "given_name": userWSP.given_name,
+        "family_name": userWSP.family_name,
+        "email": userWSP.email,
+        "iss": "https://appweb.andreabarchietto.it",
+        "aud": "internal_workspace@appweb.andreabarchietto.it",
+        "iat": 1316239022,
+        "exp": 1899999999
+    })
+    response = requests.post(
+        f"http://{backendConfig['host']}:{backendConfig['port']}/apiaccess/{dateRequests[0]}/accept",
+        timeout=2,
+        headers={
+            "Authorization": f"bearer {token}"
+        }
+    )
+
+    Assertion.Equals(
+        scope,
+        "Should return a success status code",
+        200,
+        response.status_code
+    )
+
+    data = response.text
+
+    Assertion.Equals(
+        scope,
+        "Response should return OK as message",
+        data,
+        "OK"
+    )
+
+    conn = getPostgresConnection()
+    cur = conn.cursor()
+    cur.execute('''
+        select 1 from api_acl_request where acl_id = '{acl_id}'
+    '''.format(acl_id=dateRequests[0]))
+    rowCountApiAclRequest = cur.rowcount
+    cur.execute('''
+        select 1 from person where account_id = {user_id}
+    '''.format(user_id=internalIds[0]))
+    rowCountPerson = cur.rowcount
+    cur.close()
+    conn.commit()
+    conn.close()
+
+    Assertion.Equals(
+        scope,
+        "Should remove row from api_acl_request after approval",
+        0,
+        rowCountApiAclRequest
+    )
+
+    Assertion.Equals(
+        scope,
+        "Should insert a row into person after approval",
+        1,
+        rowCountPerson
+    )
+
+
+
+
+
+
 
 def TierUp():
     PostgresSuite.clearDatabase(getPostgresConnection())
 
 def TierDown():
+    PostgresSuite.clearDatabase(getPostgresConnection())
+
+def ClearDatabase():
     PostgresSuite.clearDatabase(getPostgresConnection())
     
 
@@ -300,7 +556,8 @@ def EntryPoint(
     suite = TestSuite()
     suite.set_tierup(TierUp)
     suite.set_tierdown(TierDown)
-    suite.set_middletier(PostgresSuite.clearDatabase(getPostgresConnection()))
+    suite.set_middletier(ClearDatabase)
     suite.add_assertion(test1)
+    suite.add_assertion(test2)
     suite.run()
     suite.print_stats()

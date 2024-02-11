@@ -9,6 +9,7 @@ from cicd_test_suite.backend.auth.routes.company import test_1 as test_c1
 from cicd_test_suite.backend.auth.routes.company import test_2 as test_c2
 
 from cicd_test_suite.backend.auth.routes.apiaccess import test_1 as test_api1
+from cicd_test_suite.backend.auth.routes.apiaccess import test_2 as test_api2
 
 
 def EntryPoint(*args, **kwargs):
@@ -20,3 +21,4 @@ def EntryPoint(*args, **kwargs):
     test_c1.EntryPoint(*args, **kwargs)
     test_c2.EntryPoint(*args, **kwargs)
     test_api1.EntryPoint(*args, **kwargs)
+    test_api2.EntryPoint(*args, **kwargs)

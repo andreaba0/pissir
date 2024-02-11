@@ -12,6 +12,8 @@ using Module.Middleware;
 using Module.Openid;
 using Utility;
 using Types;
+using Jose;
+using System.Security.Cryptography;
 
 using AuthorizationService = Module.Middleware.Authorization;
 
@@ -273,8 +275,91 @@ public class ApiAccess {
         }
     }
 
-    public static Task PostMethod_Token() {
-        return Task.CompletedTask;
+    public static Task<string> PostMethod_Token(
+        IHeaderDictionary headers,
+        DbDataSource dataSource,
+        IDateTimeProvider dateTimeProvider,
+        IRemoteJwksHub remoteJwksHub,
+        LocalManager localKeyManager,
+        string issuer
+    ) {
+        try {
+            string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+            string id_token = Authentication.ParseBearerToken(bearer_token);
+            Token token = Authentication.VerifiedPayload(id_token, remoteJwksHub, dateTimeProvider);
+
+            User user = AuthorizationService.GetUser(remoteJwksHub, dataSource, token.sub, remoteJwksHub.GetIssuerName(token.iss)).Result;
+
+            if(user.role != "FA" && user.role != "WA") throw new ProfileException(ProfileException.ErrorCode.UNKNOW_USER_ROLE, "Unknow user role");
+            if(user.role == "WA") throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User is not authorized to perform this action");
+
+            using DbConnection connection = dataSource.OpenConnection();
+            DbCommand command = connection.CreateCommand();
+            command.CommandText = @"
+                select extract(epoch from 
+                    edate::timestamp - sdate::timestamp
+                ) / 60 as remaining_time
+                from api_acl
+                where person_fa=(
+                    select account_id
+                    from person
+                    where global_id=$1
+                )
+                order by remaining_time desc
+                limit 1
+            ";
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(user.global_id)));
+            int remaining_time = 0;
+            using (DbDataReader reader = command.ExecuteReader()) {
+                if(reader.HasRows) {
+                    while(reader.Read()) {
+                        remaining_time = reader.GetInt32(0);
+                    }
+                }
+            }
+
+            if(remaining_time <= 0) throw new ApiAccessException(ApiAccessException.ErrorCode.UNAUTHORIZED, "No remaining time");
+            if(remaining_time > 10) remaining_time = 10;
+
+            DateTime currentDate = dateTimeProvider.UtcNow;
+            int iatSeconds = (int)currentDate.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            int expSeconds = (int)currentDate.AddMinutes(remaining_time).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+
+            IDictionary<string, object> payload = new Dictionary<string, object>();
+            payload.Add("sub", user.global_id);
+            payload.Add("role", user.role);
+            payload.Add("exp", expSeconds);
+            payload.Add("iat", iatSeconds);
+            payload.Add("iss", issuer);
+
+            RSAKey rsaKey = localKeyManager.GetSignKey();
+            RSAParameters rsaParameters = rsaKey.Parameters;
+
+            Jwk jwk = new Jwk(
+                e: Base64Url.Encode(rsaParameters.Exponent),
+                n: Base64Url.Encode(rsaParameters.Modulus),
+                p: Base64Url.Encode(rsaParameters.P),
+                q: Base64Url.Encode(rsaParameters.Q),
+                d: Base64Url.Encode(rsaParameters.D),
+                dp: Base64Url.Encode(rsaParameters.DP),
+                dq: Base64Url.Encode(rsaParameters.DQ),
+                qi: Base64Url.Encode(rsaParameters.InverseQ)
+            );
+
+            string jwt = JWT.Encode(
+                payload: payload, 
+                key: jwk, JwsAlgorithm.RS256,
+                extraHeaders: new Dictionary<string, object> {
+                    { "kid", rsaKey.Id }
+                }
+            );
+        
+            return Task.FromResult(jwt);
+        }
+        catch(Exception e) {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 }
 
@@ -285,7 +370,8 @@ public class ApiAccessException : Exception {
         INVALID_COMPANY_VAT_NUMBER = 2,
         INVALID_DATE_RANGE = 3,
         INVALID_REQUEST_BODY = 4,
-        INVALID_ACTION = 5
+        INVALID_ACTION = 5,
+        UNAUTHORIZED = 6
     }
     public ErrorCode Code { get; } = default(ErrorCode);
     public ApiAccessException(ErrorCode errorCode, string message) : base(message) {

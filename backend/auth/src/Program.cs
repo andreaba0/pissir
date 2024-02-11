@@ -40,6 +40,7 @@ class Program
         string postgresDatabaseName = GetProperty(configuration, "database:database");
         string postgresUsername = GetProperty(configuration, "database:username");
         string postgresPassword = GetProperty(configuration, "database:password");
+        string localIssuer = GetProperty(configuration, "local_issuer");
 
         CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -80,6 +81,10 @@ class Program
         RemoteJwksHub remoteJwksHub = new RemoteJwksHub(
             httpClient
         );
+
+        LocalManager localManager = new LocalManager(
+            dataSource
+        );
         
         WebServer webServer = new WebServer(
             dataSource,
@@ -88,7 +93,9 @@ class Program
                 dataSource,
                 remoteJwksHub
             ),
-            dateTimeProvider
+            localManager,
+            dateTimeProvider,
+            localIssuer
         );
         Task webServerTask = Task.Factory.StartNew(() => webServer.RunAsync(cts.Token), TaskCreationOptions.LongRunning).Unwrap();
 

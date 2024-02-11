@@ -23,20 +23,26 @@ namespace Module.WebServer;
 public class WebServer
 {
     private readonly DbDataSource _dbDataSource;
-    private Manager _keyManager;
+    private LocalManager _keyManager;
     private readonly IRemoteJwksHub _remoteManager;
     private readonly QueryKeyService _queryKeyService;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly string _localIssuer;
 
-    public WebServer(DbDataSource dbDataSource, IRemoteJwksHub remoteManager, QueryKeyService queryKeyService, IDateTimeProvider dateTimeProvider)
+    public WebServer(
+        DbDataSource dbDataSource, 
+        IRemoteJwksHub remoteManager, 
+        QueryKeyService queryKeyService,
+        LocalManager keyManager,
+        IDateTimeProvider dateTimeProvider,
+        string localIssuer)
     {
         _dbDataSource = dbDataSource;
         _remoteManager = remoteManager;
-        _keyManager = new LocalManager(
-            _dbDataSource
-        );
+        _keyManager = keyManager;
         _queryKeyService = queryKeyService;
         _dateTimeProvider = dateTimeProvider;
+        _localIssuer = localIssuer;
     }
 
     public async Task<int> RunAsync(CancellationToken cancellationToken = default)
@@ -427,6 +433,42 @@ public class WebServer
                 Console.WriteLine(e);
                 context.Response.StatusCode = 400;
                 await context.Response.WriteAsync((e.Code != default(Routes.ApiAccessException.ErrorCode)) ? e.Message : "");
+            }
+            catch (Exception)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
+            }
+        });
+
+        app.MapPost("/token", async context => {
+            try
+            {
+                string token = ApiAccess.PostMethod_Token(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager,
+                    _keyManager,
+                    _localIssuer
+                ).Result;
+                context.Response.StatusCode = 200;
+                context.Response.ContentType = "plain/text";
+                await context.Response.WriteAsync(token);
+            }
+            catch (AuthenticationException e)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync((e.Code != default(AuthenticationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync((e.Code != default(AuthorizationException.ErrorCode)) ? e.Message : "");
+            }
+            catch (DbException)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Server error");
             }
             catch (Exception)
             {

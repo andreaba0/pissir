@@ -93,9 +93,11 @@ Quando viene eseguito il backend auth risulta necessario impostare altri paramet
     "username": "username",
     "password": "password",
     "database": "database"
-  }
+  },
+  "local_issuer": "domain"
 }
 ```
+Il parametro local_issuer corrisponde al campo iss per i token generati dal backend auth per il backend api del progetto di Progettazione e Implementazione di sistemi software in rete.
 Per eseguire il software in ambiente linux con annessa la variabile d'ambiente desiderata, eseguire il comando:
 ```console
 export ASPNETCORE_ENVIRONMENT="Development" dotnet run|watch|build

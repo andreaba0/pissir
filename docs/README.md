@@ -1,5 +1,9 @@
 # Documentazione per il progetto nel complesso
 
+Progetto a cura di:<br />
+Andrea Barchietto<br />
+Filippo Checchia
+
 ### Note generali
 Questo progetto &egrave; stato sviluppato principalmente in ambiente Linux (Ubuntu) con versione SDK 8.0 di DotNet
 
@@ -47,6 +51,16 @@ Il progetto, per essere eseguito, necessita oltre alle varie dipendenze, anche d
 Per ottimizzare i tempi di creazione del container del backend di Applicazioni Web &egrave; stata creata un'opzione apposita nel menu di avvio. Tale creazione &egrave; gi&agrave; inclusa quando viene fatto il setup completo.
 
 I test sono stati sviluppati in ambienti Linux, cos&igrave; come il backend dell'applicazione pertanto, i container fanno uso di immagini basate su sistema Linux (nei Dockerfile), quindi eseguire i test in ambiente Windows potrebbe non essere possibile (se non si fa uso di WSL2).
+
+### Approvazione automatica degli utenti
+Siccome per questo progetto &egrave; previsto come unico sistema di autenticazione quello basato su OpenId, per poter testare le funzionalit&agrave; dell'applicazione quando non esiste ancora alcun utente registrato, bisogna seguire i seguenti step:
+1. Accedere alla pagina web come un normale utente ed eseguire l'accesso con il provider desiderato.
+2. Compilare la richiesta di adesione al servizio
+3. Eseguire lo script Python presente nella cartella: test/cicd_test_suite/backend/auth/authorize.py
+4. Inserire le informazioni richieste dallo script Python, ovvero: il token jwt con il quale si &egrave; eseguito l'accesso alla pagina web, e il nome del provider che &egrave; stato utilizzato (esempio: google, facebook)
+
+## Come inserire nuovi provider nel database
+Nel file database/auth/init_data.sql sono inseriti 2 esempi che rappresentano il modo di registrare provider da usare per l'applicazione. Lista del necessario: un nome (a libera scelta), l'uri per il link a /.well-known/openid-configuration e la lista di aud (audience) accettati dall'applicazione. In questo modo ogni qualvolta il backend ricever&agrave; un token jwt da parte di un utente sar&agrave; in grado di validarlo in modo autonomo.
 
 
 ## Struttura del backend Auth
@@ -111,5 +125,14 @@ Il sistema di autenticazione prevede l'utilizzo di OAuth con OpenId. Siccome lo 
 Il backend, una volta che viene eseguito, lancia due thread:
 1. il web server che gestisce le chiamate rest
 2. una routine che, dopo aver effettuare una query al DB per ottenere la lista dei provider supportati, si occupa di mantenere aggiornate le chiavi RSA fornite dai provider supportati per verificare l'integrit&agrave; dei token forniti dagli utenti. Nel DB viene salvato per ogni provider supportato il link alla configurazione openid. Per ogni link verr&agrave; effettuata una chiamata rest per ottenere le informazioni quali "issuer" e "jwks" (endpoint per ottenere le chiavi per verificare i token JWT)
+
+Per quanto riguarda la generazione del token jwt per l'accesso alle api, tale processo avviene senza che l'utente ne sia a conoscenza. Quando l'utente cercher&agrave; di accedere a pagine protette che fanno riferimento al server api, sar&agrave; premura del frontend effettuare una chiamata al backend auth per richiedere un token jwt di accesso, e sar&agrave; premura del backend auth effettuare un controllo nel database per verificare se l'utente abbia o meno il permesso, consultando i periodi di accesso consentiti registrati nella tabella api_acl.
+
+## Note sul progetto
+
+L'intero progetto si basa sul disaccoppiare la parte di autenticazione e autorizzazione dalla parte funzionale. Per questo motivo esistono due backend, uno per gestire la creazione degli utenti e la gestione degli accessi alla parte relativa alla gestione dei campi, e uno per la parte di gestione effettiva dei campi e delle risorse delle aziende.<br />
+Server backend:
+1. Auth: gestisce la registrazione degli utenti, l'accesso alle api, le informazioni delle aziende quali: nome, indirizzo, recapiti, (...), e le informazioni personali degli utenti comprese le informazioni di login
+2. Api: non ancora implementato, fa riferimento alla parte di progetto per Progettazione e implementazione di sistemi software in rete.
 
 

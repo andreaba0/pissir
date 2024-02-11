@@ -5,11 +5,11 @@ from mcr.microsoft.com/dotnet/sdk:8.0 as build
 
 run mkdir -p /app/backend/auth/src
 
-run mkdir -p /app/backend/library/OpenIdManager
+run mkdir -p /app/backend/library/OpenIdManager/src
 
 WORKDIR /app/backend/auth/src
 
-COPY ./library/OpenIdManager /app/backend/library/OpenIdManager
+COPY ./library/OpenIdManager/src /app/backend/library/OpenIdManager/src
 
 COPY ./auth/src /app/backend/auth/src
 

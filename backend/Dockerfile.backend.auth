@@ -3,26 +3,41 @@ run apt update && apt install -y net-tools iproute2
 
 from mcr.microsoft.com/dotnet/sdk:8.0 as build
 
+
 run mkdir -p /app/backend/auth/src
 
 run mkdir -p /app/backend/library/OpenIdManager/src
 
+copy ./auth/src/auth_server.csproj /app/backend/auth/src
+copy ./library/OpenIdManager/src/OpenIdManager.csproj /app/backend/library/OpenIdManager/src
+
+workdir /app/
+
+workdir /app/backend/library/OpenIdManager/src
+run dotnet restore OpenIdManager.csproj
+workdir /app/backend/auth/src
+run dotnet restore auth_server.csproj
+
 WORKDIR /app/backend/auth/src
 
-COPY ./library/OpenIdManager/src /app/backend/library/OpenIdManager/src
+COPY ./library/OpenIdManager/src/Module /app/backend/library/OpenIdManager/src/
 
-COPY ./auth/src /app/backend/auth/src
+COPY ./auth/src/Module /app/backend/auth/src/
+COPY ./auth/src/Routes /app/backend/auth/src/
+COPY ./auth/src/Types /app/backend/auth/src/
+COPY ./auth/src/Utility /app/backend/auth/src/
+COPY ./auth/src/Program.cs /app/backend/auth/src/
 
 env ASPNETCORE_ENVIRONMENT=Testing
 env DOTNET_ENVIRONMENT=Testing
 
-run dotnet publish -o /publish_compiled
+run dotnet publish -o /publish_compiled --no-restore
 
 from dotnet8_runtime_nettools as final_runtime
 run mkdir -p /app_compiled/shared_log
 copy --from=build /publish_compiled /app_compiled
-copy --from=build /app/backend/auth/src/appsettings.json /app_compiled
-copy --from=build /app/backend/auth/src/appsettings.Testing.json /app_compiled
+copy ./auth/src/appsettings.json /app_compiled
+copy /auth/src/appsettings.Testing.json /app_compiled
 workdir /app_compiled
 
 env ASPNETCORE_ENVIRONMENT=Testing

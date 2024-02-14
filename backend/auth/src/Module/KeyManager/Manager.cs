@@ -14,6 +14,11 @@ using Module.KeyManager.Openid;
 
 namespace Module.KeyManager;
 
+public interface ILocalManager
+{
+    RSAKey GetSignKey();
+}
+
 public class LocalManager : Manager
 {
     private readonly DbDataSource _dbDataSource;
@@ -103,7 +108,7 @@ public class QueryKeyService
         _jwksHub = jwksHub;
     }
 
-    public async Task<List<ProviderInfo>> QueryJwksEndpointAsync()
+    public async Task QueryJwksEndpointAsync()
     {
         await using var connection = await _dbDataSource.OpenConnectionAsync();
         using var command = connection.CreateCommand();
@@ -111,6 +116,7 @@ public class QueryKeyService
                 select 
                     provider_name, 
                     configuration_uri, 
+                    is_active,
                     to_json(
                         array_agg(
                             audience
@@ -125,39 +131,38 @@ public class QueryKeyService
                     rp.provider_name
             ";
         var reader = await command.ExecuteReaderAsync();
-        List<ProviderInfo> providers = new List<ProviderInfo>();
         while (await reader.ReadAsync())
         {
             var name = reader.GetString(0);
             var configurationUri = reader.GetString(1);
-            var audienceList = reader.GetString(2);
+            var is_active = reader.GetBoolean(2);
+            var audienceList = reader.GetString(3);
+            if (!is_active)
+            {
+                _jwksHub.CancelProvider(name);
+            }
             var audience = JsonSerializer.Deserialize<string[]>(audienceList);
-            providers.Add(new ProviderInfo(name, configurationUri, audience));
+            ProviderInfo provider = new ProviderInfo(name, configurationUri, audience);
+            _jwksHub.AddProvider(provider);
         }
-        return providers;
     }
 
     public async Task<int> RunAsync(CancellationToken ct)
     {
-        List<ProviderInfo>? providers = default(List<ProviderInfo>);
-        while (true)
+        while (!ct.IsCancellationRequested)
         {
             Console.WriteLine("Querying jwks endpoint from database...");
             try
             {
-                providers = await QueryJwksEndpointAsync();
+                await QueryJwksEndpointAsync();
                 break;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Console.WriteLine(e);
                 await Task.Delay(1000);
             }
         }
-
-        var tasks = new List<Task>();
-        await _jwksHub.SetupAsync(providers);
-        tasks.Add(_jwksHub.RunAsync(ct));
-        await Task.WhenAll(tasks);
         return 0;
     }
 }

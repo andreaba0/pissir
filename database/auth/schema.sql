@@ -6,7 +6,8 @@ create table allowed_audience (
 
 create table registered_provider (
     provider_name text primary key,
-    configuration_uri text not null unique
+    configuration_uri text not null unique,
+    is_active boolean not null default true
 );
 
 create table user_account (

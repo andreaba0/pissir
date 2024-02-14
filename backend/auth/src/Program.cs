@@ -81,26 +81,30 @@ class Program
         RemoteJwksHub remoteJwksHub = new RemoteJwksHub(
             httpClient
         );
+        remoteJwksHub.RunAsync(cts.Token);
 
         LocalManager localManager = new LocalManager(
             dataSource
+        );
+
+        QueryKeyService queryKeyServie = new QueryKeyService(
+            dataSource,
+            remoteJwksHub
         );
         
         WebServer webServer = new WebServer(
             dataSource,
             remoteJwksHub,
-            new QueryKeyService(
-                dataSource,
-                remoteJwksHub
-            ),
             localManager,
             dateTimeProvider,
             localIssuer
         );
         Task webServerTask = Task.Factory.StartNew(() => webServer.RunAsync(cts.Token), TaskCreationOptions.LongRunning).Unwrap();
+        Task queryKeyServiceTask = Task.Factory.StartNew(() => queryKeyServie.RunAsync(cts.Token), TaskCreationOptions.LongRunning).Unwrap();
 
         //wait for webserver to exit
         webServerTask.Wait();
+        queryKeyServiceTask.Wait();
 
         Console.WriteLine("Exiting...");
         return 0;

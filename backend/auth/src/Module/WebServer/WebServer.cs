@@ -25,14 +25,12 @@ public class WebServer
     private readonly DbDataSource _dbDataSource;
     private LocalManager _keyManager;
     private readonly IRemoteJwksHub _remoteManager;
-    private readonly QueryKeyService _queryKeyService;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly string _localIssuer;
 
     public WebServer(
         DbDataSource dbDataSource, 
-        IRemoteJwksHub remoteManager, 
-        QueryKeyService queryKeyService,
+        IRemoteJwksHub remoteManager,
         LocalManager keyManager,
         IDateTimeProvider dateTimeProvider,
         string localIssuer)
@@ -40,7 +38,6 @@ public class WebServer
         _dbDataSource = dbDataSource;
         _remoteManager = remoteManager;
         _keyManager = keyManager;
-        _queryKeyService = queryKeyService;
         _dateTimeProvider = dateTimeProvider;
         _localIssuer = localIssuer;
     }
@@ -560,8 +557,7 @@ public class WebServer
 
         Task[] tasks = new Task[] {
             _keyManager.RunAsync(cancellationToken),
-            app.RunAsync(cancellationToken),
-            _queryKeyService.RunAsync(cancellationToken)
+            app.RunAsync(cancellationToken)
         };
         await Task.WhenAll(tasks);
         Console.WriteLine("WebServer stopped");

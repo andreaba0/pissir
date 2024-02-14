@@ -275,8 +275,9 @@ public class RemoteManagerException : Exception
 public interface IRemoteJwksHub
 {
     RSAParameters GetKey(string kid, string iss);
-    Task<int> RunAsync(CancellationToken tk);
-    Task SetupAsync(List<ProviderInfo> providers);
+    Task AddProvider(ProviderInfo provider);
+    Task CancelProvider(string name);
+    Task RunAsync(CancellationToken tk);
     public string GetIssuerName(string iss);
 }
 
@@ -284,39 +285,52 @@ public class RemoteJwksHub : IRemoteJwksHub
 {
     private class IssuerInfo
     {
-        public string[] audience { get; }
-        public string[] jwks { get; }
-        public string name { get; }
-        public RemoteManager manager { get; }
-        public IssuerInfo(string name, string[] audience, string[] jwks, RemoteManager manager)
-        {
-            this.name = name;
-            this.audience = audience;
-            this.jwks = jwks;
-            this.manager = manager;
-        }
+        public string[] audience { get; set; }
+        public string jwks { get; set; }
+        public string name { get; set; }
+        public RemoteManager manager { get; set; }
+        public Task<int>? task { get; set; } = null;
+        public CancellationTokenSource cts { get; set; }
+        public IssuerInfo() {}
     }
-    private readonly Dictionary<string, IssuerInfo> _allowedIssuers;
+    private IDictionary<string, IssuerInfo> _allowedIssuers;
+    private IDictionary<string, IssuerInfo> _nameIndex;
     private HttpClient _client;
+    private bool _ready = false;
+    private Task<int>? _runner = null; 
     public RemoteJwksHub(HttpClient client)
     {
         _client = client;
-        _allowedIssuers = new Dictionary<string, IssuerInfo>();
+        _allowedIssuers = new ConcurrentDictionary<string, IssuerInfo>();
+        _nameIndex = new ConcurrentDictionary<string, IssuerInfo>();
     }
 
-    public async Task SetupAsync(List<ProviderInfo> providers)
-    {
-        foreach (var provider in providers)
-        {
-            var configuration = await Provider.GetConfigurationAsync(_client, provider.configuration_uri);
-            var issuer = Provider.GetIssuerWithoutPrococol(configuration.issuer);
-            _allowedIssuers.Add(issuer, new IssuerInfo(
-                provider.name,
-                provider.audience,
-                new string[] { configuration.jwks_uri },
-                new RemoteManager(configuration.jwks_uri, _client)
-            ));
+    public async Task AddProvider(ProviderInfo provider) {
+        Console.WriteLine("Adding provider");
+        if(_allowedIssuers.ContainsKey(provider.name)) {
+            return;
         }
+        OpenidConfiguration configuration = await Provider.GetConfigurationAsync(_client, provider.configuration_uri);
+        string issuer = Provider.GetIssuerWithoutPrococol(configuration.issuer);
+        IssuerInfo issuerInfo = new IssuerInfo() {
+            name = provider.name,
+            audience = provider.audience,
+            jwks = configuration.jwks_uri,
+            manager = new RemoteManager(configuration.jwks_uri, _client),
+            cts = new CancellationTokenSource()
+        };
+        _allowedIssuers.Add(issuer, issuerInfo);
+        _nameIndex.Add(provider.name, issuerInfo);
+        issuerInfo.task = issuerInfo.manager.RunAsync(issuerInfo.cts.Token);
+    }
+
+    public async Task CancelProvider(string name) {
+        if(!_nameIndex.ContainsKey(name)) {
+            return;
+        }
+        IssuerInfo issuerInfo = _nameIndex[name];
+        issuerInfo.cts.Cancel();
+        issuerInfo.cts.Dispose();
     }
 
     public string GetIssuerName(string iss)
@@ -341,16 +355,27 @@ public class RemoteJwksHub : IRemoteJwksHub
         return false;
     }
 
-    public async Task<int> RunAsync(CancellationToken tk)
-    {
-        Task[] tasks = new Task[_allowedIssuers.Count];
-        int index = 0;
-        foreach (var issuer in _allowedIssuers)
-        {
-            tasks[index++] = issuer.Value.manager.RunAsync(tk);
+    private async Task<int> RunLoopAsync(CancellationToken tk) {
+        while(!tk.IsCancellationRequested) {
+            foreach (var issuer in _allowedIssuers.Values) {
+                if (issuer.task == null) continue;
+                //TODO restart failed tasks and remove cancelled tasks
+                //if(issuer.task.Status.)
+                //issuer.task = issuer.manager.RunAsync(issuer.cts.Token);
+            }
+            await Task.Delay(1000*60*5, tk);
         }
-        await Task.WhenAll(tasks);
         return 0;
+    }
+
+    public Task RunAsync(CancellationToken tk)
+    {
+        if (_runner != null)
+        {
+            throw new RemoteJwksHubException(RemoteJwksHubException.ErrorCode.ALREADY_RUNNING, "Already running");
+        }
+        _runner = RunLoopAsync(tk);
+        return Task.CompletedTask;
     }
 
     public RSAParameters GetKey(string kid, string iss)
@@ -377,7 +402,8 @@ public class RemoteJwksHubException : Exception
     public enum ErrorCode
     {
         KEY_NOT_FOUND,
-        ISSUER_NOT_FOUND
+        ISSUER_NOT_FOUND,
+        ALREADY_RUNNING,
     }
     public ErrorCode Code { get; }
     public RemoteJwksHubException(ErrorCode code) : base()

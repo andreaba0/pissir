@@ -48,6 +48,8 @@ Segliere dal menu del programma l'opzione in base allo step che si sta per esegu
 Il progetto, per essere eseguito, necessita oltre alle varie dipendenze, anche di Docker, software usato per la gestione dei container che conterranno le varie parti sotto test.
 > ATTENZIONE: **Docker per eseguire e gestire i container necessita dei permessi di root**. Per evitare di eseguire l'intera applicazione Python con permessi di root potrebbe essere necessario assegnare l'utente al gruppo Docker. Istruzioni presenti al link: [Docker without sudo](https://docs.docker.com/engine/install/linux-postinstall/)
 
+> ATTENZIONE: Appena effettuato il setup dei container con Docker, i test potrebbero fallire se eseguiti l'istante successivo al termine del setup. Tale problematica si deve alla progettazione interna del server di autenticazione che effettua una query al database dei provider OpenId consentiti appena viene avviato. Questo potrebbe causare errori 401 per qualche secondo dall'avvio.
+
 Per ottimizzare i tempi di creazione del container del backend di Applicazioni Web &egrave; stata creata un'opzione apposita nel menu di avvio. Tale creazione &egrave; gi&agrave; inclusa quando viene fatto il setup completo.
 
 I test sono stati sviluppati in ambienti Linux, cos&igrave; come il backend dell'applicazione pertanto, i container fanno uso di immagini basate su sistema Linux (nei Dockerfile), quindi eseguire i test in ambiente Windows potrebbe non essere possibile (se non si fa uso di WSL2).

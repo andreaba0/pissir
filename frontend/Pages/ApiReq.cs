@@ -39,7 +39,10 @@ namespace frontend.Pages
         // Metodi richieste API
 
         // Richiesta dati utente
-        public static async Task<Utente> GetUserDataFromApi(HttpContext context)
+        public static async Task<Utente> GetUserDataFromApi(HttpContext context) {
+            return await GetUserDataFromApi(context, context.Request.Cookies["Token"]);
+        }
+        public static async Task<Utente> GetUserDataFromApi(HttpContext context, string token)
         {
             // Controllo utente autenticato
             if (!await IsUserAuth(context)) context.Response.Redirect("/auth/SignIn");
@@ -47,8 +50,7 @@ namespace frontend.Pages
             // Stringa interpolata
             string urlTask = $"{urlGenerico}/profile";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
-
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             // Esegue la chiamata
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
 

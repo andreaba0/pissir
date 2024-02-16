@@ -177,7 +177,7 @@ public class SignInModel : PageModel
                         {
                             try
                             {
-                                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+                                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext, accessToken);
                                 
                                 return RedirectToPage("/DatiAccount");
                             }
@@ -191,7 +191,7 @@ public class SignInModel : PageModel
                                     return RedirectToPage("/auth/AuthPeriod");
 
                                 }
-                                else if (statusCode == "notfound")
+                                else if (statusCode == "not found" || statusCode == "notfound")
                                 {
                                     //TempData["MessaggioErrore"] = "Errore 404";
                                     return RedirectToPage("/auth/SignToFarm");

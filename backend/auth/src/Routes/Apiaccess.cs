@@ -304,11 +304,12 @@ public class ApiAccess {
                     select account_id
                     from person
                     where global_id=$1
-                )
+                ) and sdate<=$2 and edate>$2
                 order by remaining_time desc
                 limit 1
             ";
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(user.global_id)));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.UtcNow));
             int remaining_time = 0;
             using (DbDataReader reader = command.ExecuteReader()) {
                 if(reader.HasRows) {
@@ -319,7 +320,7 @@ public class ApiAccess {
             }
 
             if(remaining_time <= 0) throw new ApiAccessException(ApiAccessException.ErrorCode.UNAUTHORIZED, "No remaining time");
-            if(remaining_time > 10) remaining_time = 10;
+            if(remaining_time > 10) remaining_time = 10; // access token max lifespan is 10 minutes
 
             DateTime currentDate = dateTimeProvider.UtcNow;
             int iatSeconds = (int)currentDate.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
@@ -332,8 +333,8 @@ public class ApiAccess {
             payload.Add("iat", iatSeconds);
             payload.Add("iss", issuer);
 
-            RSAKey rsaKey = localKeyManager.GetSignKey();
-            RSAParameters rsaParameters = rsaKey.Parameters;
+            LocalManager.RSAKey rsaKey = localKeyManager.GetSignKey();
+            RSAParameters rsaParameters = rsaKey.parameters;
 
             Jwk jwk = new Jwk(
                 e: Base64Url.Encode(rsaParameters.Exponent),
@@ -350,7 +351,7 @@ public class ApiAccess {
                 payload: payload, 
                 key: jwk, JwsAlgorithm.RS256,
                 extraHeaders: new Dictionary<string, object> {
-                    { "kid", rsaKey.Id }
+                    { "kid", rsaKey.kid }
                 }
             );
         

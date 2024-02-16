@@ -136,22 +136,12 @@ public class WebServer
 
         app.MapGet("/.well-known/jwks.json", async context =>
         {
-            KeyJson[] keys = new KeyJson[3];
             try
             {
-                RSAKey[] _rsaParameters = _keyManager.GetRsaParameters();
-                for (int i = 0; i < 3; i++)
-                {
-                    keys[i] = new KeyJson(
-                        _rsaParameters[i].Id,
-                        _rsaParameters[i].Parameters
-                    );
-                }
-                KeyArray keyArray = new KeyArray(keys);
-                var json = JsonSerializer.Serialize(keyArray);
+                string _rsaParameters = _keyManager.GetRsaParameters();
                 context.Response.ContentType = "application/json";
                 context.Response.Headers.Append("Cache-Control", "max-age=3600");
-                await context.Response.WriteAsync(json);
+                await context.Response.WriteAsync(_rsaParameters);
             }
             catch (Exception ex)
             {

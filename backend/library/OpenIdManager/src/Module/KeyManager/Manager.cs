@@ -55,12 +55,12 @@ public class KeyArray
 
 public class KeyJson
 {
-    public string alg { get; set; }
-    public string kid { get; set; }
-    public string n { get; set; }
-    public string e { get; set; }
-    public string use { get; set; }
-    public string kty { get; set; }
+    public string alg { get; set; } = "RS256";
+    public string kid { get; set; } = "";
+    public string n { get; set; } = "";
+    public string e { get; set; } = "";
+    public string use { get; set; } = "sig";
+    public string kty { get; set; } = "RSA";
     public KeyJson(string kid, RSAParameters parameters)
     {
         alg = "RS256";
@@ -285,13 +285,15 @@ public class RemoteJwksHub : IRemoteJwksHub
 {
     private class IssuerInfo
     {
-        public string[] audience { get; set; }
-        public string jwks { get; set; }
-        public string name { get; set; }
+        public string[] audience { get; set; } = new string[0];
+        public string jwks { get; set; } = "";
+        public string name { get; set; } = "";
         public RemoteManager manager { get; set; }
         public Task<int>? task { get; set; } = null;
-        public CancellationTokenSource cts { get; set; }
-        public IssuerInfo() {}
+        public CancellationTokenSource cts { get; } = new CancellationTokenSource();
+        public IssuerInfo(RemoteManager manager) {
+            this.manager = manager;
+        }
     }
     private IDictionary<string, IssuerInfo> _allowedIssuers;
     private IDictionary<string, IssuerInfo> _nameIndex;
@@ -312,13 +314,12 @@ public class RemoteJwksHub : IRemoteJwksHub
         }
         OpenidConfiguration configuration = await Provider.GetConfigurationAsync(_client, provider.configuration_uri);
         string issuer = Provider.GetIssuerWithoutPrococol(configuration.issuer);
-        IssuerInfo issuerInfo = new IssuerInfo() {
-            name = provider.name,
-            audience = provider.audience,
-            jwks = configuration.jwks_uri,
-            manager = new RemoteManager(configuration.jwks_uri, _client),
-            cts = new CancellationTokenSource()
-        };
+        IssuerInfo issuerInfo = new IssuerInfo(
+            new RemoteManager(configuration.jwks_uri, _client)
+        );
+        issuerInfo.audience = provider.audience;
+        issuerInfo.name = provider.name;
+        issuerInfo.jwks = configuration.jwks_uri;
         _allowedIssuers.Add(issuer, issuerInfo);
         _nameIndex.Add(provider.name, issuerInfo);
         issuerInfo.task = issuerInfo.manager.RunAsync(issuerInfo.cts.Token);

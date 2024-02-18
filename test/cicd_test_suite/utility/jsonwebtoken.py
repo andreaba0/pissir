@@ -1,7 +1,9 @@
 from jose import jwt
 import hashlib
+from uuid import uuid4
+        
 
-class JWTRegistry:
+class JWTRegistry: 
     cache = {}
     def generate(header, payload):
         #create string base64(header).base64(payload)
@@ -18,8 +20,30 @@ class JWTRegistry:
     
     def keys():
         return list(KeyRegistry.keys.keys())
+    def namedKeys():
+        list = []
+        for kid, key in KeyRegistry.keys.items():
+            list.append({
+                "kid": kid,
+                "key": key
+            })
+        return list
+    def uuidMappedKeys():
+        list = []
+        for kid, key in KeyRegistry.keys.items():
+            list.append({
+                "kid": KeyRegistry.namedKeys[kid],
+                "key": key
+            })
+        return list
+
     
 class KeyRegistry:
+    namedKeys = {
+        "key1": uuid4(),
+        "key2": uuid4(),
+        "key3": uuid4()
+    }
     keys = {
         "key1": '''-----BEGIN PRIVATE KEY-----
 MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDKxFpnRoq3nZbL

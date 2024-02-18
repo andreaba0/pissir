@@ -98,13 +98,6 @@ create table api_acl_request (
 
 create table rsa (
     id uuid primary key,
-    d bytea not null,
-    dp bytea not null,
-    dq bytea not null,
-    exponent bytea not null,
-    inverse_q bytea not null,
-    modulus bytea not null,
-    p bytea not null,
-    q bytea not null,
+    key_content text not null,
     created_at timestamptz not null default now()
 );

@@ -104,3 +104,37 @@ class Container:
             ("GRAY", f"State of container {self.container.name}: "),
             ("GREEN", "Running")
         ])
+
+class AuthBackendContainer(Container):
+    def __init__(self, container):
+        super().__init__(container)
+    
+    def WaitTillKeysAreDownloaded(self, timeout=30):
+        currentTime = 0
+        while True:
+            currentTime += 1
+            if currentTime > timeout:
+                raise Exception("Time for string to appear in logs timed out")
+            logs = self.container.logs().decode("utf-8")
+            regexString = r"^Query RSA keys from database: (?P<state>(SUCCESS))$"
+            regexIter = re.finditer(regexString, logs, flags=re.MULTILINE)
+            lastOccurance = None
+            for match in regexIter:
+                if match.group("state") == "SUCCESS":
+                    lastOccurance = match
+            if lastOccurance is None:
+                time.sleep(1)
+                ColorPrint.print(0, [
+                    ("GRAY", f"Searching for keys state in {self.container.name}: "),
+                    ("YELLOW", "Keep searching")
+                ])
+                time.sleep(1)
+                continue
+            ColorPrint.print(0, [
+                ("GRAY", f"Searching for keys state in {self.container.name}: "),
+                ("GREEN", "Found")
+            ])
+            return
+    
+            
+            

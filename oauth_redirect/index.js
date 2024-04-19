@@ -26,12 +26,13 @@ app.get("/oauth/:provider", (req, res) => {
   const query = req.query;
   console.log(query);
   console.log(req.url);
-  const queryString = Object.keys(query)
-    .map((key) => key + "=" + query[key])
-    .join("&");
+  var newQuery = {
+    ...query,
+    provider: req.params.provider,
+  }
   res.redirect(
     301,
-    `http://localhost/auth/signin?${new URLSearchParams(query)}`
+    `http://localhost/auth/signin?${new URLSearchParams(newQuery)}`
   );
 });
 

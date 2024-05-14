@@ -271,11 +271,11 @@ public static class Authentication
     public static bool IsActuallyValid(Token token, IDateTimeProvider dateTimeProvider)
     {
         DateTime now = dateTimeProvider.UtcNow;
-        DateTime issuedAt = dateTimeProvider.FromUnixTime(token.iat-10);
+        DateTime issuedAt = dateTimeProvider.FromUnixTime(token.iat-(60*2));
         return now >= issuedAt;
     }
     public static bool IsExpired(
-        int exp,
+        int exp, 
         int iat,
         IDateTimeProvider dateTimeProvider
     )

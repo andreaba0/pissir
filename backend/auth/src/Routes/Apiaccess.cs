@@ -32,6 +32,7 @@ public class ApiAccess {
         public string? acl_id { get; set; } = null;
         public string? first_name { get; set; } = null;
         public string? last_name { get; set; } = null;
+        public string? tax_code { get; set; } = null;
         public string? company_vat_number { get; set; } = null;
         public string? email { get; set; } = null;
     }
@@ -123,6 +124,7 @@ public class ApiAccess {
                     edate,
                     p.given_name,
                     p.family_name,
+                    p.tax_code,
                     pfa.company_vat_number,
                     p.email
                 FROM 
@@ -144,8 +146,9 @@ public class ApiAccess {
                     accessRequest.date_end = reader.GetDateTime(2);
                     accessRequest.first_name = reader.GetString(3);
                     accessRequest.last_name = reader.GetString(4);
-                    accessRequest.company_vat_number = reader.GetString(5);
-                    accessRequest.email = reader.GetString(6);
+                    accessRequest.tax_code = reader.GetString(5);
+                    accessRequest.company_vat_number = reader.GetString(6);
+                    accessRequest.email = reader.GetString(7);
                     accessRequests.Add(accessRequest);
                 }
             }

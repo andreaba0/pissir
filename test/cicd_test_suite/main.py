@@ -30,8 +30,8 @@ json = {
             "ip": "172.10.0.3",
             "exposed_port": 5432,
             "host_port": 10201,
-            "user": "postgres",
-            "password": "postgres",
+            "user": "andrea",
+            "password": "password",
             "database": "auth"
         },
     },
@@ -94,8 +94,8 @@ def setupBridgeAuthNetwork():
 def runAuthDatabaseInstance():
     imageName = "test_auth_database"
     envVariable = {
-        "POSTGRES_PASSWORD": "postgres",
-        "POSTGRES_USER": "postgres",
+        "POSTGRES_PASSWORD": "password",
+        "POSTGRES_USER": "andrea",
         "POSTGRES_DB": "auth",
     }
     deleteAllContainersByTagName(imageName)
@@ -139,8 +139,8 @@ def runAuthServerInstance():
     envVariable = {
         "DOTNET_ENV_DATABASE_HOST": json["server"]["authDatabase"]["ip"],
         "DOTNET_ENV_DATABASE_PORT": json["server"]["authDatabase"]["exposed_port"],
-        "DOTNET_ENV_DATABASE_USER": "postgres",
-        "DOTNET_ENV_DATABASE_PASSWORD": "postgres",
+        "DOTNET_ENV_DATABASE_USER": "andrea",
+        "DOTNET_ENV_DATABASE_PASSWORD": "password",
         "DOTNET_ENV_DATABASE_NAME": "auth",
         "INITIAL_DATE": "01/01/2024 00:00:00",
     }

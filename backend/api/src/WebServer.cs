@@ -42,6 +42,11 @@ public class WebServer
         Console.WriteLine("Server started");
         var builder = WebApplication.CreateBuilder();
         var configuration = builder.Configuration;
+        //change Kestrel port
+        builder.WebHost.UseKestrel(options =>
+        {
+            options.Listen(IPAddress.Any, 5000);
+        });
         var app = builder.Build();
 
         app.MapPost("/api/water/sell", async context =>

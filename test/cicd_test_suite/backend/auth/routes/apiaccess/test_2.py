@@ -8,6 +8,10 @@ import datetime
 import random
 import uuid
 from runner import PostgresSuite
+from utility import JWTRegistry
+import docker
+from utility import AuthBackendContainer
+from uuid import uuid4
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -186,6 +190,41 @@ def test1(scope):
 
 
 
+def uploadKeys():
+    keys = JWTRegistry.uuidMappedKeys()
+    conn = getPostgresConnection()
+    cur = conn.cursor()
+    for key_dict in keys:
+        kid = key_dict["kid"]
+        keyContent = key_dict["key"]
+        cur.execute('''
+            insert into rsa (
+                id, key_content
+            ) values (
+                '{kid}',
+                '{key_content}'
+            )
+            ON CONFLICT (id) DO NOTHING
+        '''.format(
+            kid=kid,
+            key_content=keyContent
+        ))
+    cur.close()
+    conn.commit()
+    conn.close()
+
+def setupContainer():
+    uploadKeys()
+    client = docker.from_env()
+    containerToRestart = "test_auth_server"
+    container = client.containers.get(containerToRestart)
+    container.restart()
+    ct = AuthBackendContainer(container)
+    ct.WaitTillRunning()
+    ct.WaitRunningProcessOnPort("tcp", f"0.0.0.0:{backendConfig['port']}", "LISTEN")
+    ct.WaitTillKeysAreDownloaded()
+    print("Container restarted")
+
 
 
 
@@ -216,11 +255,13 @@ def EntryPoint(
     backendConfig["host"] = server_ip
     backendConfig["port"] = server_port
 
+    setupContainer()
+
 
     suite = TestSuite()
     suite.set_tierup(TierUp)
     suite.set_tierdown(TierDown)
     suite.set_middletier(ClearDatabase)
-    #suite.add_assertion(test1)
+    suite.add_assertion(test1)
     suite.run()
     suite.print_stats()

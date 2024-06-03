@@ -14,9 +14,9 @@ copy ./library/OpenIdManager/src/OpenIdManager.csproj /app/backend/library/OpenI
 workdir /app/
 
 workdir /app/backend/library/OpenIdManager/src
-run dotnet restore OpenIdManager.csproj
+run dotnet restore --no-cache OpenIdManager.csproj
 workdir /app/backend/auth/src
-run dotnet restore auth_server.csproj
+run dotnet restore --no-cache auth_server.csproj
 
 WORKDIR /app/backend/auth/src
 

@@ -98,7 +98,8 @@ class Program
             remoteJwksHub,
             localManager,
             dateTimeProvider,
-            issuer
+            issuer,
+            audience
         );
         Task webServerTask = Task.Factory.StartNew(() => webServer.RunAsync(cts.Token), TaskCreationOptions.LongRunning).Unwrap();
         Task queryKeyServiceTask = Task.Factory.StartNew(() => queryKeyServie.RunAsync(cts.Token), TaskCreationOptions.LongRunning).Unwrap();

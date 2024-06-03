@@ -27,19 +27,22 @@ public class WebServer
     private readonly IRemoteJwksHub _remoteManager;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly string _localIssuer;
+    private readonly string _localAudience;
 
     public WebServer(
         DbDataSource dbDataSource, 
         IRemoteJwksHub remoteManager,
         LocalManager keyManager,
         IDateTimeProvider dateTimeProvider,
-        string localIssuer)
-    {
+        string localIssuer,
+        string localAudience
+    ) {
         _dbDataSource = dbDataSource;
         _remoteManager = remoteManager;
         _keyManager = keyManager;
         _dateTimeProvider = dateTimeProvider;
         _localIssuer = localIssuer;
+        _localAudience = localAudience;
     }
 
     public async Task<int> RunAsync(CancellationToken cancellationToken = default)
@@ -437,7 +440,8 @@ public class WebServer
                     _dateTimeProvider,
                     _remoteManager,
                     _keyManager,
-                    _localIssuer
+                    _localIssuer,
+                    _localAudience
                 ).Result;
                 context.Response.StatusCode = 200;
                 context.Response.ContentType = "plain/text";

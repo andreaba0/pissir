@@ -49,7 +49,7 @@ public class LocalManager
             await using var connection = await _dbDataSource.OpenConnectionAsync();
             var command = connection.CreateCommand();
             command.CommandText = @"
-            SELECT id, d, dp, dq, exponent, inverse_q, modulus, p, q
+            SELECT id, key_content
             FROM rsa
             ORDER BY created_at DESC
             LIMIT 3";
@@ -58,28 +58,14 @@ public class LocalManager
             await using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                var id = reader.GetGuid(0).ToString();
-                var d = (byte[])reader.GetValue(1);
-                var dp = (byte[])reader.GetValue(2);
-                var dq = (byte[])reader.GetValue(3);
-                var exponent = (byte[])reader.GetValue(4);
-                var inverseQ = (byte[])reader.GetValue(5);
-                var modulus = (byte[])reader.GetValue(6);
-                var p = (byte[])reader.GetValue(7);
-                var q = (byte[])reader.GetValue(8);
+                string id = reader.GetGuid(0).ToString();
+                string keyContent = reader.GetString(1);
+                RSA rsa = new RSACryptoServiceProvider();
+                rsa.ImportFromPem(keyContent);
+                RSAParameters rsaParameters = rsa.ExportParameters(true);
                 parameters[index++] = new RSAKey(
                     id,
-                    new RSAParameters
-                    {
-                        D = d,
-                        DP = dp,
-                        DQ = dq,
-                        Exponent = exponent,
-                        InverseQ = inverseQ,
-                        Modulus = modulus,
-                        P = p,
-                        Q = q
-                    }
+                    rsaParameters
                 );
             }
             if (index != 3)

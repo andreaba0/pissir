@@ -21,7 +21,7 @@ public class KeyRotator
             Console.WriteLine(authorization);
             string token = Authentication.ParseBearerToken(authorization, Authentication.SchemeList.INTERNAL);
             if(token != "prova") throw new Exception("Invalid token");
-            RSA rsa = RSA.Create();
+            RSA rsa = RSA.Create(2048);
             RSAParameters rsaParameters = rsa.ExportParameters(true);
             Guid guid = Guid.NewGuid();
 
@@ -31,35 +31,14 @@ public class KeyRotator
             command.CommandText = @"
                 INSERT INTO rsa (
                     id,
-                    d,
-                    dp,
-                    dq,
-                    exponent,
-                    inverse_q,
-                    modulus,
-                    p,
-                    q
+                    key_content
                 ) VALUES (
                     $1,
-                    $2,
-                    $3,
-                    $4,
-                    $5,
-                    $6,
-                    $7,
-                    $8,
-                    $9
+                    $2
                 )
             ";
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, guid));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Binary, rsaParameters.D));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Binary, rsaParameters.DP));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Binary, rsaParameters.DQ));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Binary, rsaParameters.Exponent));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Binary, rsaParameters.InverseQ));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Binary, rsaParameters.Modulus));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Binary, rsaParameters.P));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Binary, rsaParameters.Q));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, rsa.ExportRSAPrivateKeyPem()));
             command.ExecuteNonQuery();
             return Task.CompletedTask;
         }

@@ -21,7 +21,7 @@ public class User
             "FA" => IndustrySector.FA,
             "WA" => IndustrySector.WA,
             _ => IndustrySector.UNKNOWN
-        }
+        };
     }
 
     public static bool isValidId(string id)
@@ -33,11 +33,11 @@ public class User
     public static bool HasValidIndustrySector(User user)
     {
         return user.company_industry_sector switch
-        {
+        { 
             "FA" => true,
             "WA" => true,
             _ => false
-        }
+        };
     }
 
     public static User From(AccessToken accessToken)

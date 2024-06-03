@@ -7,6 +7,9 @@ import re
 from utility import Container
 from runner.auth_backend.main import EntryPoint
 from multiprocessing import Pool
+from dotenv import load_dotenv
+import ipaddress
+from config import address_manager
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -275,12 +278,41 @@ def runDBInstanceWithSetup():
     initAuthDatabase()
 
 def main():
+    load_dotenv()
+    ip_address_space = os.getenv("IP_ADDRESS_SPACE")
+    if ip_address_space is None:
+        raise Exception("IP_ADDRESS_SPACE environment variable is not set")
+    address_space = ipaddress.ip_network(ip_address_space)
+    if address_space.is_private is False:
+        raise Exception("IP_ADDRESS_SPACE must be a private network")
+    if address_space.num_addresses < 64:
+        raise Exception("IP_ADDRESS_SPACE must be at least /26")
+    subnets = list(address_space.subnets(prefixlen_diff=2))
+    integration_subnets = list(address_space.subnets(prefixlen_diff=1))
+    auth_component_network = subnets[2]
+    authcn_first = auth_component_network[0]
+    authcn_last = auth_component_network[-1]
+    api_component_network = subnets[3]
+    apicn_first = api_component_network[0]
+    apicn_last = api_component_network[-1]
+    integration_testing_network = integration_subnets[1]
+    integrationtn_first = integration_testing_network[0]
+    integrationtn_last = integration_testing_network[-1]
+    live_demo_network = integration_subnets[1]
+    livedn_first = integration_testing_network[0]
+    livedn_last = integration_testing_network[-1]
+    proxy_network = integration_subnets[0]
+    proxy_first = proxy_network[0]
+    proxy_last = proxy_network[-1]
     choice = 0
+    addressManagerAuth = address_manager(list(auth_component_network))
+    addressManagerApi = address_manager(list(api_component_network))
+    addressManagerProxy = address_manager(list(proxy_network))
     while True:
-        print("1. Setup container workflow")
-        print("2. Setup container network")
-        print("3. Rebuild auth server instance")
-        print("4. Run auth test routine")
+        print(f"1. Join Auth component testing - {authcn_first} -> {authcn_last}")
+        print(f"2. Join Api component testing - {apicn_first} -> {apicn_last}")
+        print(f"3. Join full integration testing - {integrationtn_first} -> {integrationtn_last}, {proxy_first} -> {proxy_last}")
+        print(f"4. Live demo - {livedn_first} -> {livedn_last}, {proxy_first} -> {proxy_last}")
         print("5. Exit")
         choice = int(input("Enter your choice: "))
         if choice<1 or choice>5:

@@ -1,12 +1,34 @@
-class address_manager:
-    def __init__(self, addresses):
-        self.address_pool = addresses
+import ipaddress
+from dotenv import load_dotenv
+import os
 
-    def get_address(self):
-        if self.pool_index < len(self.address_pool):
-            address = self.address_pool[self.pool_index]
-            self.pool_index += 1
-            return address
-        else:
-            return None 
+class address_manager:
+    network_name = "pissir_network"
+    address_space = None #eg. 172.16.10.0/26
+    index = 1
+
+    def get_address():
+        if address_manager.address_space is None:
+            load_dotenv()
+            ip_address_space = os.getenv("IP_ADDRESS_SPACE")
+            if ip_address_space is None:
+                raise Exception("IP_ADDRESS_SPACE environment variable is not set")
+            address_space = ipaddress.ip_network(ip_address_space)
+            if address_space.is_private is False:
+                raise Exception("IP_ADDRESS_SPACE must be a private network")
+            if address_space.num_addresses < 16:
+                raise Exception("IP_ADDRESS_SPACE must be at least /28")
+            address_manager.address_space = address_space
+        address_space = address_manager.address_space
+        index = address_manager.index
+        if address_space is None:
+            raise Exception("Address space not set")
+        if index >= address_space.num_addresses:
+            raise Exception("Address space exhausted")
+        address = address_space.network_address + index
+        address_manager.index += 1
+        return address
+    
+    def reset_address():
+        address_manager.index = 1
     

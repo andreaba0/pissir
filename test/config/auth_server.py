@@ -1,22 +1,19 @@
-api_server = {
-    "name": "auth_server",
+from .address_manager import address_manager
+from .auth_database_server import auth_database_config
+
+auth_server_config = {
+    "image_name": "pissir_auth_server",
     "environment": {
-        
+        "DOTNET_ENV_DATABASE_HOST": auth_database_config["network"]["ip"],
+        "DOTNET_ENV_DATABASE_PORT": "5432",
+        "DOTNET_ENV_DATABASE_USER": "postgres",
+        "DOTNET_ENV_DATABASE_PASSWORD": "password",
+        "DOTNET_ENV_DATABASE_NAME": "auth_db",
+        "INITIAL_DATE": "01/01/2024 00:00:00", 
     },
-    "server_ip": None,
-    "server_port": 8080,
-    "database_ip": None,
-    "database_port": 5432,
-    "database_name": "auth_server",
-    "database_user": "postgres",
-    "database_password": "password"
+    "network": {
+        "ip": address_manager.get_address(),
+        "name": address_manager.network_name
+    }
 }
-
-configuration_complete = False
-
-class ApiServerConfigurator:
-    def get_config():
-        if configuration_complete:
-            return api_server
-        raise Exception("Configuration not complete")
         

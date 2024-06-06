@@ -9,7 +9,7 @@ class auth_database:
     name = auth_database_config["image_name"]
 
     def build():
-        baseImageName = imageName
+        baseImageName = auth_database_config["base_image"]
         currentPath = __location__
         dockerfilePath = os.path.join(currentPath, auth_database_config["dockerfile_path"])
         currentTimeStamp = str(int(time.time()))
@@ -26,7 +26,7 @@ class auth_database:
     def stop():
         return
 
-    def run_latest():
+    def run_latest(env_vars):
         return
     
     def converge_to_running():

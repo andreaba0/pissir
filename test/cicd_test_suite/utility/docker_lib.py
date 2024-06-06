@@ -3,6 +3,14 @@ import re
 import time
 from utility.color_print import ColorPrint
 
+class client:
+    client = None
+    def get_client():
+        if client.client is None:
+            client.client = docker.from_env()
+        return client.client
+
+
 class Container:
     def __init__(self, container):
         self.container = container
@@ -135,6 +143,15 @@ class AuthBackendContainer(Container):
                 ("GREEN", "Found")
             ])
             return
+
+
+class image_name:
+    def validate(name):
+        regexString = r"^(?P<project>(appweb|pissir))_(?P<name>[a-z0-9_]+)$"
+        regexIter = re.finditer(regexString, name)
+        for match in regexIter:
+            return True
+        return False
     
             
             

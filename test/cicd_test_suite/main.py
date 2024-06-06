@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import ipaddress
 from config.address_manager import address_manager
 import custom_env.main as custom_env
+from cicd_test_suite.builder.main import image_builder as docker_image_builder
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -291,6 +292,9 @@ def main():
             break
         if choice == "5":
             custom_env.custom_env_routine.start()
+            continue
+        if choice == "6":
+            docker_image_builder.main()
             continue
         continue
         if choice == 1:

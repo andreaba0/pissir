@@ -28,6 +28,7 @@ public class WebServer
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly string _localIssuer;
     private readonly string _localAudience;
+    private readonly string _boundAddress;
 
     public WebServer(
         DbDataSource dbDataSource, 
@@ -35,7 +36,8 @@ public class WebServer
         LocalManager keyManager,
         IDateTimeProvider dateTimeProvider,
         string localIssuer,
-        string localAudience
+        string localAudience,
+        string boundAddress
     ) {
         _dbDataSource = dbDataSource;
         _remoteManager = remoteManager;
@@ -43,14 +45,21 @@ public class WebServer
         _dateTimeProvider = dateTimeProvider;
         _localIssuer = localIssuer;
         _localAudience = localAudience;
+        _boundAddress = boundAddress;
     }
 
     public async Task<int> RunAsync(CancellationToken cancellationToken = default)
     {
         //create a web server with WebApplication builder that listen on port wit manuel route handling
-        var builder = WebApplication.CreateBuilder();
-        var configuration = builder.Configuration;
-        var app = builder.Build();
+        //var builder = WebApplication.CreateBuilder();
+        //var configuration = builder.Configuration;
+        //var app = builder.Build();
+
+        /*
+        Create object app as webserver that listen on port 5000 and reject default launchSettings.json
+        */
+        var app = WebApplication.Create(args: new string[] { "--urls", _boundAddress });
+
 
         app.MapGet("/ping", async context =>
         {

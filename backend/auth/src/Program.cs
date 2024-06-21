@@ -13,39 +13,46 @@ using Module.KeyManager;
 
 class Program
 {
-    internal static string GetProperty(IConfiguration configuration, string key) {
+    internal static string GetProperty(IConfiguration configuration, string key)
+    {
         string systemEnvKey = $"DOTNET_ENV_{key.Replace(":", "_").ToUpper()}";
         string? systemEnvValue = Environment.GetEnvironmentVariable(systemEnvKey);
-        if(systemEnvValue != null) {
+        if (systemEnvValue != null)
+        {
             return systemEnvValue;
         }
         string? value = configuration[key];
-        if(value == null) {
+        if (value == null)
+        {
             throw new Exception($"Missing configuration key: {key}");
         }
         return value;
     }
     public static int Main(string[] args)
     {
-        Console.WriteLine($"Environment: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
         var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
+#if LOAD_APPSETTINGS
             .AddJsonFile("appsettings.json", optional:true, reloadOnChange:true)
-            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional:false, reloadOnChange:true)
+            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional:false, reloadOnChange:true);
+#else
             .AddEnvironmentVariables();
+#endif
         var configuration = builder.Build();
 
         string postgresHost = GetProperty(configuration, "database:host");
         string postgresPort = GetProperty(configuration, "database:port");
-        string postgresDatabaseName = GetProperty(configuration, "database:database");
-        string postgresUsername = GetProperty(configuration, "database:username");
+        string postgresDatabaseName = GetProperty(configuration, "database:name");
+        string postgresUsername = GetProperty(configuration, "database:user");
         string postgresPassword = GetProperty(configuration, "database:password");
         string issuer = GetProperty(configuration, "pissir:iss");
         string audience = GetProperty(configuration, "pissir:aud");
+        string boundAddress = GetProperty(configuration, "webserver:bound");
 
         CancellationTokenSource cts = new CancellationTokenSource();
 
-        Console.CancelKeyPress += (sender, a) => {
+        Console.CancelKeyPress += (sender, a) =>
+        {
             Console.WriteLine("Exiting...");
             a.Cancel = true;
             cts.Cancel();
@@ -60,7 +67,8 @@ class Program
         string initialDate = Environment.GetEnvironmentVariable("INITIAL_DATE") ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
         Regex dateRegex = new Regex("^(?<day>[0-9]{2})/(?<month>[0-9]{2})/(?<year>[0-9]{4}) (?<hour>[0-9]{2}):(?<minute>[0-9]{2}):(?<second>[0-9]{2})$");
         Match match = dateRegex.Match(initialDate);
-        if(!match.Success) {
+        if (!match.Success)
+        {
             throw new Exception("Invalid date format");
         }
         DateTime startDate = new DateTime(
@@ -92,14 +100,15 @@ class Program
             dataSource,
             remoteJwksHub
         );
-        
+
         WebServer webServer = new WebServer(
             dataSource,
             remoteJwksHub,
             localManager,
             dateTimeProvider,
             issuer,
-            audience
+            audience,
+            boundAddress
         );
         Task webServerTask = Task.Factory.StartNew(() => webServer.RunAsync(cts.Token), TaskCreationOptions.LongRunning).Unwrap();
         Task queryKeyServiceTask = Task.Factory.StartNew(() => queryKeyServie.RunAsync(cts.Token), TaskCreationOptions.LongRunning).Unwrap();

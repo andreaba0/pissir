@@ -1,0 +1,6 @@
+api/
+
+**/obj/
+**/bin/
+
+library/MQTTPooledLibrary/

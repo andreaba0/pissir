@@ -6,6 +6,7 @@ class address_manager:
     network_name = "pissir_network"
     address_space = None #eg. 172.16.10.0/26
     index = 1
+    port_space = 10150
 
     def get_address():
         if address_manager.address_space is None:
@@ -31,4 +32,12 @@ class address_manager:
     
     def reset_address():
         address_manager.index = 1
+    
+    def get_port():
+        port = address_manager.port_space
+        address_manager.port_space += 1
+        return port
+    
+    def reset_port():
+        address_manager.port_space = 10150
     

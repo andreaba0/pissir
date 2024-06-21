@@ -2,15 +2,17 @@ from config.auth_database_server import auth_database_config
 import os
 import docker
 import time
+from utility.env import env_manager
+from utility.docker_lib import client
 
-client = docker.from_env()
+client = client.get_client()
 
 class auth_database:
     name = auth_database_config["image_name"]
 
     def build():
-        baseImageName = auth_database_config["base_image"]
-        currentPath = __location__
+        baseImageName = auth_database_config["image_name"]
+        currentPath = env_manager.get("BASE_PATH")
         dockerfilePath = os.path.join(currentPath, auth_database_config["dockerfile_path"])
         currentTimeStamp = str(int(time.time()))
         newImageName = baseImageName + ":" + currentTimeStamp

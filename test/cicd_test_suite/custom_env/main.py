@@ -60,6 +60,15 @@ class custom_env_routine:
     
     def stop_container(image_name):
         return
+    
+    def run_latest(config, image_class):
+        env_list = []
+        for key, value in config["environment"].items():
+            new_value = input(f"Enter value for {key} [default={value}]: ")
+            if new_value == "":
+                new_value = value
+            env_list.append(f"{key}={new_value}")
+        container = image_class.run(env_list)
 
 
     def start():
@@ -78,4 +87,7 @@ class custom_env_routine:
             choice = input("Enter choice: ")
             if choice == "8":
                 break
+            if choice == "4":
+                cer.run_latest(auth_server_config, auth_server.auth_server)
+                continue
             break

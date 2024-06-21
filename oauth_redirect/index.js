@@ -3,7 +3,7 @@ const app = express();
 const fs = require("fs");
 const { createPublicKey } = require("crypto");
 
-const privateKeyFileName = ["rsakey1.pem", "rsakey2.pem", "rsakey3.pem"];
+const privateKeyFileName = ["private1.pem", "private2.pem", "private3.pem"];
 
 var keys = [];
 

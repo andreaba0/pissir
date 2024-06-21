@@ -8,8 +8,11 @@ run mkdir -p /app/backend/auth/src
 
 run mkdir -p /app/backend/library/OpenIdManager/src
 
+run mkdir -p /app/backend/auth/test
+
 copy ./auth/src/auth_server.csproj /app/backend/auth/src
 copy ./library/OpenIdManager/src/OpenIdManager.csproj /app/backend/library/OpenIdManager/src
+copy ./auth/test/test.csproj /app/backend/auth/test
 
 workdir /app/
 
@@ -17,9 +20,14 @@ workdir /app/backend/library/OpenIdManager/src
 run dotnet restore --no-cache OpenIdManager.csproj
 workdir /app/backend/auth/src
 run dotnet restore --no-cache auth_server.csproj
+workdir /app/backend/auth/test
+run dotnet restore --no-cache test.csproj
+
 
 WORKDIR /app/backend/auth/src
 
+
+# Copy source code
 COPY ./library/OpenIdManager/src/Module /app/backend/library/OpenIdManager/src/
 
 COPY ./auth/src/Module /app/backend/auth/src/
@@ -28,16 +36,29 @@ COPY ./auth/src/Types /app/backend/auth/src/
 COPY ./auth/src/Utility /app/backend/auth/src/
 COPY ./auth/src/Program.cs /app/backend/auth/src/
 
+run mkdir -p /app/backend/auth/test
+
+copy ./auth/test/test.csproj /app/backend/auth/test
+copy ./auth/test/Data /app/backend/auth/test/Data
+copy ./auth/test/Utility /app/backend/auth/test/Utility
+copy ./auth/test/GlobalUsings.cs /app/backend/auth/test
+
+workdir /app/backend/auth/test/
+
+run dotnet test --no-restore
+
+workdir /app/backend/auth/src
+
 env ASPNETCORE_ENVIRONMENT=Testing
 env DOTNET_ENVIRONMENT=Testing
 
-run dotnet publish -o /publish_compiled --no-restore
+run dotnet build -o /publish_compiled --no-restore
 
 from dotnet8_runtime_nettools as final_runtime
 run mkdir -p /app_compiled/shared_log
 copy --from=build /publish_compiled /app_compiled
-copy ./auth/src/appsettings.json /app_compiled
-copy /auth/src/appsettings.Testing.json /app_compiled
+#copy ./auth/src/appsettings.json /app_compiled
+#copy /auth/src/appsettings.Testing.json /app_compiled
 workdir /app_compiled
 
 env ASPNETCORE_ENVIRONMENT=Testing

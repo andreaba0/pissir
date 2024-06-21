@@ -6,14 +6,21 @@ auth_server_config = {
     "environment": {
         "DOTNET_ENV_DATABASE_HOST": auth_database_config["network"]["ip"],
         "DOTNET_ENV_DATABASE_PORT": "5432",
-        "DOTNET_ENV_DATABASE_USER": "postgres",
-        "DOTNET_ENV_DATABASE_PASSWORD": "password",
-        "DOTNET_ENV_DATABASE_NAME": "auth_db",
+        "DOTNET_ENV_DATABASE_USER": auth_database_config["environment"]["POSTGRES_USER"],
+        "DOTNET_ENV_DATABASE_PASSWORD": auth_database_config["environment"]["POSTGRES_PASSWORD"],
+        "DOTNET_ENV_DATABASE_NAME": auth_database_config["environment"]["POSTGRES_DB"],
+        "DOTNET_ENV_WEBSERVER_BOUND": "http://0.0.0.0:8000",
+        "DOTNET_ENV_PISSIR_ISS": "https://appweb.andreabarchietto.it",
+        "DOTNET_ENV_PISSIR_AUD": "https://pissir.andreabarchietto.it",
         "INITIAL_DATE": "01/01/2024 00:00:00", 
     },
+    "internal_port": 8000,
+    "exposed_port": address_manager.get_port(),
     "network": {
         "ip": address_manager.get_address(),
         "name": address_manager.network_name
-    }
+    },
+    "dockerfile_path": "backend/",
+    "dockerfile_name": "Dockerfile.backend.auth"
 }
         

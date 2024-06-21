@@ -11,6 +11,8 @@ auth_database_config = {
         "ip": address_manager.get_address(),
         "name": address_manager.network_name
     },
+    "internal_port": 5432,
+    "exposed_port": address_manager.get_port(),
     "dockerfile_path": "database/auth/",
     "dockerfile_name": "Dockerfile"
 }

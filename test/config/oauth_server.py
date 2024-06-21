@@ -7,6 +7,8 @@ oauth_server_config = {
     "network": {
         "ip": address_manager.get_address(),
         "name": address_manager.network_name
-    }
+    },
+    "internal_port": 8000,
+    "exposed_port": address_manager.get_port(),
 }
         

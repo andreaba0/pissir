@@ -5,10 +5,10 @@ WORKDIR /app
 COPY package.json /app
 COPY package-lock.json /app
 
+RUN npm install
+
 COPY cache.js /app
 COPY index.js /app
-
-RUN npm install
 
 EXPOSE 8000
 

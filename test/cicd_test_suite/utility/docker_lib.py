@@ -9,6 +9,34 @@ class client:
         if client.client is None:
             client.client = docker.from_env()
         return client.client
+    
+    def get_latest_tag(image_name):
+        client = client.get_client()
+        # filter get tag json from images
+        images = client.images.get(
+            image_name,
+            filters={"reference": [image_name]}
+        )
+        for image in images:
+            print(image)
+
+class image:
+    def list_version(client, name):
+        images = client.images.list(name)
+        res_dict = {}
+        match_pattern = r"^(?P<name>[a-z_]+):(?P<version>[0-9]+)$"
+        for image in images:
+            match = re.match(match_pattern, image.tags[0])
+            if match is None:
+                continue
+            if match.group("name") != name:
+                continue
+            int_version = int(match.group("version"))
+            res_dict[int_version] = True
+        res_list = []
+        for key in sorted(res_dict.keys(), reverse=True):
+            res_list.append(f"{name}:{key}")
+        return res_list
 
 
 class Container:

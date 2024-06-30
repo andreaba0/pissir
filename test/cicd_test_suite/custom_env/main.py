@@ -6,6 +6,8 @@ from image import auth_database
 from image import oauth_server
 from image import proxy_server
 
+import json
+
 from cicd_test_suite.utility import docker_lib
 
 client = docker_lib.client.get_client()
@@ -63,12 +65,20 @@ class custom_env_routine:
     
     def run_latest(config, image_class):
         env_list = []
+        new_dict = {}
         for key, value in config["environment"].items():
             new_value = input(f"Enter value for {key} [default={value}]: ")
             if new_value == "":
                 new_value = value
             env_list.append(f"{key}={new_value}")
-        container = image_class.run(env_list)
+            new_dict[f"{key}"] = f"{new_value}"
+        print(env_list)
+        print(new_dict)
+        #container = image_class.run(env_list)
+        version_list = docker_lib.image.list_version(client, image_class.name)
+        latest = version_list[0]
+        print(version_list)
+        container = image_class.run(f"{image_class.name}:latest", env_list)
 
 
     def start():

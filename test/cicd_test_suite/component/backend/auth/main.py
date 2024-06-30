@@ -1,15 +1,17 @@
-from cicd_test_suite.backend.auth.routes.service.application import test_1 as test_a1 
-from cicd_test_suite.backend.auth.routes.service.application import test_2 as test_a2 
-from cicd_test_suite.backend.auth.routes.service.application import test_3 as test_a3 
-from cicd_test_suite.backend.auth.routes.service.application import test_4 as test_a4
+from cicd_test_suite.component.backend.auth.routes.service.application import test_1 as test_a1 
+from cicd_test_suite.component.backend.auth.routes.service.application import test_2 as test_a2 
+from cicd_test_suite.component.backend.auth.routes.service.application import test_3 as test_a3 
+from cicd_test_suite.component.backend.auth.routes.service.application import test_4 as test_a4
 
-from cicd_test_suite.backend.auth.routes.profile import test_1 as test_p1
+from cicd_test_suite.component.backend.auth.routes.profile import test_1 as test_p1
 
-from cicd_test_suite.backend.auth.routes.company import test_1 as test_c1
-from cicd_test_suite.backend.auth.routes.company import test_2 as test_c2
+from cicd_test_suite.component.backend.auth.routes.company import test_1 as test_c1
+from cicd_test_suite.component.backend.auth.routes.company import test_2 as test_c2
 
-from cicd_test_suite.backend.auth.routes.apiaccess import test_1 as test_api1
-from cicd_test_suite.backend.auth.routes.apiaccess import test_2 as test_api2
+from cicd_test_suite.component.backend.auth.routes.apiaccess import test_1 as test_api1
+from cicd_test_suite.component.backend.auth.routes.apiaccess import test_2 as test_api2
+
+from cicd_test_suite.utility.state import StateManager, Block, State
 
 
 def EntryPoint(*args, **kwargs):
@@ -25,6 +27,15 @@ def EntryPoint(*args, **kwargs):
 
 
 def AuthMain():
+    StateManager.converge([
+        Block("auth_database", {}, State.NEW),
+        Block("auth_server", {}, State.NEW),
+        Block("oauth_server", {}, State.NEW),
+        Block("fake_oauth_provider", {}, State.NEW)
+    ])
+
+
+    return
     choice = 0
     while True:
         print("Component testing for Auth Backend")

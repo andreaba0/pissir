@@ -4,13 +4,13 @@ import time
 import psycopg2
 import re
 from utility import Container
-from runner.auth_backend.main import EntryPoint
 from multiprocessing import Pool
 from dotenv import load_dotenv
 import ipaddress
 from config.address_manager import address_manager
 import custom_env.main as custom_env
-from cicd_test_suite.builder.main import image_builder as docker_image_builder
+
+from cicd_test_suite.component.backend.auth.main import AuthMain
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -288,6 +288,9 @@ def main():
         print("6. Build image")
         print("7. Exit")
         choice = input("Enter your choice: ")
+        if choice == "1":
+            AuthMain()
+            continue
         if choice == "7":
             break
         if choice == "5":

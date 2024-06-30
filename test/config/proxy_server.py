@@ -7,7 +7,5 @@ proxy_server_config = {
     "network": {
         "ip": address_manager.get_address(),
         "name": address_manager.network_name
-    },
-    "dockerfile_path": "envoy/",
-    "dockerfile_name": "Dockerfile"
+    }
 }

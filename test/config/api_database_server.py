@@ -10,7 +10,5 @@ api_database_config = {
     "network": {
         "ip": address_manager.get_address(),
         "name": address_manager.network_name
-    },
-    "dockerfile_path": "database/auth/",
-    "dockerfile_name": "Dockerfile"
+    }
 }

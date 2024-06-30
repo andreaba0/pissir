@@ -7,7 +7,7 @@ from faker import Faker
 import datetime
 import random
 import uuid
-from runner import PostgresSuite
+from cicd_test_suite.component.backend.auth.utility.postgres import PostgresSuite
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))

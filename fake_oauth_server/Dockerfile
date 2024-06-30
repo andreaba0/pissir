@@ -1,5 +1,7 @@
 from node:20.11-alpine
 
+LABEL image_name="appweb_fake_oauth_server"
+
 WORKDIR /app
 
 COPY package.json /app

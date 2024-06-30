@@ -17,7 +17,7 @@ if [ $obj = "auth" ]; then
     
     echo "Building pissir_auth_server:$ctime"
     # docker build Dockerfile.backend.auth with tag pissir_auth_server:ctime
-    docker build -t pissir_auth_server:$ctime -f Dockerfile.backend.auth .
+    docker build -t pissir_auth_server:$ctime -t pissir_auth_server:latest -f Dockerfile.backend.auth .
     exit 0
 fi
 

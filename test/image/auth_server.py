@@ -19,6 +19,10 @@ class auth_server:
             environment=env_list,
             ports={f"{auth_server_config['internal_port']}/tcp": auth_server_config['exposed_port']},
             detach=True,
-            remove=True
+            labels={
+                "com.pissir.env": "testing",
+                "com.pissir.role": name_with_tag.split(":")[0],
+            },
+            remove=False
         )
         return container

@@ -81,6 +81,7 @@ class FakeUser:
 def getPostgresConnection():
     return psycopg2.connect(
         host=databaseConfig["host"],
+        port=databaseConfig["port"],
         database=databaseConfig["database"],
         user=databaseConfig["user"],
         password=databaseConfig["password"]

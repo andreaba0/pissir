@@ -7,6 +7,7 @@ class address_manager:
     address_space = None #eg. 172.16.10.0/26
     index = 1
     port_space = 10150
+    gateway_ip = None
 
     def get_address():
         if address_manager.address_space is None:
@@ -26,6 +27,9 @@ class address_manager:
             raise Exception("Address space not set")
         if index >= address_space.num_addresses:
             raise Exception("Address space exhausted")
+        if address_manager.gateway_ip is None:
+            address_manager.gateway_ip = address_space.network_address + index
+            address_manager.index += 1
         address = address_space.network_address + index
         address_manager.index += 1
         return address
@@ -41,3 +45,17 @@ class address_manager:
     def reset_port():
         address_manager.port_space = 10150
     
+    def get_address_space():
+        return os.getenv("IP_ADDRESS_SPACE")
+    
+    def get_network_name():
+        return address_manager.network_name
+    
+    def get_gateway_ip():
+        if address_manager.gateway_ip is None:
+            address_manager.gateway_ip = address_space.network_address + index
+            address_manager.index += 1
+        return address_manager.gateway_ip
+    
+    def get_netmask():
+        return os.getenv("IP_ADDRESS_SPACE").split("/")[1]

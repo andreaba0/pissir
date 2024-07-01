@@ -1,6 +1,5 @@
 from config.auth_database_server import auth_database_config
 import os
-import docker
 import time
 from utility.env import env_manager
 from utility.docker_lib import client
@@ -9,27 +8,21 @@ client = client.get_client()
 
 class auth_database:
     name = auth_database_config["image_name"]
-
-    def build():
-        baseImageName = auth_database_config["image_name"]
-        currentPath = env_manager.get("BASE_PATH")
-        dockerfilePath = os.path.join(currentPath, auth_database_config["dockerfile_path"])
-        currentTimeStamp = str(int(time.time()))
-        newImageName = baseImageName + ":" + currentTimeStamp
-        print(dockerfilePath)
-        image, build_log = client.images.build(
-            path=dockerfilePath,
-            dockerfile=auth_database_config["dockerfile_name"], 
-            tag=newImageName,
-            labels={"image": baseImageName},
-            rm=True
+    
+    def run(name_with_tag, env_list):
+        print("Creating container")
+        # container_name = f"{auth_server_config['image_name']}_{actual time in seconds}"
+        container_name = f"{auth_database_config['image_name']}_{int(time.time())}"
+        container = client.containers.run(
+            name_with_tag,
+            #name=container_name,
+            environment=env_list,
+            ports={f"{auth_database_config['internal_port']}/tcp": auth_database_config['exposed_port']},
+            detach=True,
+            labels={
+                "com.pissir.env": "testing",
+                "com.pissir.role": name_with_tag.split(":")[0],
+            },
+            remove=False
         )
-    
-    def stop():
-        return
-
-    def run_latest(env_vars):
-        return
-    
-    def converge_to_running():
-        return
+        return container

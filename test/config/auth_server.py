@@ -5,7 +5,7 @@ auth_server_config = {
     "image_name": "pissir_auth_server",
     "environment": {
         "DOTNET_ENV_DATABASE_HOST": auth_database_config["network"]["ip"],
-        "DOTNET_ENV_DATABASE_PORT": "5432",
+        "DOTNET_ENV_DATABASE_PORT": auth_database_config["internal_port"],
         "DOTNET_ENV_DATABASE_USER": auth_database_config["environment"]["POSTGRES_USER"],
         "DOTNET_ENV_DATABASE_PASSWORD": auth_database_config["environment"]["POSTGRES_PASSWORD"],
         "DOTNET_ENV_DATABASE_NAME": auth_database_config["environment"]["POSTGRES_DB"],

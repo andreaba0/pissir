@@ -35,7 +35,14 @@ fi
 if [ $obj = "auth_database" ]; then
     cd database/auth
     ctime=$(date +%s)
-    docker build -t pissir_auth_database:$ctime -f Dockerfile .
+    docker build -t pissir_auth_database:$ctime -t pissir_auth_database:latest -f Dockerfile .
+    exit 0
+fi
+
+if [ $obj = "api_database" ]; then
+    cd database/api
+    ctime=$(date +%s)
+    docker build -t pissir_api_database:$ctime -t pissir_api_database:latest -f Dockerfile .
     exit 0
 fi
 
@@ -49,7 +56,14 @@ fi
 if [ $obj = "fake_oauth" ]; then
     cd fake_oauth_server
     ctime=$(date +%s)
-    docker build -t appweb_fake_oauth_server:$ctime -f Dockerfile .
+    docker build -t appweb_fake_oauth_server:$ctime -t appweb_fake_oauth_server:latest -f Dockerfile .
+    exit 0
+fi
+
+if [ $obj = "mosquitto" ]; then
+    cd mosquitto
+    ctime=$(date +%s)
+    docker build -t pissir_broker_server:$ctime -t pissir_broker_server:latest -f Dockerfile .
     exit 0
 fi
     

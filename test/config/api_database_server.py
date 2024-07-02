@@ -7,6 +7,8 @@ api_database_config = {
         "POSTGRES_USER": "postgres",
         "POSTGRES_DB": "api_db"  
     },
+    "internal_port": 5432,
+    "exposed_port": address_manager.get_port(),
     "network": {
         "ip": address_manager.get_address(),
         "name": address_manager.network_name

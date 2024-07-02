@@ -285,7 +285,6 @@ def main():
         print("3. Run integration testing environment")
         print("4. Go live")
         print("5. Run custom environment")
-        print("6. Build image")
         print("7. Exit")
         choice = input("Enter your choice: ")
         if choice == "1":
@@ -295,9 +294,6 @@ def main():
             break
         if choice == "5":
             custom_env.custom_env_routine.start()
-            continue
-        if choice == "6":
-            docker_image_builder.main()
             continue
         continue
         if choice == 1:

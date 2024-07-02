@@ -13,26 +13,33 @@ from cicd_test_suite.utility import docker_lib
 client = docker_lib.client.get_client()
 
 from config.auth_server import auth_server_config
+from config.mosquitto_server import mosquitto_server_config
 
 class custom_env_routine:
 
-    images = {}
+    containers = {}
 
     def list_running_containers():
+        custom_env_routine.containers = {}
         ls_raw = client.containers.list(
             all=False
         )
         # return object: [{id, name, image, status, bridge_ip}]
         # to get bridge_ip it is required to run inspect on container for each container
         ls = []
-        custom_env_routine.images = {}
         for container in ls_raw:
             container_data = client.containers.get(container.id)
-            image_name = container_data.attrs["Config"]["Image"].split(":")[0]
-            #if docker_lib.image_name.validate(image_name) == False:
-             #   continue
+            if container_data.labels.get("com.pissir.role") == None and container_data.labels.get("com.pissir.env") == None:
+                    continue
+            container_name = container_data.labels["com.pissir.role"]
+            if container_name in custom_env_routine.containers:
+                custom_env_routine.containers[container_name].append(container_data)
+            else:
+                custom_env_routine.containers[container_name] = [container_data]
+            continue
             bridge_ip = container_data.attrs["NetworkSettings"]["Networks"]["bridge"]["IPAddress"]
-            if image_name in custom_env_routine.images:
+            image_name = container_data.labels["com.pissir.role"]
+            if image_name in custom_env_routine.images:   
                 custom_env_routine.images[image_name]["bridge_ip"].append(bridge_ip)
                 custom_env_routine.images[image_name]["id"].append(container.id)
             else:
@@ -44,26 +51,24 @@ class custom_env_routine:
                 }
     
     def container_template(index, container_name):
-        img = custom_env_routine.images.get(container_name)
-        if img is None:
+        cnt = custom_env_routine.containers.get(container_name)
+        if cnt is None:
             return f"{index}. [ offline ] {container_name} Press {index} to run"
-        ip_list = ", ".join(img["bridge_ip"])
-        return f"{index}. [ online ] {container_name} [{ip_list}] Press {index} to stop"
-        cer = custom_env_routine
-        return f"{index}. {cer.get_container_stat(container_name)}: {container_name} {cer.get_container_ip(container_name)}"
-
-    def auth_server():
-        # display keys in environment dictionary of auth_server_config in KEY=VALUE format
-        for key, value in auth_server_config["environment"].items():
-            print(f"{key}={value}")
-    
-    def run_container(image_name):
-        return
-    
-    def stop_container(image_name):
-        return
+        ip_list = []
+        status_list = []
+        for container in cnt:
+            ip_list.append(container.attrs["NetworkSettings"]["Networks"]["bridge"]["IPAddress"])
+            status_list.append(container.status)
+        ip_list = ", ".join(ip_list)
+        status_list = ", ".join(status_list)
+        return f"{index}. [ {status_list} ] {container_name} [ {ip_list} ] Press {index} to stop"
     
     def run_latest(config, image_class):
+        if config["image_name"] in custom_env_routine.containers:
+            for container in custom_env_routine.containers[config["image_name"]]:
+                client.containers.get(container.id).remove(force=True)
+            del custom_env_routine.containers[config["image_name"]]
+            return
         env_list = []
         new_dict = {}
         for key, value in config["environment"].items():
@@ -83,7 +88,6 @@ class custom_env_routine:
 
     def start():
         cer = custom_env_routine
-        cer.auth_server()
         while True:
             cer.list_running_containers()
             print(cer.container_template(1, api_database.api_database.name))
@@ -97,7 +101,13 @@ class custom_env_routine:
             choice = input("Enter choice: ")
             if choice == "8":
                 break
+            if choice == "3":
+                cer.run_latest(mosquitto_server_config, mosquitto_server.mosquitto_server)
+                continue
             if choice == "4":
                 cer.run_latest(auth_server_config, auth_server.auth_server)
+                continue
+            if choice == "5":
+                cer.run_latest(auth_database.auth_database_config, auth_database.auth_database)
                 continue
             break

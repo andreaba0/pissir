@@ -216,6 +216,7 @@ def uploadKeys():
 
 def setupContainer():
     uploadKeys()
+    return
     client = docker.from_env()
     containerToRestart = "test_auth_server"
     container = client.containers.get(containerToRestart)
@@ -246,7 +247,8 @@ def EntryPoint(
     database_user,
     database_password,
     server_ip,
-    server_port
+    server_port,
+    container
 ):
     databaseConfig["host"] = database_ip
     databaseConfig["port"] = database_port
@@ -256,7 +258,10 @@ def EntryPoint(
     backendConfig["host"] = server_ip
     backendConfig["port"] = server_port
 
-    setupContainer()
+    #setupContainer()
+    uploadKeys()
+    ct = AuthBackendContainer(container)
+    ct.WaitTillKeysAreDownloaded()
 
 
     suite = TestSuite()

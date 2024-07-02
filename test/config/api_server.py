@@ -1,7 +1,7 @@
 from .address_manager import address_manager
 from .api_database_server import api_database_config
 
-internalPort = 8080
+internalPort = 8000
 
 api_server_config = {
     "image_name": "pissir_api_server",

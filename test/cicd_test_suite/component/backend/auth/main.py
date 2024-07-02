@@ -28,7 +28,7 @@ from image.auth_server import auth_server
 from image.auth_database import auth_database
 from image.oauth_server import oauth_server
 
-from utility import Container
+from utility import Container, AuthBackendContainer
 from config.address_manager import address_manager
 
 
@@ -126,6 +126,24 @@ def AuthMain():
         authDatabaseConfig["environment"]["POSTGRES_PASSWORD"],
         "localhost",
         authServerConfig["exposed_port"]
+    )
+
+    containers = StateManager.converge([
+        Block(auth_server, authServerConfig, State.NEW),
+        Block(auth_database, authDatabaseConfig, State.RUNNING),
+        Block(oauth_server, oauthServerConfig, State.RUNNING)
+    ])
+    checkAuthServerConnectivity(containers[0], authServerConfig)
+
+    test_api2.EntryPoint(
+        "localhost",
+        authDatabaseConfig["exposed_port"],
+        authDatabaseConfig["environment"]["POSTGRES_DB"],
+        authDatabaseConfig["environment"]["POSTGRES_USER"],
+        authDatabaseConfig["environment"]["POSTGRES_PASSWORD"],
+        "localhost",
+        authServerConfig["exposed_port"],
+        containers[0]
     )
 
 

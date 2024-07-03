@@ -14,6 +14,8 @@ client = docker_lib.client.get_client()
 
 from config.auth_server import auth_server_config
 from config.mosquitto_server import mosquitto_server_config
+from config.auth_database_server import auth_database_config
+from config.oauth_server import oauth_server_config
 
 class custom_env_routine:
 
@@ -109,5 +111,8 @@ class custom_env_routine:
                 continue
             if choice == "5":
                 cer.run_latest(auth_database.auth_database_config, auth_database.auth_database)
+                continue
+            if choice == "6":
+                cer.run_latest(oauth_server_config, oauth_server.oauth_server)
                 continue
             break

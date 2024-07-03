@@ -115,8 +115,8 @@ def AuthMain():
     ])
     checkOAuthServerConnectivity(containers[2], oauthServerConfig)
     checkAuthServerConnectivity(containers[0], authServerConfig)
-
-    time.sleep(10)
+    ct = Container(containers[0])
+    ct.WaitForStringInLogs(f"Updated RSA parameters for: {authServerConfig['environment']['DOTNET_ENV_PISSIR_ISS']}", 30)
 
     EntryPoint(
         "localhost",

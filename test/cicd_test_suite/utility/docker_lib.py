@@ -42,6 +42,35 @@ class image:
 class Container:
     def __init__(self, container):
         self.container = container
+    def WaitForStringInLogs(self, string, timeout=30):
+        currentTime = 0
+        while True:
+            currentTime += 1
+            if currentTime > timeout:
+                raise Exception("Time for string to appear in logs timed out")
+            logs = self.container.logs().decode("utf-8")
+            
+            # search for string with regex
+            regexString = f"^{string}$"
+            regexIter = re.finditer(regexString, logs, flags=re.MULTILINE)
+            lastOccurance = None
+            for match in regexIter:
+                lastOccurance = match
+            if lastOccurance is None:
+                time.sleep(1)
+                ColorPrint.print(0, [
+                    ("GRAY", f"Searching for string {string} in {self.container.name}: "),
+                    ("YELLOW", "Keep searching")
+                ])
+                time.sleep(1)
+                continue
+            else:
+                ColorPrint.print(0, [
+                    ("GRAY", f"Searching for string {string} in {self.container.name}: "),
+                    ("GREEN", "Found")
+                ])
+                return
+
     def WaitRunningProcessOnPort(self, proto, local_address, state, timeout=30):
         currentTime = 0
         while True:

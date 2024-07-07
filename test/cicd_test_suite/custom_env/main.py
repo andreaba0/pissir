@@ -39,18 +39,23 @@ class custom_env_routine:
             else:
                 custom_env_routine.containers[container_name] = [container_data]
             continue
-            bridge_ip = container_data.attrs["NetworkSettings"]["Networks"]["bridge"]["IPAddress"]
-            image_name = container_data.labels["com.pissir.role"]
-            if image_name in custom_env_routine.images:   
-                custom_env_routine.images[image_name]["bridge_ip"].append(bridge_ip)
-                custom_env_routine.images[image_name]["id"].append(container.id)
-            else:
-                custom_env_routine.images[image_name] = {
-                    "id": [container.id],
-                    "name": container.name,
-                    "status": container.status,
-                    "bridge_ip": [bridge_ip]
-                }
+
+    def get_config_by_name(name):
+        if name == api_database.api_database.name:
+            return api_database.api_database_config
+        if name == api_server.api_server.name:
+            return api_server.api_server_config
+        if name == mosquitto_server.mosquitto_server.name:
+            return mosquitto_server_config
+        if name == auth_server.auth_server.name:
+            return auth_server_config
+        if name == auth_database.auth_database.name:
+            return auth_database_config
+        if name == oauth_server.oauth_server.name:
+            return oauth_server_config
+        if name == proxy_server.proxy_server.name:
+            return proxy_server.proxy_server_config
+        return None
     
     def container_template(index, container_name):
         cnt = custom_env_routine.containers.get(container_name)
@@ -59,7 +64,10 @@ class custom_env_routine:
         ip_list = []
         status_list = []
         for container in cnt:
-            ip_list.append(container.attrs["NetworkSettings"]["Networks"]["bridge"]["IPAddress"])
+            internal_port = custom_env_routine.get_config_by_name(container_name)["internal_port"]
+            ip = container.attrs["NetworkSettings"]["Networks"]["bridge"]["IPAddress"]
+            port = container.attrs["NetworkSettings"]["Ports"][f"{internal_port}/tcp"][0]["HostPort"]
+            ip_list.append(f"{ip}:{port}")
             status_list.append(container.status)
         ip_list = ", ".join(ip_list)
         status_list = ", ".join(status_list)
@@ -103,6 +111,9 @@ class custom_env_routine:
             choice = input("Enter choice: ")
             if choice == "8":
                 break
+            if choice == "1":
+                cer.run_latest(api_database.api_database_config, api_database.api_database)
+                continue
             if choice == "3":
                 cer.run_latest(mosquitto_server_config, mosquitto_server.mosquitto_server)
                 continue

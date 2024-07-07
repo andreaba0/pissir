@@ -112,7 +112,7 @@ public abstract class Manager
                 int exp = 0;
                 lock (_lock)
                 {
-                    _expiration = 1000*60*5; //5 minutes
+                    _expiration = 1000 * 60 * 5; //5 minutes
                     exp = _expiration;
                 }
                 await Task.Delay(exp, tk);
@@ -123,11 +123,11 @@ public abstract class Manager
                 int exp = 0;
                 lock (_lock)
                 {
-                    _expiration = 1000*20; //20 seconds
+                    _expiration = 1000 * 20; //20 seconds
                     exp = _expiration;
                 }
                 await Task.Delay(exp, tk);
-                
+
             }
         }
         return 0;
@@ -173,10 +173,18 @@ public class RemoteManager : Manager
     private readonly string _uri;
     private readonly HttpClient _client;
     private static readonly char[] padding = { '=' };
+    private string _issuer = "";
     public RemoteManager(string uri, HttpClient client) : base()
     {
         _uri = uri;
         _client = client;
+    }
+
+    public RemoteManager(string uri, HttpClient client, string issuer) : base()
+    {
+        _uri = uri;
+        _client = client;
+        _issuer = issuer;
     }
 
     public RSAParameters GetKey(string kid)
@@ -200,16 +208,20 @@ public class RemoteManager : Manager
             if (response == null) throw new RemoteManagerException(RemoteManagerException.ErrorCode.UNABLE_TO_FETCH, "Unable to fetch");
             if (response.StatusCode != HttpStatusCode.OK) throw new RemoteManagerException(RemoteManagerException.ErrorCode.INVALID_RESPONSE, "Invalid response");
             var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("Response from provider: " + _issuer);
+            Console.WriteLine(content);
+            Console.WriteLine("Response from provider: END");
             KeyArray? json = JsonSerializer.Deserialize<KeyArray>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
                 IgnoreNullValues = true,
                 UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
             });
-            Console.WriteLine(JsonSerializer.Serialize(json));
+            //Console.WriteLine(JsonSerializer.Serialize(json));
             if (json == null) throw new RemoteManagerException(RemoteManagerException.ErrorCode.INVALID_JSON, "Invalid json");
+            Console.WriteLine("Updated RSA parameters for: " + _issuer);
+            Console.WriteLine(content);
             RSAKey?[] _rsaParameters = new RSAKey[json.keys.Length];
-            Console.WriteLine("Updated RSA parameters");
             for (int i = 0; i < json.keys.Length; i++)
             {
                 string kid = json.keys[i].kid;
@@ -237,7 +249,10 @@ public class RemoteManager : Manager
         }
         catch (Exception ex)
         {
+            Console.WriteLine("Error in RemoteManager");
+            Console.WriteLine(ex.Message);
             base.SwitchArray(new RSAKey[0]);
+            Console.WriteLine(ex.Message);
             throw ex;
         }
     }
@@ -291,7 +306,8 @@ public class RemoteJwksHub : IRemoteJwksHub
         public RemoteManager manager { get; set; }
         public Task<int>? task { get; set; } = null;
         public CancellationTokenSource cts { get; } = new CancellationTokenSource();
-        public IssuerInfo(RemoteManager manager) {
+        public IssuerInfo(RemoteManager manager)
+        {
             this.manager = manager;
         }
     }
@@ -299,7 +315,7 @@ public class RemoteJwksHub : IRemoteJwksHub
     private IDictionary<string, IssuerInfo> _nameIndex;
     private HttpClient _client;
     private bool _ready = false;
-    private Task<int>? _runner = null; 
+    private Task<int>? _runner = null;
     public RemoteJwksHub(HttpClient client)
     {
         _client = client;
@@ -307,15 +323,17 @@ public class RemoteJwksHub : IRemoteJwksHub
         _nameIndex = new ConcurrentDictionary<string, IssuerInfo>();
     }
 
-    public async Task AddProvider(ProviderInfo provider) {
+    public async Task AddProvider(ProviderInfo provider)
+    {
         Console.WriteLine("Adding provider");
-        if(_allowedIssuers.ContainsKey(provider.name)) {
+        if (_allowedIssuers.ContainsKey(provider.name))
+        {
             return;
         }
         OpenidConfiguration configuration = await Provider.GetConfigurationAsync(_client, provider.configuration_uri);
         string issuer = Provider.GetIssuerWithoutPrococol(configuration.issuer);
         IssuerInfo issuerInfo = new IssuerInfo(
-            new RemoteManager(configuration.jwks_uri, _client)
+            new RemoteManager(configuration.jwks_uri, _client, configuration.issuer)
         );
         issuerInfo.audience = provider.audience;
         issuerInfo.name = provider.name;
@@ -325,8 +343,10 @@ public class RemoteJwksHub : IRemoteJwksHub
         issuerInfo.task = issuerInfo.manager.RunAsync(issuerInfo.cts.Token);
     }
 
-    public async Task CancelProvider(string name) {
-        if(!_nameIndex.ContainsKey(name)) {
+    public async Task CancelProvider(string name)
+    {
+        if (!_nameIndex.ContainsKey(name))
+        {
             return;
         }
         IssuerInfo issuerInfo = _nameIndex[name];
@@ -356,15 +376,18 @@ public class RemoteJwksHub : IRemoteJwksHub
         return false;
     }
 
-    private async Task<int> RunLoopAsync(CancellationToken tk) {
-        while(!tk.IsCancellationRequested) {
-            foreach (var issuer in _allowedIssuers.Values) {
+    private async Task<int> RunLoopAsync(CancellationToken tk)
+    {
+        while (!tk.IsCancellationRequested)
+        {
+            foreach (var issuer in _allowedIssuers.Values)
+            {
                 if (issuer.task == null) continue;
                 //TODO restart failed tasks and remove cancelled tasks
                 //if(issuer.task.Status.)
                 //issuer.task = issuer.manager.RunAsync(issuer.cts.Token);
             }
-            await Task.Delay(1000*60*5, tk);
+            await Task.Delay(1000 * 60 * 5, tk);
         }
         return 0;
     }

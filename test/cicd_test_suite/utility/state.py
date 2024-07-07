@@ -23,6 +23,7 @@ class StateManager:
                     continue
                 if container.labels.get("com.pissir.role") == block.config.get("image_name"):
                     client.containers.get(container.id).remove(force=True)
+            container = None
             if block.state == State.NEW:
                 container = block.image.run(f"{block.image.name}:latest", block.config["environment"])
                 NetworkState.connect(block.config["network"]["name"], block.config["network"]["ip"], container)

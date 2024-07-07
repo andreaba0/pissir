@@ -23,10 +23,19 @@ from cicd_test_suite.utility.state import StateManager, Block, State
 from config.auth_server import auth_server_config
 from config.auth_database_server import auth_database_config
 from config.oauth_server import oauth_server_config
+from config.api_server import api_server_config
+from config.api_database_server import api_database_config
+from config.mosquitto_server import mosquitto_server_config
+from config.proxy_server import proxy_server_config
+
 
 from image.auth_server import auth_server
 from image.auth_database import auth_database
 from image.oauth_server import oauth_server
+from image.api_server import api_server
+from image.api_database import api_database
+from image.mosquitto_server import mosquitto_server
+from image.proxy_server import proxy_server
 
 from utility import Container, AuthBackendContainer
 from config.address_manager import address_manager
@@ -103,7 +112,11 @@ def AuthMain():
     containers = StateManager.converge([
         Block(auth_server, authServerConfig, State.CLEAR),
         Block(auth_database, authDatabaseConfig, State.NEW),
-        Block(oauth_server, oauthServerConfig, State.CLEAR)
+        Block(oauth_server, oauthServerConfig, State.CLEAR),
+        Block(api_server, api_server_config, State.CLEAR),
+        Block(api_database, api_database_config, State.CLEAR),
+        Block(mosquitto_server, mosquitto_server_config, State.CLEAR),
+        Block(proxy_server, proxy_server_config, State.CLEAR)
     ])
     checkAuthDatabaseConnectivity(containers[1], authDatabaseConfig)
     initAuthDatabase(oauthServerConfig, authDatabaseConfig)
@@ -111,7 +124,11 @@ def AuthMain():
     containers = StateManager.converge([
         Block(auth_server, authServerConfig, State.NEW),
         Block(auth_database, authDatabaseConfig, State.RUNNING),
-        Block(oauth_server, oauthServerConfig, State.NEW)
+        Block(oauth_server, oauthServerConfig, State.NEW),
+        Block(api_server, api_server_config, State.CLEAR),
+        Block(api_database, api_database_config, State.CLEAR),
+        Block(mosquitto_server, mosquitto_server_config, State.CLEAR),
+        Block(proxy_server, proxy_server_config, State.CLEAR)
     ])
     checkOAuthServerConnectivity(containers[2], oauthServerConfig)
     checkAuthServerConnectivity(containers[0], authServerConfig)
@@ -131,7 +148,11 @@ def AuthMain():
     containers = StateManager.converge([
         Block(auth_server, authServerConfig, State.NEW),
         Block(auth_database, authDatabaseConfig, State.RUNNING),
-        Block(oauth_server, oauthServerConfig, State.RUNNING)
+        Block(oauth_server, oauthServerConfig, State.RUNNING),
+        Block(api_server, api_server_config, State.CLEAR),
+        Block(api_database, api_database_config, State.CLEAR),
+        Block(mosquitto_server, mosquitto_server_config, State.CLEAR),
+        Block(proxy_server, proxy_server_config, State.CLEAR)
     ])
     checkAuthServerConnectivity(containers[0], authServerConfig)
 

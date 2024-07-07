@@ -31,7 +31,20 @@ public class Provider {
     }
 
     public static async Task<OpenidConfiguration> GetConfigurationAsync(HttpClient client, string configuration_uri) {
-        var response = await client.GetAsync(configuration_uri);
+        var response = new HttpResponseMessage();
+        while(true) {
+            try {
+                response = await client.GetAsync(configuration_uri);
+                break;
+            } catch(Exception e) {
+                Console.WriteLine($"Failed to fetch openid configuration: {e.Message}");
+            }
+            await Task.Delay(5000);
+        }
+        
+        
+        
+        //var response = await client.GetAsync(configuration_uri);
         if(response.StatusCode != HttpStatusCode.OK) {
             throw new Exception("Failed to fetch openid configuration");
         }

@@ -24,7 +24,11 @@ class Program
         string? value = configuration[key];
         if (value == null)
         {
-            throw new Exception($"Missing configuration key: {key}");
+#if LOAD_APPSETTINGS
+            throw new Exception($"Missing configuration key: {key} in appsettings.json");
+#else
+            throw new Exception($"Missing configuration key: {key} in environment variables");
+#endif
         }
         return value;
     }

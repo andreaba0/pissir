@@ -67,4 +67,4 @@ env DOTNET_ENVIRONMENT=Testing
 expose 8000
 
 #run dotnet and redirect output to file /app_compiled/log.txt
-entrypoint ["dotnet", "auth_server.dll", ">", "/app_compiled/shared_log/log.txt"]
+entrypoint ["dotnet", "auth_server.dll"]

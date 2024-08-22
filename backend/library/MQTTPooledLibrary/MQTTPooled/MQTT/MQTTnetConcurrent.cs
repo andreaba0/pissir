@@ -66,7 +66,20 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
         return this.sharedInputChannel;
     }
 
-    public Task RunAsync(CancellationToken ct)
+    //look for nested exception of type target, loop also through aggregate exceptions
+    protected bool lookForNestedException(Exception e, Type target) {
+        if (e == null) return false;
+        Console.WriteLine(e.GetType());
+        if (e.GetType() == target) return true;
+        if (e is AggregateException ae) {
+            foreach (Exception inner in ae.InnerExceptions) {
+                if (lookForNestedException(inner, target)) return true;
+            }
+        }
+        return lookForNestedException(e.InnerException, target);
+    }
+
+    public async Task RunAsync(CancellationToken ct)
     {
         MqttClientConcurrent[] mqttClients = new MqttClientConcurrent[cData.poolSize];
         Task[] workers = new Task[cData.poolSize + 2];
@@ -79,31 +92,28 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
                 clientChannel,
                 this.demuxChannel
             );
-            workers[currentId] = Task.Factory.StartNew(
-                async () => await mqttClients[currentId].RunClient(ct), TaskCreationOptions.LongRunning
-            ).Unwrap();
+            workers[currentId] = new Task(() => mqttClients[currentId].RunClient(ct), ct);
         }
-        workers[cData.poolSize] = Task.Run(async () => await MessageDispatcherRoutine(ct));
-        workers[cData.poolSize + 1] = Task.Run(async () => await MessageDemuxRoutine(ct));
-        
-        // when any of the workers is done write the id in the array to console
-        // if ct is not cancelled yet, restart the worker
-        Task.Factory.ContinueWhenAny(workers, (t) =>
-        {
-            int id = Array.IndexOf(workers, t);
-            Console.WriteLine($"Worker {id} is done");
-            if (!ct.IsCancellationRequested)
+        workers[cData.poolSize] = MessageDispatcherRoutine(ct);
+        workers[cData.poolSize + 1] = MessageDemuxRoutine(ct);
+
+        try {
+            Console.WriteLine(typeof(OperationCanceledException));
+            await Task.WhenAll(workers);
+        } catch (Exception) {
+            //log the state of the tasks
+            foreach (Task worker in workers)
             {
-                Console.WriteLine($"Restarting worker {id}");
-                workers[id] = Task.Factory.StartNew(
-                    async () => await mqttClients[id].RunClient(ct), TaskCreationOptions.LongRunning
-                ).Unwrap();
+                Console.WriteLine(worker.Status);
+                if (lookForNestedException(worker.Exception, typeof(OperationCanceledException))) {
+                    Console.WriteLine("Task cancelled");
+                }
             }
-        });
+        }
 
+        Console.WriteLine("MQTTnetConcurrent stopped");
 
-        Task.WaitAll(workers);
-        return Task.CompletedTask;
+        return;
     }
 
     /**
@@ -146,6 +156,10 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
                 continue;
             }
         }
+        if (ct.IsCancellationRequested) {
+            ct.ThrowIfCancellationRequested();
+            Console.WriteLine("MessageDispatcherRoutine stopped");
+        }
     }
 
     /**
@@ -166,6 +180,10 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
                 Console.WriteLine("Writing to channel");
                 await channel.Writer.WriteAsync(message);
             }
+        }
+        if (ct.IsCancellationRequested) {
+            ct.ThrowIfCancellationRequested();
+            Console.WriteLine("MessageDemuxRoutine stopped");
         }
     }
 

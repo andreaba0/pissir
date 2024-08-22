@@ -1,150 +1,169 @@
-using Microsoft.AspNetCore.Http;
-using System.Web;
-using Extension;
-using System.Text.RegularExpressions;
-using System.Security.Claims;
-
-using Types;
+using Utility;
 using Jose;
+using System.Text.Json;
+using System.Security.Cryptography;
+using System.Text.Json.Serialization;
+using System.Collections.Generic;
+using System.Text;
+using Module.KeyManager;
+using System;
+using System.Text.RegularExpressions;
+using Types;
 
 namespace Middleware;
 
 public static class Authentication
 {
-    public static bool IsAuthenticated(string authorizationHeader, out string jwt, out string error_message) {
-        jwt = string.Empty;
-        if(authorizationHeader == null || authorizationHeader == string.Empty) {
-            error_message = "Missing Authorization header";
-            return false;
-        }
-        Regex tokenRegex = new Regex(@"^(?<scheme>[A-Za-z-]+)\s(?<token>[A-Za-z0-9-_\.]+)$");
-        if(!tokenRegex.IsMatch(authorizationHeader)) {
-            error_message = "Invalid Authorization header";
-            return false;
-        }
-        string scheme = tokenRegex.Match(authorizationHeader).Groups["scheme"].Value;
-        if(scheme.ToLower() != "bearer") {
-            error_message = $"Bearer scheme required but found {scheme}";
-            return false;
-        }
-        string token = tokenRegex.Match(authorizationHeader).Groups["token"].Value;
-        Regex jwtRegex = new Regex(@"^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$");
-        string jwtToken = jwtRegex.Match(token).Value;
-        if(jwtToken == string.Empty) {
-            error_message = "Invalid token format, expected Json Web Token";
-            return false;
-        }
-        if($"{scheme} {jwtToken}" != authorizationHeader) {
-            error_message = "Invalid token string, expected: \"Authorization: Bearer <jwt>\"";
-            return false;
-        }
-        jwt = jwtToken;
-        error_message = string.Empty;
-        return true;
-    }
 
-    /*public OpenidToken VerifyToken(string jwt) {
-
-    }*/
-
-   /*public static bool CheckTokenClaim(ClaimsPrincipal principal, out string error_message) {
-        error_message = string.Empty;
-        if(principal == null) {
-            error_message = "Missing claims";
-            return false;
-        }
-        if(!principal.HasClaim(c => c.Type == ClaimTypes.Role)) {
-            error_message = "Missing role claim";
-            return false;
-        }
-        if(!principal.HasClaim(c => c.Type == ClaimTypes.NameIdentifier)) {
-            error_message = "Missing user_id claim";
-            return false;
-        }
-        //check if aud field is set
-        if(!principal.HasClaim(c => c.Type == ClaimTypes.Actor)) {
-            error_message = "Missing aud claim";
-            return false;
-        }
-        return true;
-    }
-
-    public static async Task JwtCheck(HttpContext context, Func<Task> next, IStaticWrapperHRE httpResponseExtension)
+    internal static string ToBase64Url(byte[] input)
     {
-        //get jwt bearer from header and check if it's valid
-        string? jwtBearer = context.Request.Headers["Authorization"];
-        if (jwtBearer == string.Empty || jwtBearer == null)
+        return Convert.ToBase64String(input)
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .Replace("=", "");
+    }
+
+    internal static IDictionary<string, object> ToDictionary(object obj)
+    {
+        return JsonSerializer.Deserialize<IDictionary<string, object>>((string)obj, new JsonSerializerOptions
         {
-            context.Response.StatusCode = 401;
-            await httpResponseExtension.WriteAsync(context.Response, "Missing Authorization header");
-            return;
-        }
-        if (!jwtBearer.StartsWith("Bearer "))
+            PropertyNameCaseInsensitive = true,
+            UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
+        }) ?? new Dictionary<string, object>();
+    }
+
+    internal static string GetValue(IDictionary<string, object> dictionary, string key)
+    {
+        return key switch
         {
-            context.Response.StatusCode = 401;
-            await httpResponseExtension.WriteAsync(context.Response, "Invalid Authorization header");
-            return;
-        }
-        string jwt = jwtBearer.Substring(7);
-        TokenOut instance = JwtTokenManager.jwtVerified(jwt);
-        if (instance.success == false)
+            "iss" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.ISSUER_REQUIRED, "Issuer required"),
+            "aud" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.AUDIENCE_REQUIRED, "Audience required"),
+            "exp" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.EXPIRATION_REQUIRED, "Expiration required"),
+            "iat" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.IAT_REQUIRED, "Issued at required"),
+            "alg" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.ALGORITHM_REQUIRED, "Algorithm required"),
+            _ => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, $"Unknown key {key} in token")
+        };
+    }
+
+    internal static Token VerifiedPayload(
+        string id_token,
+        RemoteManager remoteManager,
+        IDateTimeProvider dateTimeProvider
+    )
+    {
+        try
         {
-            context.Response.StatusCode = 401;
-            await httpResponseExtension.WriteAsync(context.Response, instance.error);
-            return;
+            var parts = id_token.Split('.');
+            if (parts.Length != 3)
+            {
+                throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Malformed token");
+            }
+            IDictionary<string, object> header = Jose.JWT.Headers(id_token);
+            IDictionary<string, object> payload = ToDictionary(Encoding.UTF8.GetString(Base64Url.Decode(parts[1])));
+            string signature = parts[2];
+            string alg = Authentication.GetValue(header, "alg");
+            string kid = Authentication.GetValue(header, "kid");
+            string iss = Authentication.GetValue(payload, "iss");
+            string aud = Authentication.GetValue(payload, "aud");
+            string allowed_iss = EnvManager.Get(EnvManager.Variable.PISSIR_ISS);
+            string allowed_aud = EnvManager.Get(EnvManager.Variable.PISSIR_AUD);
+            if (iss != allowed_iss) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_ISSUER, "Invalid issuer");
+            if (aud != allowed_aud) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_AUDIENCE, "Invalid audience");
+            var key = remoteManager.GetKey(kid);
+            string json = Jose.JWT.Decode(id_token, new Jwk(
+                Authentication.ToBase64Url(key.Exponent),
+                Authentication.ToBase64Url(key.Modulus)
+            ), JwsAlgorithm.RS256);
+
+            Token payloadVerified = JsonSerializer.Deserialize<Token>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (Authentication.IsExpired(
+                payloadVerified,
+                dateTimeProvider
+            )) throw new AuthenticationException(AuthenticationException.ErrorCode.TOKEN_EXPIRED, "Token expired");
+            if (!Authentication.IsActuallyValid(
+                payloadVerified,
+                dateTimeProvider
+            )) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token");
+            return payloadVerified;
         }
-        if (!instance.claims.TryGetValue("role", out _))
+        catch (AuthenticationException)
         {
-            context.Response.StatusCode = 401;
-            await httpResponseExtension.WriteAsync(context.Response, "Missing role claim");
-            return;
+            throw;
         }
-        if (!instance.claims.TryGetValue("user_id", out _))
+        catch (JsonException e)
         {
-            context.Response.StatusCode = 401;
-            await httpResponseExtension.WriteAsync(context.Response, "Missing user_id claim");
-            return;
+            throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token", e);
         }
-        await next();
-    }*/
-    /*{
-        HttpResponseExtension httpResponseExtension = new HttpResponseExtension();
-        //get jwt bearer from header and check if it's valid
-        string? jwtBearer = context.Request.Headers["Authorization"];
-        Console.WriteLine("init");
-        if (jwtBearer == string.Empty || jwtBearer == null)
+        catch (Exception e)
         {
-            Console.WriteLine("Missing Authorization header");
-            context.Response.StatusCode = 401;
-            //await httpResponseExtension.WriteAsync(context.Response, "Missing Authorization header");
-            return;
+            Console.WriteLine(e);
+            throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token", e);
         }
-        if (!jwtBearer.StartsWith("Bearer "))
-        {
-            context.Response.StatusCode = 401;
-            await context.Response.WriteAsync("Invalid Authorization header");
-            return;
-        }
-        string jwt = jwtBearer.Substring(7);
-        TokenOut instance = JwtTokenManager.jwtVerified(jwt);
-        if (instance.success == false)
-        {
-            context.Response.StatusCode = 401;
-            await context.Response.WriteAsync(instance.error);
-            return;
-        }
-        if (!instance.claims.TryGetValue("role", out _))
-        {
-            context.Response.StatusCode = 401;
-            await context.Response.WriteAsync("Missing role claim");
-            return;
-        }
-        if (!instance.claims.TryGetValue("user_id", out _))
-        {
-            context.Response.StatusCode = 401;
-            await context.Response.WriteAsync("Missing user_id claim");
-            return;
-        }
-        await next();
-    }*/
+    }
+
+    public static bool IsExpired(Token token, IDateTimeProvider dateTimeProvider)
+    {
+        DateTime now = dateTimeProvider.UtcNow;
+        DateTime expiration = dateTimeProvider.FromUnixTime(token.exp);
+        return now > expiration;
+    }
+
+    public static bool IsActuallyValid(Token token, IDateTimeProvider dateTimeProvider)
+    {
+        DateTime now = dateTimeProvider.UtcNow;
+        DateTime issuedAt = dateTimeProvider.FromUnixTime(token.iat-(60*2));
+        return now >= issuedAt;
+    }
+    public static bool IsExpired(
+        int exp, 
+        int iat,
+        IDateTimeProvider dateTimeProvider
+    )
+    {
+        DateTime now = dateTimeProvider.UtcNow;
+        DateTime expiration = dateTimeProvider.FromUnixTime(exp);
+        DateTime issuedAt = dateTimeProvider.FromUnixTime(iat);
+        return now >= issuedAt && now <= expiration;
+    }
+}
+
+public class AuthenticationException : Exception
+{
+    public enum ErrorCode
+    {
+        INVALID_TOKEN = 1,
+        TOKEN_EXPIRED = 2,
+        INVALID_AUDIENCE = 3,
+        INVALID_ISSUER = 4,
+        INVALID_KID = 5,
+        KID_REQUIRED = 6,
+        UNSUPPORTED_ALGORITHM = 7,
+        INVALID_SIGNATURE = 8,
+        ALGORITHM_REQUIRED = 9,
+        ISSUER_REQUIRED = 10,
+        EXPIRATION_REQUIRED = 11,
+        IAT_REQUIRED = 12,
+        AUDIENCE_REQUIRED = 13,
+        CREDENTIALS_REQUIRED = 14,
+        GENERIC_ERROR = 0,
+        USER_UNAUTHORIZED = 15,
+        INCORRECT_AUTHORIZATION_SCHEME = 16,
+        INCORRECT_AUTHORIZATION_HEADER = 17,
+        MISSING_AUTHORIZATION_TOKEN_IN_HEADER = 18,
+        MISSING_AUTHORIZATION_HEADER = 19,
+    }
+
+    public ErrorCode Code { get; } = default(ErrorCode);
+    public AuthenticationException(ErrorCode code, string message) : base(message)
+    {
+        this.Code = code;
+    }
+    public AuthenticationException(ErrorCode code, string message, Exception innerException) : base(message, innerException)
+    {
+        this.Code = code;
+    }
 }

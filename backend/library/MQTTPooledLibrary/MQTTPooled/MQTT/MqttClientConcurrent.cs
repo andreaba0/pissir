@@ -40,6 +40,7 @@ public class MqttClientConcurrent
 
     public async Task<int> RunClient(CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested();
         try
         {
             await this.mqttClient.StartAsync(new ManagedMqttClientOptionsBuilder()
@@ -60,8 +61,10 @@ public class MqttClientConcurrent
         this.mqttClient.ApplicationMessageReceivedAsync += OnMessageReceivedAsync;
         while (!ct.IsCancellationRequested)
         {
+            Console.WriteLine("MqttClientConcurrent running");
             if (!this.mqttClient.IsConnected)
             {
+                Console.WriteLine("MqttClientConcurrent not connected");
                 //let the queue fill up while client is disconnected
                 await Task.Delay(1000);
                 continue;
@@ -82,6 +85,10 @@ public class MqttClientConcurrent
                 ProcessPublish(publishMessage);
                 continue;
             }
+        }
+        if (ct.IsCancellationRequested) {
+            Console.WriteLine("MqttClientConcurrent stopped");
+            throw new OperationCanceledException();
         }
         return 0;
     }

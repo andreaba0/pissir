@@ -5,7 +5,7 @@ mosquitto_server_config = {
     "environment": {
     },
     "internal_port": 1883,
-    "exposed_port": 1883,
+    "exposed_port": address_manager.get_port(),
     "network": {
         "ip": address_manager.get_address(),
         "name": address_manager.network_name

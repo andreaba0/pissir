@@ -1,6 +1,7 @@
 import custom_env.main as custom_env
 
 from cicd_test_suite.component.backend.auth.main import AuthMain
+from cicd_test_suite.component.backend.api.main import ApiMain
 
 
 def main():
@@ -14,6 +15,9 @@ def main():
         choice = input("Enter your choice: ")
         if choice == "1":
             AuthMain()
+            continue
+        if choice == "2":
+            ApiMain()
             continue
         if choice == "6":
             break

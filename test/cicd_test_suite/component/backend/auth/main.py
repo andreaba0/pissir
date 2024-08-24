@@ -166,37 +166,3 @@ def AuthMain():
         authServerConfig["exposed_port"],
         containers[0]
     )
-
-
-    return
-    choice = 0
-    while True:
-        print("Component testing for Auth Backend")
-        print("1. Setup container workflow") # won't do anything if containers are already running
-        print("2. Rebuild and run database instance")
-        print("3. Rebuild and run auth server instance")
-        print("4. Rebuild and run fake OAuth provider instance")
-        print("5. Run test routine")
-        print("6. Tierdown workflow")
-        print("6. Exit")
-        choice = int(input("Enter your choice: "))
-        if choice<1 or choice>5:
-            print("Choice must be in range {1,5}")
-            continue
-        if choice == 1:
-            runAuthDatabaseInstance()
-            initAuthDatabase()
-            runFakeOAuthProviderInstance()
-            runAuthServerInstance()
-            continue
-        if choice == 2:
-            setupBridgeAuthNetwork()
-            continue
-        if choice == 3:
-            runAuthServerInstance()
-            continue
-        if choice == 4:
-            TestRoutine()
-            continue
-        if choice == 5:
-            break

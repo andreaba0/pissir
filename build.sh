@@ -27,8 +27,9 @@ if [ $obj = "api" ]; then
     # create variable ctime with current seconds since epoch
     ctime=$(date +%s)
 
+    echo "Building pissir_api_server:$ctime"
     # docker build Dockerfile.backend.api with tag pissir_api_server:ctime
-    docker build -t pissir_api_server:$ctime -f Dockerfile.backend.api .
+    docker build -t pissir_api_server:$ctime -t pissir_api_server:latest -f Dockerfile.backend.api .
     exit 0
 fi
 

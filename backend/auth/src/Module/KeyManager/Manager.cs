@@ -130,12 +130,56 @@ public class LocalManager
         return signKey;
     }
 
+    protected class JWKSKey {
+        public string kid { get; set; }
+        public string kty { get; set; }
+        public string use { get; set; }
+        public string alg { get; set; }
+        public string n { get; set; }
+        public string e { get; set; }
+        public JWKSKey(
+            string kid,
+            string kty,
+            string use,
+            string alg,
+            string n,
+            string e
+        ) {
+            this.kid = kid;
+            this.kty = kty;
+            this.use = use;
+            this.alg = alg;
+            this.n = n;
+            this.e = e;
+        }
+    }
+
+    protected class JWKS {
+        public JWKSKey[] keys { get; set; }
+        public JWKS(JWKSKey[] keys) {
+            this.keys = keys;
+        }
+    }
+
     public string GetRsaParameters()
     {
+        JWKSKey[] keys;
         lock (_lock)
         {
-            return JsonSerializer.Serialize(_rsaParameters);
+            keys = new JWKSKey[_rsaParameters.Length];
+            for (int i = 0; i < _rsaParameters.Length; i++)
+            {
+                keys[i] = new JWKSKey(
+                    _rsaParameters[i].kid,
+                    "RSA",
+                    "sig",
+                    "RS256",
+                    Convert.ToBase64String(_rsaParameters[i].parameters.Modulus),
+                    Convert.ToBase64String(_rsaParameters[i].parameters.Exponent)
+                );
+            }
         }
+        return JsonSerializer.Serialize(new JWKS(keys));
     }
 }
 

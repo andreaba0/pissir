@@ -146,7 +146,7 @@ public class WebServer
             }
         });
 
-        app.MapGet("/.well-known/jwks.json", async context =>
+        app.MapGet("/.well-known/oauth/openid/jwks", async context =>
         {
             try
             {

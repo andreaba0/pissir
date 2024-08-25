@@ -130,6 +130,10 @@ public abstract class Manager
 
             }
         }
+        if (tk.IsCancellationRequested)
+        {
+            Console.WriteLine("Cancellation requested");
+        }
         return 0;
     }
 

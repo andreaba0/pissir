@@ -335,6 +335,7 @@ public class ApiAccess {
             payload.Add("role", user.role);
             payload.Add("exp", expSeconds);
             payload.Add("iat", iatSeconds);
+            payload.Add("company_vat_number", user.company_vat_number);
             payload.Add("iss", issuer);
             payload.Add("aud", audience);
 

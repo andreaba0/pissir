@@ -67,7 +67,6 @@ public class WaterLimit {
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
         }).Result ?? throw new WaterLimitException(WaterLimitException.ErrorCode.INVALID_BODY, "Invalid body");
         _body.validate().Wait();
-        Console.WriteLine(_body.start_date);
         return Task.CompletedTask;
     }
 }

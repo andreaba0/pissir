@@ -47,10 +47,10 @@ if [ $obj = "api_database" ]; then
     exit 0
 fi
 
-if [ $obj = "envoy" ]; then
+if [ $obj = "proxy" ]; then
     cd envoy
     ctime=$(date +%s)
-    docker build -t appweb_envoy:$ctime -f Dockerfile .
+    docker build -t appweb_proxy_server:$ctime -t appweb_proxy_server:latest -f Dockerfile .
     exit 0
 fi
 
@@ -65,6 +65,13 @@ if [ $obj = "mosquitto" ]; then
     cd mosquitto
     ctime=$(date +%s)
     docker build -t pissir_broker_server:$ctime -t pissir_broker_server:latest -f Dockerfile .
+    exit 0
+fi
+
+if [ $obj = "frontend" ]; then
+    cd frontend
+    ctime=$(date +%s)
+    docker build -t appweb_frontend_server:$ctime -t appweb_frontend_server:latest -f Dockerfile .
     exit 0
 fi
     

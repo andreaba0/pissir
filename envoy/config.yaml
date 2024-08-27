@@ -4,7 +4,7 @@ static_resources:
       address:
         socket_address:
           address: 0.0.0.0
-          port_value: 80
+          port_value: 10000
       filter_chains:
         - filters:
             - name: envoy.http_connection_manager
@@ -50,7 +50,7 @@ static_resources:
   clusters:
     - name: "api"
       connect_timeout: 0.25s
-      type: STATIC
+      type: strict_dns
       load_assignment:
         cluster_name: "api"
         endpoints:
@@ -58,11 +58,11 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: "127.0.0.1"
-                      port_value: 5001
+                      address: pissir_api_server
+                      port_value: 8000
     - name: "auth"
       connect_timeout: 0.25s
-      type: STATIC
+      type: strict_dns
       load_assignment:
         cluster_name: "auth"
         endpoints:
@@ -70,11 +70,11 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: "127.0.0.1"
-                      port_value: 5002
+                      address: pissir_auth_server
+                      port_value: 8000
     - name: "frontend"
       connect_timeout: 5s
-      type: STATIC
+      type: strict_dns
       load_assignment:
         cluster_name: "frontend"
         endpoints:
@@ -82,5 +82,5 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: 127.0.0.1
-                      port_value: 5000
+                      address: appweb_frontend_server
+                      port_value: 80

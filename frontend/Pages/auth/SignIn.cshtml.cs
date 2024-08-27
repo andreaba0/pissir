@@ -1,57 +1,86 @@
+using frontend.Models;
 using frontend.Pages;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
-using ServiceStack.MiniProfiler;
 using System.Net;
 
 public class SignInModel : PageModel
 {
-    string authGoogle = "https://accounts.google.com/o/oauth2/auth?" +
-        "scope=openid&" +
-        "access_type=online&" +
-        "response_type=code&" +
-        "state=1234567890qwerty&" +
-        "redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/google&" +
-        "client_id=330493585576-us7lib6fpk4bg0j1vcti09l0jpso2o4k.apps.googleusercontent.com";
-
-    string authFacebook = "https://www.facebook.com/v18.0/dialog/oauth?" +
-        "scope=openid&" +
-        "response_type=code&" +
-        "state=1234567890qwerty&" +
-        "redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/facebook&" +
-        "client_id=709636884633879&" +
-        "client_secret=f502cde6c8b5dec3d1046ceef2aa78e8";
-
     public async Task<IActionResult> OnGet()
     {
         try
         {
-            Console.WriteLine("Provider: " + Request.Query["provider"]);
-            string? provider = Request.Query["provider"];
-            string? code = Request.Query["code"];
+            // Controllo variabili d'ambiente
+            string[] requiredVariables = { "ipbackend", "googleClientId", "googleSecretId", "facebookClientId", "facebookSecretId" };
 
-            //HttpContext.Response.Cookies.Delete("Provider");
-            HttpContext.Response.Cookies.Delete("Code");
-
-            // Se esiste il provider
-            if (!string.IsNullOrEmpty(provider))
+            foreach (string variable in requiredVariables)
             {
-                Response.Cookies.Append("Provider", provider, new CookieOptions
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(variable)))
                 {
-                    Path = "/",
-                    Expires = DateTime.Now.AddSeconds(10),
-                    HttpOnly = true,
-                    Secure = false,
-                });
+                    TempData["MessaggioErrore"] = $"La variabile d'ambiente '{variable}' non è definita.";
+                    return Redirect("/Error");
+                }
             }
 
+            string authGoogle = "https://accounts.google.com/o/oauth2/auth?" +
+                "scope=openid&" +
+                "access_type=online&" +
+                "response_type=code&" +
+                "state=1234567890qwerty&" +
+                "redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/google&" +
+                "client_id=" + Environment.GetEnvironmentVariable("googleClientId");
+
+            string authFacebook = "https://www.facebook.com/v18.0/dialog/oauth?" +
+                "scope=openid&" +
+                "response_type=code&" +
+                "state=1234567890qwerty&" +
+                "redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/facebook&" +
+                "client_id=" + Environment.GetEnvironmentVariable("facebookClientId");
+
+            // Richiesta parametri nell'url
+            string? provider = Request.Query["provider"];
+            string? code = Request.Query["code"];
+            provider = provider?.ToLower();
+
+            HttpContext.Response.Cookies.Delete("Code");
+
+            // Se esiste già il token
+            string tk = HttpContext.Request.Cookies["Token"];
+            if (!string.IsNullOrEmpty(tk))
+            {
+                try
+                {
+                    string data = await ApiReq.GetDataFromApi(HttpContext, "/profile");
+                    ApiReq.utente = JsonConvert.DeserializeObject<Utente>(data);
+                    return RedirectToPage("/DatiAccount");
+                }
+                catch (HttpRequestException ex)
+                {
+                    string statusCode = ex.Message.ToString().ToLower();
+
+                    if (statusCode == "unauthorized")
+                    {
+                        TempData["MessaggioErrore"] = "Errore 401. Non sei autorizzato.";
+                    }
+                    else if (statusCode == "not found" || statusCode == "notfound")
+                    {
+                        //TempData["MessaggioErrore"] = "Errore 404";
+                        return RedirectToPage("/auth/SignToFarm");
+                    }
+                    else
+                    {
+                        TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                    }
+
+                    return RedirectToPage("/Error");
+                }
+            }
+
+            // Redirect al giusto provider per ottenere il token, se esiste il provider e il relativo code
             if (!string.IsNullOrEmpty(provider) && string.IsNullOrEmpty(code))
             {
-                provider = provider.ToLower();
-
                 if (provider == "google")
                 {
                     return Redirect(authGoogle);
@@ -81,33 +110,30 @@ public class SignInModel : PageModel
 
             }
 
-            // Prende il tipo di provider dal cookie per reinderizzare all'url giusto per la creazione del token
-            provider = HttpContext.Request.Cookies["Provider"];
-
             if (string.IsNullOrEmpty(provider))
             {
                 return Page();
             }
 
-
+            // Prende il tipo di provider per reinderizzare all'url giusto per la creazione del token
             string tokenEndpoint = "";
             string clientId = "";
             string clientSecret = "";
             string redirectUri = "";
 
-            switch (provider.ToLower())
+            switch (provider)
             {
                 case "google":
                     tokenEndpoint = "https://oauth2.googleapis.com/token";
-                    clientId = "330493585576-us7lib6fpk4bg0j1vcti09l0jpso2o4k.apps.googleusercontent.com";
-                    clientSecret = "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";
+                    clientId = Environment.GetEnvironmentVariable("googleClientId");
+                    clientSecret = Environment.GetEnvironmentVariable("googleSecretId");
                     redirectUri = "https://appweb.andreabarchietto.it/localhost_redirect/oauth/google";
                     break;
 
                 case "facebook":
                     tokenEndpoint = "https://graph.facebook.com/v18.0/oauth/access_token";
-                    clientId = "709636884633879";
-                    clientSecret = "f502cde6c8b5dec3d1046ceef2aa78e8";
+                    clientId = Environment.GetEnvironmentVariable("facebookClientId");
+                    clientSecret = Environment.GetEnvironmentVariable("facebookSecretId");
                     redirectUri = "https://appweb.andreabarchietto.it/localhost_redirect/oauth/facebook";
                     break;
 
@@ -116,12 +142,8 @@ public class SignInModel : PageModel
                     return RedirectToPage();
             }
 
-
-            if (HttpContext.Request.Cookies["Provider"] != null && HttpContext.Request.Cookies["Code"] != null)
+            if (provider != null && code != null)
             {
-                code = HttpContext.Request.Cookies["Code"];
-
-                HttpContext.Response.Cookies.Delete("Provider");
                 HttpContext.Response.Cookies.Delete("Code");
 
                 var tokenRequestData = new List<KeyValuePair<string, string>>
@@ -161,12 +183,10 @@ public class SignInModel : PageModel
                                 HttpOnly = true,
                                 Secure = false
                             });
-
-
                         }
                         else
                         {
-                            // Gestisci il caso in cui "expires_in" non � presente o non � un numero valido
+                            // Gestisci il caso in cui "expires_in" non presente o non un numero valido
                             TempData["MessaggioErrore"] = "Expires_in non presente o non valido. Autenticazione fallita.";
                             return RedirectToPage();
                         }
@@ -175,64 +195,59 @@ public class SignInModel : PageModel
                         // Gestione redirect alle pagine dopo il login
                         if (accessToken != null)
                         {
-                            try
-                            {
-                                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext, accessToken);
-                                
-                                return RedirectToPage("/DatiAccount");
-                            }
-                            catch (HttpRequestException ex)
-                            {
-                                string statusCode = ex.Message.ToString().ToLower();
-
-                                if (statusCode == "unauthorized")
-                                {
-                                    //TempData["MessaggioErrore"] = "Errore 400";
-                                    return RedirectToPage("/auth/AuthPeriod");
-
-                                }
-                                else if (statusCode == "not found" || statusCode == "notfound")
-                                {
-                                    //TempData["MessaggioErrore"] = "Errore 404";
-                                    return RedirectToPage("/auth/SignToFarm");
-                                }
-                                else
-                                {
-                                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare pi� tardi.";
-                                }
-                                
-                                return RedirectToPage("/Error");
-                            }
-
+                            await RouteToPage();
                         }
-
-
-
                     }
                     else
                     {
-                        // Gestisci il caso in cui il token non � presente nella risposta
+                        // Gestisci il caso in cui il token non presente nella risposta
                         TempData["MessaggioErrore"] = "Access Token non presente o non valido. Autenticazione fallita.";
                         return RedirectToPage();
                     }
                 }
             }
 
-
             return RedirectToPage();
 
         }
         catch (Exception ex)
         {
-            ViewData["MessaggioErrore"] = "Si � verificato un errore durante l'accesso. " + ex.ToString();
+            ViewData["MessaggioErrore"] = "Si è verificato un errore durante l'accesso. " + ex.ToString();
             return RedirectToPage("/Error");
         }
-        
+
     }
 
-    
 
+    private async Task<RedirectToPageResult> RouteToPage()
+    {
+        try
+        {
+            string data = await ApiReq.GetDataFromApi(HttpContext, "/profile");
+            ApiReq.utente = JsonConvert.DeserializeObject<Utente>(data);
+            return RedirectToPage("/DatiAccount");
+        }
+        catch (HttpRequestException ex)
+        {
+            string statusCode = ex.Message.ToString().ToLower();
 
+            if (statusCode == "unauthorized")
+            {
+                //TempData["MessaggioErrore"] = "Errore 401. Non sei autorizzato.";
+                return RedirectToPage("/Error");
+            }
+            else if (statusCode == "not found" || statusCode == "notfound")
+            {
+                //TempData["MessaggioErrore"] = "Errore 404";
+                return RedirectToPage("/auth/SignToFarm");
+            }
+            else
+            {
+                TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+            }
+
+            return RedirectToPage("/Error");
+        }
+    }
 }
-
 

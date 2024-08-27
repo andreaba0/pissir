@@ -4,7 +4,7 @@ import psycopg2
 import requests
 import time
 
-from cicd_test_suite.utility.state import StateManager, Block, State
+from utility.state import StateManager, Block, State
 
 from config.auth_server import auth_server_config
 from config.auth_database_server import auth_database_config

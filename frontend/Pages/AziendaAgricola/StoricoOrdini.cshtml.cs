@@ -1,7 +1,7 @@
 using frontend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Net.Http.Headers;
+using Newtonsoft.Json;
 
 namespace frontend.Pages.AziendaAgricola
 {
@@ -23,19 +23,26 @@ namespace frontend.Pages.AziendaAgricola
                 StoricoOrdini = GetStoricoOrdini();
                 return Page();
 
-                StoricoOrdini = await ApiReq.GetStoricoOrdiniFromApi(HttpContext);
+                // Richiesta API
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/order");
+                StoricoOrdini = JsonConvert.DeserializeObject<List<OrdineAcquisto>>(data);
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                TempData["MessaggioErrore"] = ex.Message;
-                return RedirectToPage("/Error");
-            }           
-            
+                string statusCode = ex.Message.ToString().ToLower();
 
-            // Simulazione dati
-            StoricoOrdini = GetStoricoOrdini();
-
-            return Page();
+                if (statusCode == "unauthorized")
+                {
+                    // Errore 401
+                    TempData["MessaggioErrore"] = "Non sei autorizzato. Effettua prima la richiesta di accesso ai servizi.";
+                    return RedirectToPage("/Error");
+                }
+                else
+                {
+                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                    return RedirectToPage("/Error");
+                }
+            }
         }
 
 

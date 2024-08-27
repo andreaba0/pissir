@@ -11,12 +11,10 @@ namespace frontend.Pages.GestoreIdrico
     {
         public List<UtenteAp>? RichiesteUtenti { get; set; }
 
-        public List<UtentePeriodo> RichiestePeriodo { get; set; }
+        public List<UtentePeriodo>? RichiestePeriodo { get; set; }
 
         public async Task<IActionResult> OnGet()
         {
-
-
             try
             {
                 // Controllo utente autenticato
@@ -25,8 +23,12 @@ namespace frontend.Pages.GestoreIdrico
                 // Controllo utente autorizzato
                 if (ApiReq.utente.Role!="WA") { throw new Exception("Unauthorized"); }
 
-                RichiesteUtenti = await ApiReq.GetRichiesteUtentiFromApi(HttpContext);
-                RichiestePeriodo = await ApiReq.GetRichiestePeriodoFromApi(HttpContext);
+                // Richiesta API
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/service/application");
+                RichiesteUtenti = JsonConvert.DeserializeObject<List<UtenteAp>>(data);
+                
+                data = await ApiReq.GetDataFromApi(HttpContext, "/apiaccess");
+                RichiestePeriodo = JsonConvert.DeserializeObject<List<UtentePeriodo>>(data);
 
                 return Page();
             }
@@ -35,13 +37,6 @@ namespace frontend.Pages.GestoreIdrico
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            
-
-            // Simula dati di richieste
-            RichiesteUtenti = GetSimulatedRichiesteUtenti();
-            RichiestePeriodo = GetSimulatedRichiestePeriodo();
-
-            return Page();
         }
 
 

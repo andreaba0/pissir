@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using System.Net.Http.Headers;
-using System.Text;
 using frontend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
+using System.Net.Http.Headers;
+using System.Text;
 
 namespace frontend.Pages.AziendaAgricola
 {
@@ -31,22 +30,29 @@ namespace frontend.Pages.AziendaAgricola
 
                 return Page();
 
-                // Chiamata alle API per ottenere i dati
-                Colture = await ApiReq.GetColtureAziendaFromApi(HttpContext);
-                ColtureStock = await ApiReq.GetStockColtureAziendaFromApi(HttpContext);
+                // Richiesta API
+                string dataC = await ApiReq.GetDataFromApi(HttpContext, "/field");
+                Colture = JsonConvert.DeserializeObject<List<Coltura>>(dataC);
+
+                string dataCS = await ApiReq.GetDataFromApi(HttpContext, "/water/stock");
+                ColtureStock = JsonConvert.DeserializeObject<List<ColturaStock>>(dataCS);
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                TempData["MessaggioErrore"] = ex.Message;
-                return RedirectToPage("/Error");
+                string statusCode = ex.Message.ToString().ToLower();
+
+                if (statusCode == "unauthorized")
+                {
+                    // Errore 401
+                    TempData["MessaggioErrore"] = "Non sei autorizzato. Effettua prima la richiesta di accesso ai servizi.";
+                    return RedirectToPage("/Error");
+                }
+                else
+                {
+                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                    return RedirectToPage("/Error");
+                }
             }
-            
-
-            // Simulazione dati
-            Colture = GetListaColture();
-            ColtureStock = GetStockColture();
-
-            return Page();
         }
 
         

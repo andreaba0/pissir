@@ -11,10 +11,10 @@ class api_server:
 
     def run(name_with_tag, env_list):
         print("Creating container")
-        container_name = f"{api_server_config['image_name']}_{int(time.time())}"
+        container_name = api_server_config["image_name"]
         container = client.containers.run(
             name_with_tag,
-            #name=container_name,
+            name=container_name,
             environment=env_list,
             ports={f"{api_server_config['internal_port']}/tcp": api_server_config['exposed_port']},
             detach=True,

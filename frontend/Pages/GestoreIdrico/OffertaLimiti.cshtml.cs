@@ -1,12 +1,10 @@
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using frontend.Models;
 using Newtonsoft.Json;
-using System.Text;
-using System.Net.Http.Headers;
 using System.Globalization;
-using Microsoft.AspNetCore.Authentication;
+using System.Net.Http.Headers;
+using System.Text;
 
 namespace frontend.Pages.GestoreIdrico
 {
@@ -17,8 +15,7 @@ namespace frontend.Pages.GestoreIdrico
         public float AcquaDisponibile { get; set; }
 
         public async Task<IActionResult> OnGet()
-        {
-            
+        {   
             try
             {
                 // Controllo utente autenticato
@@ -32,22 +29,18 @@ namespace frontend.Pages.GestoreIdrico
 
                 return Page();
 
-                OfferteInserite = await ApiReq.GetOfferteIdricheFromApi(HttpContext);
-                LimitiAcquistoPerAzienda = await ApiReq.GetLimitiPerAziendaFromApi(HttpContext);
+                // Richiesta API
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/offer");
+                OfferteInserite = JsonConvert.DeserializeObject<List<Offerta>>(data);
 
-                //LimiteGiornalieroVendita = await ApiReq.GetLimiteGiornaliero(ApiReq.utente.PartitaIva, HttpContext);
+                data = await ApiReq.GetDataFromApi(HttpContext, "/water/limit/all");
+                LimitiAcquistoPerAzienda = JsonConvert.DeserializeObject<List<LimiteAcquistoAzienda>>(data);
             }
             catch (Exception ex)
             {
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            
-
-            // Simula i dati di esempio
-            SimulaDatiDiEsempio();
-
-            return Page();
         }
 
         
@@ -141,7 +134,7 @@ namespace frontend.Pages.GestoreIdrico
 
             if (float.Parse(nuovaQuantita) <= 0.0f)
             {
-                TempData["MessaggioErrore"] = "Quantit� acqua erroneamente impostata.";
+                TempData["MessaggioErrore"] = "Quantità acqua erroneamente impostata.";
                 return RedirectToPage();
             }
 
@@ -237,86 +230,86 @@ namespace frontend.Pages.GestoreIdrico
         }
 
 
-        
-        // Chiamata API per modificare il limite di vendita aziendale giornaliero
-        public async Task<IActionResult> OnPostImpostaLimiteGiornaliero(string limiteAcqua, string dataInizio, string dataFine)
-        {
-            string urlTask = ApiReq.urlGenerico + "/water/limit";
 
-            // Controllo se le date sono nel formato corretto yyyy-MM-dd
-            if (!DateTime.TryParseExact(dataInizio, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime startDate) ||
-                !DateTime.TryParseExact(dataFine, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime endDate))
-            {
-                TempData["MessaggioErrore"] = "Formato data non valido. Utilizzare il formato gg/mm/aaaa. Ricevuto: " + dataInizio + " - " + dataFine;
-                return RedirectToPage();
-            }
+        //// Chiamata API per modificare il limite di vendita aziendale giornaliero
+        //public async Task<IActionResult> OnPostImpostaLimiteGiornaliero(string limiteAcqua, string dataInizio, string dataFine)
+        //{
+        //    string urlTask = ApiReq.urlGenerico + "/water/limit";
 
-            // Ottenere la data odierna
-            DateTime today = DateTime.Now.Date;
+        //    // Controllo se le date sono nel formato corretto yyyy-MM-dd
+        //    if (!DateTime.TryParseExact(dataInizio, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime startDate) ||
+        //        !DateTime.TryParseExact(dataFine, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime endDate))
+        //    {
+        //        TempData["MessaggioErrore"] = "Formato data non valido. Utilizzare il formato gg/mm/aaaa. Ricevuto: " + dataInizio + " - " + dataFine;
+        //        return RedirectToPage();
+        //    }
 
-            // Controllare se la data di inizio � posteriore a quella odierna
-            if (startDate < today)
-            {
-                TempData["MessaggioErrore"] = "La data di inizio non pu� essere posteriore a oggi.";
-                return RedirectToPage();
-            }
+        //    // Ottenere la data odierna
+        //    DateTime today = DateTime.Now.Date;
 
-            // Controllare se la data di fine � precedente alla data di inizio
-            if (endDate < startDate)
-            {
-                TempData["MessaggioErrore"] = "La data di fine non pu� essere precedente alla data di inizio.";
-                return RedirectToPage();
-            }
+        //    // Controllare se la data di inizio � posteriore a quella odierna
+        //    if (startDate < today)
+        //    {
+        //        TempData["MessaggioErrore"] = "La data di inizio non pu� essere posteriore a oggi.";
+        //        return RedirectToPage();
+        //    }
 
-            /*
-            try
-            {
-                // Controllo utente autenticato
-                if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
+        //    // Controllare se la data di fine � precedente alla data di inizio
+        //    if (endDate < startDate)
+        //    {
+        //        TempData["MessaggioErrore"] = "La data di fine non pu� essere precedente alla data di inizio.";
+        //        return RedirectToPage();
+        //    }
 
-                // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="WSP") { throw new Exception("Unauthorized"); }    
 
-                // Imposta il token
-                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+        //    try
+        //    {
+        //        // Controllo utente autenticato
+        //        if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-                // Creare il corpo della richiesta
-                var requestBody = new
-                {
-                    limit = limiteAcqua,
-                    start_date = dataInizio,
-                    end_date = dataFine
-                };
-                var jsonRequest = JsonConvert.SerializeObject(requestBody);
-                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+        //        // Controllo utente autorizzato
+        //        if (ApiReq.utente.Role != "WSP") { throw new Exception("Unauthorized"); }
 
-                // Esegue la chiamata PUT
-                HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
+        //        // Imposta il token
+        //        ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
 
-                if (response.IsSuccessStatusCode)
-                {
-                    // Imposta un messaggio di successo
-                    TempData["MessaggioLimite"] = $"Modifica limite di vendita giornaliero a {limiteAcqua} per il periodo {dataInizio} - {dataFine} effettuata con successo!";
-                }
-                else
-                {
-                    // Imposta un messaggio di errore
-                    TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova pi� tardi.";
-                }
-            }
-            catch (Exception ex)
-            {
-                TempData["MessaggioErrore"] = ex.Message;
-                return RedirectToPage("/Error");
-            }
-            */
+        //        // Creare il corpo della richiesta
+        //        var requestBody = new
+        //        {
+        //            limit = limiteAcqua,
+        //            start_date = dataInizio,
+        //            end_date = dataFine
+        //        };
+        //        var jsonRequest = JsonConvert.SerializeObject(requestBody);
+        //        var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
-            TempData["MessaggioLimite"] = $"Modifica limite di vendita giornaliero a {limiteAcqua} per il periodo {dataInizio} - {dataFine} effettuata con successo!";
-            TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova pi� tardi.";
+        //        // Esegue la chiamata PUT
+        //        HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
 
-            return RedirectToPage();
-        }
-        
+        //        if (response.IsSuccessStatusCode)
+        //        {
+        //            // Imposta un messaggio di successo
+        //            TempData["MessaggioLimite"] = $"Modifica limite di vendita giornaliero a {limiteAcqua} per il periodo {dataInizio} - {dataFine} effettuata con successo!";
+        //        }
+        //        else
+        //        {
+        //            // Imposta un messaggio di errore
+        //            TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova pi� tardi.";
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        TempData["MessaggioErrore"] = ex.Message;
+        //        return RedirectToPage("/Error");
+        //    }
+
+
+        //    TempData["MessaggioLimite"] = $"Modifica limite di vendita giornaliero a {limiteAcqua} per il periodo {dataInizio} - {dataFine} effettuata con successo!";
+        //    TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova pi� tardi.";
+
+        //    return RedirectToPage();
+        //}
+
 
 
         // Chiamata API per modificare il limite di acquisto per le aziende agricole
@@ -364,8 +357,8 @@ namespace frontend.Pages.GestoreIdrico
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
+                    vat_number = partitaIvaAzienda,
                     limit = nuovoLimite,
-                    company_vat_number = partitaIvaAzienda,
                     start_date = startDate, 
                     end_date = endDate
                 };
@@ -394,7 +387,7 @@ namespace frontend.Pages.GestoreIdrico
             */
 
             TempData["MessaggioLimite"] = $"Modifica limite per l'azienda con P.Iva {partitaIvaAzienda} a {nuovoLimite} per il periodo {dataInizio} - {dataFine} effettuata con successo!";
-            TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova pi� tardi.";
+            TempData["MessaggioErroreLimite"] = "Errore durante la modifica. Riprova più tardi.";
 
             return RedirectToPage();
         }

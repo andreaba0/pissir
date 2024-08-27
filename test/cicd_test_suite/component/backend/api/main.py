@@ -5,9 +5,9 @@ import requests
 import time
 
 
-from cicd_test_suite.component.backend.api.routes import ping as test_a1
+from component.backend.api.routes import ping as test_a1
 
-from cicd_test_suite.utility.state import StateManager, Block, State
+from utility.state import StateManager, Block, State
 
 from config.auth_server import auth_server_config
 from config.auth_database_server import auth_database_config

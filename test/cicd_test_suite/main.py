@@ -1,17 +1,16 @@
-import custom_env.main as custom_env
-
-from cicd_test_suite.component.backend.auth.main import AuthMain
-from cicd_test_suite.component.backend.api.main import ApiMain
-from cicd_test_suite.integration.main import IntegrationMain
+from component.backend.auth.main import AuthMain
+from component.backend.api.main import ApiMain
+from integration.main import IntegrationMain
+from custom_env.main import custom_env_routine
 
 
 def main():
     while True:
-        print("1. Run auth testing environment")
-        print("2. Run api testing environment")
-        print("3. Run integration testing environment")
-        print("4. Go live")
-        print("5. Run custom environment")
+        print("1. Run test suite for authentication/authorization Microservice")
+        print("2. Run test suite for API Microservice")
+        print("3. Run integration test suite for both Microservices")
+        print("4. Launch live sample environment")
+        print("5. Run custom custom component")
         print("6. Exit")
         choice = input("Enter your choice: ")
         if choice == "1":
@@ -26,7 +25,7 @@ def main():
         if choice == "6":
             break
         if choice == "5":
-            custom_env.custom_env_routine.start()
+            custom_env_routine.start()
             continue
 
 if __name__ == "__main__":

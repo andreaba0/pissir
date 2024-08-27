@@ -1,4 +1,4 @@
-from cicd_test_suite.utility.docker_lib import client
+from utility.docker_lib import client
 from enum import Enum
 from config.address_manager import address_manager
 import docker

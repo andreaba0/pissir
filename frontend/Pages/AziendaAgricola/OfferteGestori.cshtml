@@ -73,12 +73,12 @@
                         <td>@offerta.PrezzoLitro</td>
                         <td>@offerta.Quantita</td>
                         <td>
-                            <button class="btn btn-primary" data-toggle="modal" data-target="#modalOrdine\@offerta.Id">Acquista</button>
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#modalOrdine_@offerta.Id">Acquista</button>
                         </td>
                     </tr>
 
                     <!-- Modale per l'ordine di acquisto -->
-                    <div id="modalOrdine\@offerta.Id" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalOrdine\@offerta.Id" aria-hidden="true" data-backdrop="true">
+                    <div id="modalOrdine_@offerta.Id" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalOrdine_@offerta.Id" aria-hidden="true" data-backdrop="true">
                         <div class="modal-dialog modal-lg">
                             <div class="modal-content">
                                 <div class="modal-header">
@@ -121,21 +121,20 @@
                                         </div>
                                         <script>
                                             $(document).ready(function () {
-                                                // Aggiungi questo script alla tua pagina
                                                 document.getElementById("colturaSelect_@offerta.Id").addEventListener("change", function () {
                                                     var selectedOption = this.options[this.selectedIndex];
                                                     updateColturaInfo(selectedOption);
                                                 });
 
-                                                $('#modalOrdine\\@offerta.Id').on('shown.bs.modal', function () {
+                                                $('#modalOrdine_@offerta.Id').on('shown.bs.modal', function () {
                                                     // Ottieni l'opzione attualmente selezionata
-                                                    var selectedOption = document.getElementById("colturaSelect_\\@offerta.Id").options[document.getElementById("colturaSelect").selectedIndex];
+                                                    var selectedOption = document.getElementById("colturaSelect_@offerta.Id").options[document.getElementById("colturaSelect").selectedIndex];
                                                     // Aggiorna le stime quando la modale viene aperta
                                                     updateColturaInfo(selectedOption);
                                                 });
 
                                                 function updateColturaInfo(selectedOption) {
-                                                    var colturaInfoDiv = document.querySelector('.coltura-info_\\@offerta.Id');
+                                                    var colturaInfoDiv = document.querySelector('.coltura-info_@offerta.Id');
                                                     var values = selectedOption.value.split('-').map(function (item) {
                                                         return item.trim();
                                                     });

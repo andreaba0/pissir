@@ -2,10 +2,6 @@ using frontend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
-using System.Text;
 
 namespace frontend.Pages.AziendaAgricola
 {
@@ -31,25 +27,30 @@ namespace frontend.Pages.AziendaAgricola
 
                 return Page();
 
-                SensoriLogs = await ApiReq.GetSensoriFromApi(HttpContext);
-                AttuatoriLogs = await ApiReq.GetAttuatoriFromApi(HttpContext);
+                // Richiesta API
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/object/sensor");
+                SensoriLogs = JsonConvert.DeserializeObject<List<SensoreLog>>(data);
+
+                data = await ApiReq.GetDataFromApi(HttpContext, "/object/actuator");
+                AttuatoriLogs = JsonConvert.DeserializeObject<List<AttuatoreLog>>(data);
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                TempData["MessaggioErrore"] = ex.Message;
-                return RedirectToPage("/Error");
+                string statusCode = ex.Message.ToString().ToLower();
+
+                if (statusCode == "unauthorized")
+                {
+                    // Errore 401
+                    TempData["MessaggioErrore"] = "Non sei autorizzato. Effettua prima la richiesta di accesso ai servizi.";
+                    return RedirectToPage("/Error");
+                }
+                else
+                {
+                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                    return RedirectToPage("/Error");
+                }
             }
-            
-
-            // Simulazione dati
-            SensoriLogs = GetSensoriLogs();
-            AttuatoriLogs = GetAttuatoriLogs();
-
-            return Page();
         }
-
-
-
 
 
         // Simulazione dati

@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace frontend.Pages;
 
@@ -17,6 +15,6 @@ public class IndexModel : PageModel
 
     public void OnGet()
     {
-        Welcome = "Benvenuto nel sistema di gestione dell'acqua per aziende idriche e gestori.";
+        Welcome = "Benvenuto nel sistema di gestione dell'acqua per aziende idriche e agricole.";
     }
 }

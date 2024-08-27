@@ -2,8 +2,6 @@ using frontend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
-using System.Net.Http.Headers;
-using System.Text;
 
 namespace frontend.Pages.GestoreIdrico
 {
@@ -13,7 +11,6 @@ namespace frontend.Pages.GestoreIdrico
 
         public async Task<IActionResult> OnGet()
         {
-            
             try
             {
                 // Controllo utente autenticato
@@ -27,19 +24,15 @@ namespace frontend.Pages.GestoreIdrico
 
                 return Page();
 
-                Acquisti = await ApiReq.GetStoricoVenditeFromApi(HttpContext);
+                // Richiesta API
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/order");
+                Acquisti = JsonConvert.DeserializeObject<List<OrdineAcquisto>>(data);
             }
             catch (Exception ex)
             {
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            
-
-            // Simulazione dati
-            Acquisti = GetListaAcquisti();
-
-            return Page();
         }
 
 

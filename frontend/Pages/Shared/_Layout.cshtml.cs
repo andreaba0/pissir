@@ -9,8 +9,9 @@
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return Page();
 
-                // Chiamata alle API per ottenere i dati
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
+                // Richiesta API
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/profile");
+                ApiReq.utente = JsonConvert.DeserializeObject<Utente>(data);
 
                 return Page();
             }
@@ -19,10 +20,6 @@
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            
-
-
-            return Page();           
         }
     }
 }

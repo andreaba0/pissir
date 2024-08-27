@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using System.Net.Http.Headers;
-using System.Text;
 using frontend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
+using System.Net.Http.Headers;
+using System.Text;
 
 namespace frontend.Pages.AziendaAgricola
 {
@@ -17,7 +16,6 @@ namespace frontend.Pages.AziendaAgricola
 
         public async Task<IActionResult> OnGet()
         {
-            
             try
             {
                 // Controllo utente autenticato
@@ -34,26 +32,43 @@ namespace frontend.Pages.AziendaAgricola
 
                 return Page();
 
-                // Chiamate alle API
-                Offerte = await ApiReq.GetOfferteIdricheFromApi(HttpContext);
-                Colture = await ApiReq.GetColtureAziendaFromApi(HttpContext);
-                LimiteAcquistoAzienda = await ApiReq.GetLimiteAcquistoAziendaFromApi(HttpContext);
-                CampiAcquaStimata = await ApiReq.GetStimeCampiPerAziendaFromApi(HttpContext);
+                // Richiesta API
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/offer");
+                Offerte = JsonConvert.DeserializeObject<List<Offerta>>(data);
+
+                data = await ApiReq.GetDataFromApi(HttpContext, "/field");
+                Colture = JsonConvert.DeserializeObject<List<Coltura>>(data);
+
+                data = await ApiReq.GetDataFromApi(HttpContext, "/water/limit");
+                LimiteAcquistoAzienda = JsonConvert.DeserializeObject<float>(data);
+
+                foreach (Coltura campo in Colture)
+                {
+                    data = await ApiReq.GetDataFromApi(HttpContext, "/water/recommendation/"+campo.Id);
+                    AcquaStimata new_item = JsonConvert.DeserializeObject<AcquaStimata>(data);
+                    new_item.CampoId = campo.Id;
+                    CampiAcquaStimata.Add(new_item);
+                }
+
+                //data = await ApiReq.GetDataFromApi(HttpContext, "/water/recommendation");
+                //CampiAcquaStimata = JsonConvert.DeserializeObject<List<AcquaStimata>>(data);
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                TempData["MessaggioErrore"] = ex.Message;
-                return RedirectToPage("/Error");
+                string statusCode = ex.Message.ToString().ToLower();
+
+                if (statusCode == "unauthorized")
+                {
+                    // Errore 401
+                    TempData["MessaggioErrore"] = "Non sei autorizzato. Effettua prima la richiesta di accesso ai servizi.";
+                    return RedirectToPage("/Error");
+                }
+                else
+                {
+                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                    return RedirectToPage("/Error");
+                }
             }
-            
-
-            // Simulazione dati
-            Offerte = GetListaOfferte();
-            Colture = GetListaColture();
-            CampiAcquaStimata = GetAcquaSitmata();
-            LimiteAcquistoAzienda = 500.0f;
-
-            return Page();
         }
 
         
@@ -122,7 +137,7 @@ namespace frontend.Pages.AziendaAgricola
             */
 
             TempData["Messaggio"] = $"Risorse idriche acquistate ( {quantitaAcquisto}L ) dall'offerta con ID: {offertaId} per il campo con ID: {colturaId}";
-            TempData["MessaggioErrore"] = "Errore durante l'acquisto. Riprova pi� tardi.";
+            TempData["MessaggioErrore"] = "Errore durante l'acquisto. Riprova più tardi.";
 
             
             return RedirectToPage();

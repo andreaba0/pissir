@@ -1,7 +1,52 @@
 ﻿@page
+@using Newtonsoft.Json
+@using frontend.Models
 @model frontend.Pages.auth.SignToFarmModel
 @{
     Layout = null;
+
+    // Richiesta dati di una eventuale richiesta passata
+    try
+    {
+        IDictionary<string, string> payload = new Dictionary<string, string>();
+        Model.utenteAp = new UtenteAp
+        {
+            Id =  null,
+            Nome =  null,
+            Cognome =  null,
+            Email = null,
+            CodiceFiscale = null
+        };
+        string data = await ApiReq.GetDataFromApi(HttpContext, "/service/my_application", false);
+        Model.utenteAp = JsonConvert.DeserializeObject<UtenteAp>(data);
+
+        if (Model.utenteAp == null)
+        {
+            TempData["MessaggioErrore"] = "Si è verificato un errore durante l'accesso. ";
+        }
+
+        // se l'utente ha già inserito i dati 
+        Model.isAlreadyRequest = true;
+    }
+    catch (HttpRequestException ex)
+    {
+        switch (ex.Message.ToString().ToLower())
+        {
+            case "badrequest":
+                TempData["MessaggioErrore"] = "Errore 400. Utente già accettato nel sistema.";
+                break;
+            case "unauthorized":
+                TempData["MessaggioErrore"] = "Errore 401. Non autorizzato.";
+                break;
+            case "notfound":
+                //TempData["MessaggioErrore"] = "Errore 404. Richiesta d'adesione non trovata.";
+                break;
+            default:
+                TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                break;
+        } 
+    }
+    
 }
 
 <!DOCTYPE html>
@@ -30,8 +75,15 @@
     <div class="center-content" style="text-align:left;">
         <h4 style="text-align:center;">Inserisci i tuoi dati</h4>
         <hr style="margin-top: 0.5em; margin-bottom: 1em;">
-
-        <label>Completa l'adesione inserendo i dati mancanti:</label>
+        @if (Model.isAlreadyRequest)
+        {
+            <label>Richiesta di adesione <b>inviata</b>. Attendi di essere accettato nel sistema.</label>
+        }
+        else
+        {
+            <label>Completa l'adesione inserendo i dati mancanti:</label>
+        }
+        
                         
         <form method="post" asp-page-handler="Iscriviti" class="w-100">
             <div class="form-group">
@@ -66,7 +118,7 @@
 
             <div class="form-group">
                 <label>Codice Fiscale</label>
-                <input type="text" class="form-control" name="codiceFiscale" placeholder="Inserisci il tuo codice fiscale" value="@Model.utenteAp.CodiceFiscale" required
+                <input type="text" class="form-control" name="codiceFiscale" placeholder="Inserisci il tuo codice fiscale" value="@Model.utenteAp.CodiceFiscale" pattern=".{16}" title="La partita IVA deve essere composta da 16 caratteri" maxlength="16" required
                 @if (Model.utenteAp.CodiceFiscale != null)
                 {
                     <text>readonly</text>
@@ -77,7 +129,7 @@
             <div class="form-group row">
                 <div class="col-md-8">
                     <label>Partita Iva</label>
-                    <input type="text" class="form-control" name="partitaIva" placeholder="Partita Iva dell'azienda in cui lavorerai" style="margin-right: 1em;" value="@Model.utenteAp.PartitaIva" required
+                    <input type="text" class="form-control" name="partitaIva" placeholder="Partita Iva dell'azienda in cui lavorerai" style="margin-right: 1em;" value="@Model.utenteAp.PartitaIva" pattern=".{11}" title="La partita IVA deve essere composta da 11 caratteri" maxlength="11" required
                     @if (Model.utenteAp.PartitaIva != null)
                     {
                         <text>readonly</text>
@@ -107,14 +159,24 @@
                     }
                 </div>
             </div>
-
-            <button type="submit" class="btn btn-primary" id="iscrivitiButton">Invia richiesta</button>
-
+            @if (Model.isAlreadyRequest)
+            {
+                <button type="submit" class="btn btn-primary" id="iscrivitiButton" disabled>Invia richiesta</button>
+            }
+            else
+            {
+                <button type="submit" class="btn btn-primary" id="iscrivitiButton">Invia richiesta</button>
+            }
+            
+            
         </form>
-        <a class="link-login" href="/auth/AuthPeriod">Shortcut Periodo</a>
+        <form method="post" asp-page-handler="Annulla" style="margin-top: 0.5em;">
+            <button type="submit" class="btn btn-secondary">Esci / Torna al login</button>
+        </form>
         
         @if (TempData.ContainsKey("Messaggio"))
         {
+            <br />
             <div class="alert alert-info" role="alert">
                 @TempData["Messaggio"]
             </div>
@@ -122,6 +184,7 @@
 
         @if (TempData.ContainsKey("MessaggioErrore"))
         {
+            <br />
             <div class="alert alert-danger" role="alert">
                 @TempData["MessaggioErrore"]
             </div>

@@ -1,0 +1,1 @@
+__package__ = 'cicd_test_suite'

@@ -24,5 +24,9 @@ namespace frontend.Models
 
         [JsonProperty("company_vat_number")]
         public string PartitaIva { get; set; }
+
+        [JsonProperty("tax_code")]
+        public string CodiceFiscale {  get; set; }
     }
+    
 }

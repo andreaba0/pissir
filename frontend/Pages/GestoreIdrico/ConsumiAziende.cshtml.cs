@@ -2,8 +2,6 @@ using frontend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
-using System.Net.Http.Headers;
-using System.Text;
 
 namespace frontend.Pages.GestoreIdrico
 {
@@ -27,19 +25,15 @@ namespace frontend.Pages.GestoreIdrico
 
                 return Page();
 
-                consumiAziende = await ApiReq.GetConsumoAziendeFromApi(HttpContext);
+                // Richiesta API
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/consumption");
+                consumiAziende = JsonConvert.DeserializeObject<List<ConsumoAziendaleCampo>>(data);
             }
             catch (Exception ex)
             {
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            
-
-            // Simulazione Dati
-            consumiAziende = GetStoricoConsumi();
-
-            return Page();
         }
 
 

@@ -9,20 +9,13 @@
 <div style="margin: 1em;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h4>Gestione colture</h4>
-        @if (ApiReq.utente.Role == "FAR")
-        {
-            <button class="btn btn-primary" data-toggle="modal" data-target="#modalNuovaColtura">Aggiungi Coltura</button>
-        }
-        else
-        {
-            <button class="btn btn-primary" data-toggle="modal" data-target="#modalNuovaColtura" disabled>Aggiungi Coltura</button>
-        }
+        <button class="btn btn-primary" data-toggle="modal" data-target="#modalNuovaColtura">Aggiungi Coltura</button>
     </div>
     <small>• Vengono visualizzati tutti le coltivazioni dell'azienda agricola.</small>
 
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
-    @if (ApiReq.utente.Role == "FAR")
+    @if (ApiReq.utente.Role == "FA")
     {
         <!-- Modale per l'aggiunta di una nuova coltura -->
         <div id="modalNuovaColtura" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalNuovaColtura" data-backdrop="true">

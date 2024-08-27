@@ -28,27 +28,30 @@
 
     <!-- Parte centrale -->
     <div class="flex-container @(ViewData["Page"] as string == "Index" ? "hide-aside" : "")">
-        
-        @if (ApiReq.utente.Role=="WA")
+        @if (ApiReq.utente != null && ApiReq.utente.Role != null)
         {
-            <aside>
-                <a href="/DatiAccount" class="@((ViewData["Page"] as string == "Dati Account") ? "current-page" : "")">Dati account</a>
-                <a href="/GestoreIdrico/OffertaLimiti" class="@((ViewData["Page"] as string == "Offerta e limiti") ? "current-page" : "")">Offerta e limiti</a>
-                <a href="/GestoreIdrico/AdesioneSistema" class="@((ViewData["Page"] as string == "Adesione Sistema") ? "current-page" : "")">Adesione Sistema</a>
-                <a href="/GestoreIdrico/ConsumiAziende" class="@((ViewData["Page"] as string == "Consumi Aziende") ? "current-page" : "")">Consumi Aziende</a>
-                <a href="/GestoreIdrico/StoricoVendite" class="@((ViewData["Page"] as string == "Storico Vendite") ? "current-page" : "")">Storico Vendite</a>
-            </aside>
-        }
-        else if (ApiReq.utente.Role == "FA")
-        {
-            <aside>
-                <a href="/DatiAccount" class="@((ViewData["Page"] as string == "Dati Account") ? "current-page" : "")">Dati account</a>
-                <a href="/AziendaAgricola/GestioneColture" class="@((ViewData["Page"] as string == "Gestione Colture") ? "current-page" : "")">Gestione Colture</a>
-                <a href="/AziendaAgricola/OfferteGestori" class="@((ViewData["Page"] as string == "Offerte Gestori") ? "current-page" : "")">Offerte Gestori</a>
-                <a href="/AziendaAgricola/StoricoOrdini" class="@((ViewData["Page"] as string == "Storico Ordini") ? "current-page" : "")">Storico Ordini</a>
-                <a href="/AziendaAgricola/StoricoConsumi" class="@((ViewData["Page"] as string == "Storico Consumi") ? "current-page" : "")">Storico Consumi</a>
-                <a href="/AziendaAgricola/StoricoDispositivi" class="@((ViewData["Page"] as string == "Storico Dispositivi") ? "current-page" : "")">Storico Dispositivi</a>  
-            </aside>
+            @if (ApiReq.utente.Role == "WA")
+            {
+                <aside>
+                    <a href="/DatiAccount" class="@((ViewData["Page"] as string == "Dati Account") ? "current-page" : "")">Dati account</a>
+                    <a href="/GestoreIdrico/OffertaLimiti" class="@((ViewData["Page"] as string == "Offerta e limiti") ? "current-page" : "")">Offerta e limiti</a>
+                    <a href="/GestoreIdrico/AdesioneSistema" class="@((ViewData["Page"] as string == "Adesione Sistema") ? "current-page" : "")">Adesione sistema</a>
+                    <a href="/GestoreIdrico/ConsumiAziende" class="@((ViewData["Page"] as string == "Consumi Aziende") ? "current-page" : "")">Consumi aziende</a>
+                    <a href="/GestoreIdrico/StoricoVendite" class="@((ViewData["Page"] as string == "Storico Vendite") ? "current-page" : "")">Storico vendite</a>
+                </aside>
+            }
+            else if (ApiReq.utente.Role == "FA")
+            {
+                <aside>
+                    <a href="/DatiAccount" class="@((ViewData["Page"] as string == "Dati Account") ? "current-page" : "")">Dati account</a>
+                    <a href="/AziendaAgricola/AuthPeriod" class="@((ViewData["Page"] as string == "Accesso Servizi") ? "current-page" : "")">Accesso ai servizi</a>
+                    <a href="/AziendaAgricola/GestioneColture" class="@((ViewData["Page"] as string == "Gestione Colture") ? "current-page" : "")">Gestione colture</a>
+                    <a href="/AziendaAgricola/OfferteGestori" class="@((ViewData["Page"] as string == "Offerte Gestori") ? "current-page" : "")">Offerte gestori</a>
+                    <a href="/AziendaAgricola/StoricoOrdini" class="@((ViewData["Page"] as string == "Storico Ordini") ? "current-page" : "")">Storico ordini</a>
+                    <a href="/AziendaAgricola/StoricoConsumi" class="@((ViewData["Page"] as string == "Storico Consumi") ? "current-page" : "")">Storico consumi</a>
+                    <a href="/AziendaAgricola/StoricoDispositivi" class="@((ViewData["Page"] as string == "Storico Dispositivi") ? "current-page" : "")">Storico dispositivi</a>
+                </aside>
+            }
         }
 
         <!-- Main -->

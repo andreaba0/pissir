@@ -1,5 +1,4 @@
 using frontend.Models;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
@@ -14,15 +13,15 @@ namespace frontend.Pages
         
         public async Task<IActionResult> OnGet()
         {
-            
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-                // Chiamata alle API per ottenere i dati
-                azienda = await ApiReq.GetAziendaDataFromApi(HttpContext);
-                Console.WriteLine("Azienda: " + azienda);
+                // Richiesta API
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/company");
+                azienda = JsonConvert.DeserializeObject<Azienda>(data);
+
                 return Page();
 
             }
@@ -31,12 +30,6 @@ namespace frontend.Pages
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            
-
-            //azienda = GetAziendaTest();
-            
-            // Continua con la generazione della pagina
-            return Page();
         }
 
         public async Task<IActionResult> OnPostAggiornaDatiAzienda(string partitaIva, string nomeAzienda, string indirizzoAzienda, string telefonoAzienda, string emailAzienda, string categoria)
@@ -59,7 +52,7 @@ namespace frontend.Pages
                     company_name = nomeAzienda,
                     working_address = indirizzoAzienda,
                     working_phone_number = telefonoAzienda,
-                    working_email = emailAzienda,
+                    working_email_address = emailAzienda,
                     industry_sector = categoria
                 };
 
@@ -94,10 +87,8 @@ namespace frontend.Pages
             return RedirectToPage();
         }
 
-
-
         // Funzione per effettuare il logout
-        public async Task<IActionResult> OnPostLogout()
+        public IActionResult OnPostLogout()
         {
             // Cancella il cookie del token
             Response.Cookies.Delete("Token");
@@ -105,29 +96,6 @@ namespace frontend.Pages
             // Reindirizza alla pagina di accesso
             return RedirectToPage("/auth/SignIn");
         }
-
-
-
-
-
-
-        // Simula i dati di un'azienda
-        private Azienda GetAziendaTest()
-        {
-            return new Azienda
-            {
-                PartitaIva = "1234567890",
-                Nome = "Azienda Rossa",
-                Indirizzo = "Via delle Campagne, 123",
-                Telefono = "0123456789",
-                Email = "info@azienda.com",
-                Categoria = "FA" //FA, WA
-            };
-        }
-
-
-
-
 
     }
 }

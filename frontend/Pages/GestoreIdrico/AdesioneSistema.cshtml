@@ -9,7 +9,7 @@
 <div style="margin: 1em;">
 
     <h4>Adesione Sistema</h4>
-    <small>• Elenco delle richieste di adesione per utenti e richieste del periodo di accesso ai servizi.</small>
+    <small>• Elenco delle richieste di adesione per i nuovi utenti ed elenco delle richieste di accesso ai servizi per gli utenti già registrati. </small>
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
 
     @if (TempData.ContainsKey("Messaggio"))
@@ -26,7 +26,7 @@
         </div>
     }
 
-    <h5>Richieste di adesione - Utenti</h5>
+    <h5>Richieste di adesione al sistema per nuovi utenti</h5>
     @if (Model.RichiesteUtenti == null || Model.RichiesteUtenti.Count == 0)
     {
         <label>Nessuna richiesta in attesa.</label>
@@ -36,7 +36,7 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>Id</th>
+                    @* <th>Id</th> *@
                     <th>Email</th>
                     <th>Codice Fiscale</th>
                     <th>Nome</th>
@@ -50,7 +50,7 @@
                 @foreach (var utenteAp in Model.RichiesteUtenti)
                 {
                     <tr>
-                        <td>@utenteAp.Id</td>
+                        @* <td>@utenteAp.Id</td> *@
                         <td>@utenteAp.Email</td>
                         <td>@utenteAp.CodiceFiscale</td>
                         <td>@utenteAp.Nome</td>
@@ -86,7 +86,7 @@
 
     <hr style="margin-top: 0.5em; margin-bottom: 1em;">
     
-    <h5>Richieste di accesso - Utenti per periodo</h5>
+    <h5>Richieste di accesso ai servizi per utenti registrati</h5>
     @if (Model.RichiestePeriodo == null || Model.RichiestePeriodo.Count == 0)
     {
         <label>Nessuna richiesta in attesa.</label>
@@ -96,7 +96,7 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>Id</th>
+                   @*  <th>Id</th> *@
                     <th>Email</th>
                     <th>Codice Fiscale</th>
                     <th>Nome</th>
@@ -111,7 +111,7 @@
                 @foreach (var utentePeriodo in Model.RichiestePeriodo)
                 {
                     <tr>
-                        <td>@utentePeriodo.Id</td>
+                        @* <td>@utentePeriodo.Id</td> *@
                         <td>@utentePeriodo.Email</td>
                         <td>@utentePeriodo.CodiceFiscale</td>
                         <td>@utentePeriodo.Nome</td>

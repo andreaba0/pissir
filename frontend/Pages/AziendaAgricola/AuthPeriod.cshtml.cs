@@ -3,40 +3,48 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
-using System.Net.Http;
 using System.Text;
 using System.Globalization;
 
-namespace frontend.Pages.auth
+namespace frontend.Pages.AziendaAgricola
 {
     public class AuthPeriodModel : PageModel
     {
+        public List<UtentePeriodo>? requestList { get; set; }
+
         public async Task<IActionResult> OnGet()
         {
-            /*
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
-                // Chiamata alle API per ottenere i dati
-                ApiReq.utente = await ApiReq.GetUserDataFromApi(HttpContext);
-
                 if (ApiReq.utente == null)
                 {
-                    ViewData["ErrorMessage"] = "Si è verificato un errore durante l'accesso. ";
+                    TempData["MessaggioErrore"] = "Si Ã¨ verificato un errore durante l'accesso. ";
                     return RedirectToPage("/Error");
                 }
+
+                if (ApiReq.utente.Role == "FA")
+                {
+                    return Page();
+                }
+                else if (ApiReq.utente.Role == "WA")
+                {
+                    return RedirectToPage("/DatiAccount");
+                }
+                else
+                {
+                    TempData["MessaggioErrore"] = "Non sei autorizzato a visualizzare questa pagina. ";
+                    return RedirectToPage("/Error");
+                }
+
             }
             catch (Exception ex)
             {
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
-
-
-            return Page();           
         }
 
 
@@ -48,31 +56,31 @@ namespace frontend.Pages.auth
             if (!DateTime.TryParseExact(dataInizio, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime startDate) ||
                 !DateTime.TryParseExact(dataFine, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime endDate))
             {
-                TempData["MessaggioErrore"] = "Formato data non valido. Utilizzare il formato gg/mm/aaaa. Ricevuto: "+ dataInizio +" - "+dataFine;
+                TempData["MessaggioErrore"] = "Formato data non valido. Utilizzare il formato gg/mm/aaaa. Ricevuto: " + dataInizio + " - " + dataFine;
                 return RedirectToPage();
             }
 
             // Ottenere la data odierna
             DateTime today = DateTime.Now.Date;
 
-            // Controllare se la data di inizio è posteriore a quella odierna
+            // Controllare se la data di inizio Ã¨ posteriore a quella odierna
             if (startDate < today)
             {
-                TempData["MessaggioErrore"] = "La data di inizio non può essere posteriore a oggi.";
+                TempData["MessaggioErrore"] = "La data di inizio non puÃ² essere posteriore a oggi.";
                 return RedirectToPage();
             }
 
-            // Controllare se la data di fine è precedente alla data di inizio
+            // Controllare se la data di fine Ã¨ precedente alla data di inizio
             if (endDate < startDate)
             {
-                TempData["MessaggioErrore"] = "La data di fine non può essere precedente alla data di inizio.";
+                TempData["MessaggioErrore"] = "La data di fine non puÃ² essere precedente alla data di inizio.";
                 return RedirectToPage();
             }
 
-            
+
             try
             {
-                /*
+
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
@@ -99,12 +107,8 @@ namespace frontend.Pages.auth
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova piÃ¹ tardi.";
                 }
-                */
-
-                //TempData["Messaggio"] = "Richiesta periodo di accesso al sistema da " + dataInizio + " a " + dataFine + " effettuata con successo!";
-                TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
 
                 return RedirectToPage();
             }
@@ -113,7 +117,7 @@ namespace frontend.Pages.auth
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            
+
         }
 
     }

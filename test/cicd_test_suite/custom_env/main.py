@@ -8,7 +8,7 @@ from image import proxy_server
 
 import json
 
-from cicd_test_suite.utility import docker_lib
+from utility import docker_lib
 
 client = docker_lib.client.get_client()
 
@@ -16,6 +16,7 @@ from config.auth_server import auth_server_config
 from config.mosquitto_server import mosquitto_server_config
 from config.auth_database_server import auth_database_config
 from config.oauth_server import oauth_server_config
+from config.proxy_server import proxy_server_config
 
 class custom_env_routine:
 
@@ -125,5 +126,8 @@ class custom_env_routine:
                 continue
             if choice == "6":
                 cer.run_latest(oauth_server_config, oauth_server.oauth_server)
+                continue
+            if choice == "7":
+                cer.run_latest(proxy_server_config, proxy_server.proxy_server)
                 continue
             break

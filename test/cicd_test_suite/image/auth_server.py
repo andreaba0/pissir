@@ -11,11 +11,10 @@ class auth_server:
 
     def run(name_with_tag, env_list):
         print("Creating container")
-        # container_name = f"{auth_server_config['image_name']}_{actual time in seconds}"
-        container_name = f"{auth_server_config['image_name']}_{int(time.time())}"
+        container_name = auth_server_config["image_name"]
         container = client.containers.run(
             name_with_tag,
-            #name=container_name,
+            name=container_name,
             environment=env_list,
             ports={f"{auth_server_config['internal_port']}/tcp": auth_server_config['exposed_port']},
             detach=True,

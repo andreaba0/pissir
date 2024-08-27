@@ -5,20 +5,20 @@ import requests
 import time
 
 
-from cicd_test_suite.component.backend.auth.routes.service.application import test_1 as test_a1 
-from cicd_test_suite.component.backend.auth.routes.service.application import test_2 as test_a2 
-from cicd_test_suite.component.backend.auth.routes.service.application import test_3 as test_a3 
-from cicd_test_suite.component.backend.auth.routes.service.application import test_4 as test_a4
+from component.backend.auth.routes.service.application import test_1 as test_a1 
+from component.backend.auth.routes.service.application import test_2 as test_a2 
+from component.backend.auth.routes.service.application import test_3 as test_a3 
+from component.backend.auth.routes.service.application import test_4 as test_a4
 
-from cicd_test_suite.component.backend.auth.routes.profile import test_1 as test_p1
+from component.backend.auth.routes.profile import test_1 as test_p1
 
-from cicd_test_suite.component.backend.auth.routes.company import test_1 as test_c1
-from cicd_test_suite.component.backend.auth.routes.company import test_2 as test_c2
+from component.backend.auth.routes.company import test_1 as test_c1
+from component.backend.auth.routes.company import test_2 as test_c2
 
-from cicd_test_suite.component.backend.auth.routes.apiaccess import test_1 as test_api1
-from cicd_test_suite.component.backend.auth.routes.apiaccess import test_2 as test_api2
+from component.backend.auth.routes.apiaccess import test_1 as test_api1
+from component.backend.auth.routes.apiaccess import test_2 as test_api2
 
-from cicd_test_suite.utility.state import StateManager, Block, State
+from utility.state import StateManager, Block, State
 
 from config.auth_server import auth_server_config
 from config.auth_database_server import auth_database_config

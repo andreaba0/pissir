@@ -14,7 +14,12 @@
       "launchBrowser": true,
       "applicationUrl": "http://localhost:80",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ipbackend": "http://localhost:8000",
+        "googleClientId": "218970200448-62ddcs49ilsub6a1r1l2k2vpd84elkqs.apps.googleusercontent.com",
+        "googleSecretId": "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",
+        "facebookClientId": "709636884633879",
+        "facebookSecretId": "f502cde6c8b5dec3d1046ceef2aa78e8"
       }
     },
     "https": {

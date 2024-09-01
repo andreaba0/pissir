@@ -9,7 +9,7 @@ using System.Data.Common;
 using Module.JsonWebToken;
 using Module.KeyManager;
 using Utility;
-using Module.WebServer;
+using Main_Processes;
 
 class Program
 {
@@ -50,6 +50,7 @@ class Program
         string mqttPassword = GetProperty(configuration, "mqtt:password");
         string mqttPoolSize = GetProperty(configuration, "mqtt:poolSize");
         string mqttPerClientCapacity = GetProperty(configuration, "mqtt:perClientCapacity");
+        string mqttTopicSchema = GetProperty(configuration, "mqtt:topic");
 
         string postgresHost = GetProperty(configuration, "database:host");
         string postgresPort = GetProperty(configuration, "database:port");
@@ -93,6 +94,26 @@ class Program
             webserverBound
         );
 
+        MqttHeadRoutine headRoutine = new MqttHeadRoutine(
+            mqttTopicSchema,
+            dataSource,
+            mqttChannel
+        );
+
+        Task headTask = Task.Factory.StartNew(() => {
+            try {
+                headRoutine.RunAsync(cts.Token).Wait();
+            } catch (AggregateException e) {
+                e.Handle((ex) => {
+                    if (ex is OperationCanceledException) {
+                        Console.WriteLine("HeadTask cancelled");
+                        return true;
+                    }
+                    return false;
+                });
+            }
+        }, TaskCreationOptions.LongRunning);
+
         Task keyManagerTask = Task.Factory.StartNew(() => {
             try {
                 remoteKeyManager.RunAsync(cts.Token).Wait();
@@ -130,6 +151,7 @@ class Program
         mqttTask.Wait();
         keyManagerTask.Wait();
         webServerTask.Wait();
+        headTask.Wait();
 
         Console.WriteLine("Exiting...");
         return 0;

@@ -92,13 +92,50 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
                 clientChannel,
                 this.demuxChannel
             );
-            workers[currentId] = new Task(() => mqttClients[currentId].RunClient(ct), ct);
+            workers[currentId] = Task.Factory.StartNew(() => {
+                try {
+                    mqttClients[currentId].RunClient(ct).Wait();
+                } catch (AggregateException e) {
+                    e.Handle((ex) => {
+                        if (ex is OperationCanceledException) {
+                            Console.WriteLine("MqttClientTask cancelled");
+                            return true;
+                        }
+                        return false;
+                    });
+                }
+            }, TaskCreationOptions.LongRunning);
         }
-        workers[cData.poolSize] = MessageDispatcherRoutine(ct);
-        workers[cData.poolSize + 1] = MessageDemuxRoutine(ct);
+        workers[cData.poolSize] = Task.Factory.StartNew(() => {
+            try {
+                MessageDispatcherRoutine(ct).Wait();
+            } catch (AggregateException e) {
+                e.Handle((ex) => {
+                    if (ex is OperationCanceledException) {
+                        Console.WriteLine("MessageDispatcherTask cancelled");
+                        return true;
+                    }
+                    return false;
+                });
+            }
+        }, TaskCreationOptions.LongRunning);
+        workers[cData.poolSize + 1] = Task.Factory.StartNew(() => {
+            try {
+                MessageDemuxRoutine(ct).Wait();
+            } catch (AggregateException e) {
+                e.Handle((ex) => {
+                    if (ex is OperationCanceledException) {
+                        Console.WriteLine("MessageDemuxTask cancelled");
+                        return true;
+                    }
+                    return false;
+                });
+            }
+        }, TaskCreationOptions.LongRunning);
 
         try {
-            Console.WriteLine(typeof(OperationCanceledException));
+            //Console.WriteLine(typeof(OperationCanceledException));
+            Console.WriteLine("MQTTnetConcurrent started");
             await Task.WhenAll(workers);
         } catch (Exception) {
             //log the state of the tasks
@@ -131,17 +168,16 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
             }
             if (message is MqttChannelSubscribeCommand mqttSubscription)
             {
-                string Topic = ConnectionData.ParseTopic(mqttSubscription.Topic);
-                if(Topic==string.Empty) continue;
-                string idempotentTopic = "$share/"+this.ServerTopic+"/" + Topic;
-                Console.WriteLine($"Subscribing to {idempotentTopic}");
+                Console.WriteLine($"1 Subscribing to {mqttSubscription.Topic}");
+                string idempotentTopic = "$share/"+this.ServerTopic+"/" + mqttSubscription.Topic;
+                Console.WriteLine($"2 Subscribing to {idempotentTopic}");
                 MqttChannelSubscribe pubsubMessage = new MqttChannelSubscribe(idempotentTopic);
                 this.dispatcher.PushAll(pubsubMessage);
-                if (!this.subscriptionChannels.ContainsKey(Topic))
+                if (!this.subscriptionChannels.ContainsKey(idempotentTopic))
                 {
-                    this.subscriptionChannels[Topic] = new List<Channel<IMqttChannelMessage>>();
+                    this.subscriptionChannels[idempotentTopic] = new List<Channel<IMqttChannelMessage>>();
                 }
-                this.subscriptionChannels[Topic].Add(mqttSubscription.Channel);
+                this.subscriptionChannels[idempotentTopic].Add(mqttSubscription.Channel);
                 continue;
             }
             if (message is MqttChannelUnsubscribeCommand mqttUnsubscription)

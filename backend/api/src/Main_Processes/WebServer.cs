@@ -16,7 +16,7 @@ using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 
-namespace Module.WebServer;
+namespace Main_Processes;
 
 public class WebServer
 {

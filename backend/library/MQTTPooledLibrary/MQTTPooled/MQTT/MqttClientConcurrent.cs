@@ -72,6 +72,7 @@ public class MqttClientConcurrent
             IMqttBusPacket message = await this.sendChannel.Reader.ReadAsync(ct);
             if (message is Message.MqttChannelSubscribe subscribeMessage)
             {
+                Console.WriteLine($"Client is subscribing to topic {subscribeMessage.Topic}");
                 ProcessTopicSubscription(subscribeMessage);
                 continue;
             }

@@ -10,6 +10,7 @@ appsettings.Staging.json
 appsettings.Testing.json
 appsettings.json
 frontend/wwwroot/css/
+launchSettings.json
 *.pem
 target/
 key*

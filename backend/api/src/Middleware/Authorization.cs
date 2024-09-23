@@ -101,12 +101,20 @@ public class Authorization {
 }
 
 public class AuthorizationException : Exception {
-
+    public ErrorCode Code { get; private set; }
     public enum ErrorCode {
         GENERIC_ERROR = 0,
         USER_NOT_FOUND = 1,
-        AUTHORIZATION_TYPE_UNKNOWN = 2
+        AUTHORIZATION_TYPE_UNKNOWN = 2,
+        INVALID_AUTHORIZATION_HEADER = 3,
+        BEARER_SCHEME_REQUIRED = 4,
+        FARM_SCHEME_REQUIRED = 5,
+        INTERNAL_SCHEME_REQUIRED = 6,
+        INVALID_ROLE = 7
     }
 
-    public AuthorizationException(string message) : base(message) { }
+    public AuthorizationException(string message) : base(message) {}
+    public AuthorizationException(ErrorCode code, string message) : base(message) {
+        this.Code = code;
+    }
 }

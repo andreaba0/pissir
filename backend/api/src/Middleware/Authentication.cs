@@ -154,7 +154,7 @@ public class AuthenticationException : Exception
         INCORRECT_AUTHORIZATION_SCHEME = 16,
         INCORRECT_AUTHORIZATION_HEADER = 17,
         MISSING_AUTHORIZATION_TOKEN_IN_HEADER = 18,
-        MISSING_AUTHORIZATION_HEADER = 19,
+        MISSING_AUTHORIZATION_HEADER = 19
     }
 
     public ErrorCode Code { get; } = default(ErrorCode);

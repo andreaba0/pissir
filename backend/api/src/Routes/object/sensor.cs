@@ -26,25 +26,7 @@ public class SensorRoute {
         IDateTimeProvider dateTimeProvider,
         RemoteManager remoteManager
     ) {
-        bool ok = false;
-        string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
-        ok = Authorization.tryParseAuthorizationHeader(bearer_token, out Authorization.Scheme _scheme, out string _token, out string error_message);
-        if(!ok) {
-            throw new AuthorizationException(AuthorizationException.ErrorCode.INVALID_AUTHORIZATION_HEADER, "Invalid authorization header");
-        }
-        if (_scheme != Authorization.Scheme.Bearer) {
-            throw new AuthorizationException(AuthorizationException.ErrorCode.INVALID_AUTHORIZATION_HEADER, "Bearer scheme required");
-        }
-        Token token = Authentication.VerifiedPayload(_token, remoteManager, dateTimeProvider);
-        User user = new User(
-            global_id: token.sub,
-            role: token.role,
-            company_vat_number: token.company_vat_number
-        );
-
-        if (User.GetRole(user) != User.Role.FA) {
-            throw new AuthorizationException(AuthorizationException.ErrorCode.INVALID_ROLE, "Only FA users can access this route");
-        }
+        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.FA });
 
         using DbConnection connection = dataSource.OpenConnection();
 

@@ -28,23 +28,7 @@ public class WaterOrderRoute
         RemoteManager remoteManager
     )
     {
-        bool ok = false;
-        string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
-        ok = Authorization.tryParseAuthorizationHeader(bearer_token, out Authorization.Scheme _scheme, out string _token, out string error_message);
-        if (!ok)
-        {
-            throw new WaterLimitException(WaterLimitException.ErrorCode.INVALID_AUTHORIZATION_HEADER, error_message);
-        }
-        if (_scheme != Authorization.Scheme.Bearer)
-        {
-            throw new WaterLimitException(WaterLimitException.ErrorCode.INVALID_AUTHORIZATION_HEADER, "Bearer scheme required");
-        }
-        Token token = Authentication.VerifiedPayload(_token, remoteManager, dateTimeProvider);
-        User user = new User(
-            global_id: token.sub,
-            role: token.role,
-            company_vat_number: token.company_vat_number
-        );
+        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.FA, User.Role.WA });
 
         using DbConnection connection = dataSource.OpenConnection();
 

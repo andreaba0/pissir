@@ -11,6 +11,7 @@ using Module.KeyManager;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text;
+using Npgsql;
 
 namespace Routes;
 
@@ -25,6 +26,48 @@ public class Fields
         public string irrigation_type;
     }
 
+    public struct PostData {
+        public float square_meters;
+        public string crop_type;
+        public string irrigation_type;
+    }
+
+    public static Task PostField(
+        IHeaderDictionary headers,
+        Stream body,
+        DbDataSource dataSource,
+        IDateTimeProvider dateTimeProvider,
+        RemoteManager remoteManager
+    ) {
+        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.FA });
+
+        PostData data = JsonSerializer.DeserializeAsync<PostData>(
+            body,
+            new JsonSerializerOptions { 
+                PropertyNameCaseInsensitive = true
+            }
+        ).Result;
+
+        using DbConnection connection = dataSource.OpenConnection();
+
+        using DbCommand commandPostField = dataSource.CreateCommand();
+
+        commandPostField.CommandText = $@"
+            insert into farm_field (id, vat_number, company_industry_sector, square_meters, crop_type, irrigation_type)
+            values ($1, $2, $3, $4, $5, $6)
+        ";
+        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, Ulid.NewUlid().ToString()));
+        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
+        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, "FAR"));
+        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Single, data.square_meters));
+        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, data.crop_type));
+        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, data.irrigation_type));
+
+        commandPostField.ExecuteNonQuery();
+        connection.Close();
+        return Task.CompletedTask;
+    }
+
     public static List<GetData> GetFields(
         IHeaderDictionary headers,
         DbDataSource dataSource,
@@ -32,28 +75,7 @@ public class Fields
         RemoteManager remoteManager
     )
     {
-        bool ok = false;
-        string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
-        ok = Authorization.tryParseAuthorizationHeader(bearer_token, out Authorization.Scheme _scheme, out string _token, out string error_message);
-        if (!ok)
-        {
-            throw new AuthorizationException(AuthorizationException.ErrorCode.INVALID_AUTHORIZATION_HEADER, error_message);
-        }
-        if (_scheme != Authorization.Scheme.Bearer)
-        {
-            throw new AuthorizationException(AuthorizationException.ErrorCode.INVALID_AUTHORIZATION_HEADER, "Bearer scheme required");
-        }
-        Token token = Authentication.VerifiedPayload(_token, remoteManager, dateTimeProvider);
-        User user = new User(
-            global_id: token.sub,
-            role: token.role,
-            company_vat_number: token.company_vat_number
-        );
-
-        if (User.GetRole(user) != User.Role.FA)
-        {
-            throw new AuthorizationException(AuthorizationException.ErrorCode.INVALID_ROLE, "Only FA users can access this route");
-        }
+        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.FA });
 
         using DbConnection connection = dataSource.OpenConnection();
 
@@ -85,5 +107,23 @@ public class Fields
         reader.Close();
         connection.Close();
         return data;
+    }
+}
+
+public class FieldException : Exception
+{
+    public enum ErrorCode
+    {
+        GENERIC_ERROR = 0,
+        MISSING_FIELD = 1,
+        UNKNOW_FIELD_TYPE = 2,
+        BODY_PARSE_ERROR = 3,
+        INVALID_FIELD_ID = 4,
+        FIELD_ID_REQUIRED = 5
+    }
+    public ErrorCode Code { get; } = default(ErrorCode);
+    public FieldException(ErrorCode errorCode, string message) : base(message)
+    {
+        Code = errorCode;
     }
 }

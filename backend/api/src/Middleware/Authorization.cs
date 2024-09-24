@@ -1,4 +1,6 @@
 using Types;
+using Module.KeyManager;
+using Utility;
 using System.Text.RegularExpressions;
 
 namespace Middleware;
@@ -88,6 +90,36 @@ public class Authorization {
         return true;
     }
 
+    public static User AllowByRole(
+        IHeaderDictionary headers,
+        RemoteManager remoteManager,
+        IDateTimeProvider dateTimeProvider,
+        List<User.Role> roles
+    ) {
+        bool ok = false;
+        string bearer_token = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+        ok = Authorization.tryParseAuthorizationHeader(bearer_token, out Authorization.Scheme _scheme, out string _token, out string error_message);
+        if (!ok)
+        {
+            throw new AuthorizationException(AuthorizationException.ErrorCode.INVALID_AUTHORIZATION_HEADER, error_message);
+        }
+        if (_scheme != Authorization.Scheme.Bearer)
+        {
+            throw new AuthorizationException(AuthorizationException.ErrorCode.BEARER_SCHEME_REQUIRED, "Bearer scheme required");
+        }
+        Token token = Authentication.VerifiedPayload(_token, remoteManager, dateTimeProvider);
+        User user = new User(
+            global_id: token.sub,
+            role: token.role,
+            company_vat_number: token.company_vat_number
+        );
+        if (!roles.Contains(User.GetRole(user)))
+        {
+            throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User unauthorized");
+        }
+        return user;
+    }
+
     public Authorization(string authorizationHeader) {
     }
 
@@ -110,7 +142,8 @@ public class AuthorizationException : Exception {
         BEARER_SCHEME_REQUIRED = 4,
         FARM_SCHEME_REQUIRED = 5,
         INTERNAL_SCHEME_REQUIRED = 6,
-        INVALID_ROLE = 7
+        INVALID_ROLE = 7,
+        UNAUTHORIZED = 8
     }
 
     public AuthorizationException(string message) : base(message) {}

@@ -18,11 +18,11 @@ public class MqttClientConcurrent
     private readonly IManagedMqttClient mqttClient;
     private readonly ConnectionData cData;
     private readonly Channel<IMqttBusPacket> sendChannel;
-    private readonly Channel<IMqttChannelMessage> receiveChannel;
+    private readonly Channel<IMqttBusPacket> receiveChannel;
     public MqttClientConcurrent(
         ConnectionData cData,
         Channel<IMqttBusPacket> sendChannel,
-        Channel<IMqttChannelMessage> receiveChannel
+        Channel<IMqttBusPacket> receiveChannel
     )
     {
         this.mqttClient = new MqttFactory().CreateManagedMqttClient();

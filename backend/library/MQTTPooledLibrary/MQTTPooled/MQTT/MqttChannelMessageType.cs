@@ -3,5 +3,7 @@ namespace MQTTConcurrent;
 public enum MqttChannelMessageType {
     SUBSCRIBE,
     UNSUBSCRIBE,
-    MESSAGE
+    MESSAGE,
+    ASSOCIATE_DELEGATE,
+    DISASSOCIATE_DELEGATE
 }

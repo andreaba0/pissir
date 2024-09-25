@@ -1,8 +1,4 @@
 import copy
-import json
-import psycopg2
-import requests
-import time
 
 
 from component.backend.api.routes import ping as test_a1

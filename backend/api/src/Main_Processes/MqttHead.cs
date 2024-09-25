@@ -10,8 +10,43 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Data;
 using NpgsqlTypes;
+using System.Text.RegularExpressions;
 
 namespace Main_Processes;
+
+public class TopicSchema {
+    public enum Type {
+        Temperature,
+        Humidity,
+        Actuator
+    }
+    public readonly Type type;
+    public TopicSchema(Type type) {
+        this.type = type;
+    }
+    public static TopicSchema? Parse(string topicSchema) {
+        Regex regex = new Regex(@"backend\/measure\/(?<object>[a-z]+)(\/(?<type>[a-z]+))?$");
+        Match match = regex.Match(topicSchema);
+        if (match.Success) {
+            string objectName = match.Groups["object"].Value;
+            string typeName = match.Groups["type"].Value;
+            if (objectName == "sensor"&&typeName=="tmp") {
+                return new TopicSchema(Type.Temperature);
+            }
+            if (objectName == "sensor"&&typeName=="umdty") {
+                return new TopicSchema(Type.Humidity);
+            }
+            if (objectName == "actuator"&&typeName=="") {
+                return new TopicSchema(Type.Actuator);
+            }
+        }
+        return null;
+    }
+
+    public static bool ShouldBeRouted(string topic) {
+        return Parse(topic) != null;
+    }
+}
 
 public class MqttHeadRoutine {
     private Channel<IMqttChannelMessage> receivingChannel;
@@ -43,9 +78,18 @@ public class MqttHeadRoutine {
             //read a message from the receiving channel
             Console.WriteLine("Waiting for message");
             var message = await this.receivingChannel.Reader.ReadAsync(tk);
+            Console.WriteLine("Message received in head routine");
             //process the message
-            if (message is MqttChannelMessage mqttMessage) {
-                Console.WriteLine(mqttMessage.Payload);
+            if (!(message is MqttChannelMessage)) {
+                Console.WriteLine("A malformed message was received");
+            }
+            //cast the message to a MqttChannelMessage
+            MqttChannelMessage? mqttMessage = message as MqttChannelMessage;
+
+            TopicSchema? result = TopicSchema.Parse(mqttMessage.Topic);
+            if (result == null) {
+                Console.WriteLine("A malformed topic was received");
+                continue;
             }
         }
 

@@ -36,6 +36,20 @@ app.get("/oauth/:provider", (req, res) => {
   );
 });
 
+app.get("/oauth/port_redirect/:port/:provider", (req, res) => {
+  const query = req.query;
+  console.log(query);
+  console.log(req.url);
+  var newQuery = {
+    ...query,
+    provider: req.params.provider,
+  }
+  res.redirect(
+    301,
+    `http://localhost:${req.params.port}/auth/signin?${new URLSearchParams(newQuery)}`
+  );
+});
+
 app.get("/.well-known/openid-configuration", (req, res) => {
   res.json({
     issuer: "https://appweb.andreabarchietto.it",

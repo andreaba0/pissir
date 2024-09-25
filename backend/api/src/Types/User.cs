@@ -17,6 +17,11 @@ public class User {
     public readonly string company_vat_number;
     //No company industry required as it is obvious that company industry and user role are related
 
+    public enum Role {
+        FA,
+        WA
+    }
+
     public User(
         string global_id,
         string role,
@@ -25,6 +30,12 @@ public class User {
         this.global_id = global_id;
         this.role = role;
         this.company_vat_number = company_vat_number;
+    }
+
+    public static Role GetRole(User user) {
+        if(user.role == "FA") return Role.FA;
+        if(user.role == "WA") return Role.WA;
+        throw new UserException(UserException.ErrorCode.UNKNOW_USER_ROLE, "Unknow user role");
     }
 
     public static User Get(UserFields userStruct) {
@@ -43,6 +54,7 @@ public class UserException : Exception {
     public enum ErrorCode {
         GENERIC_ERROR = 0,
         MISSING_FIELD = 1,
+        UNKNOW_USER_ROLE = 2
     }
     public ErrorCode Code { get; } = default(ErrorCode);
     public UserException(ErrorCode errorCode, string message) : base(message) {

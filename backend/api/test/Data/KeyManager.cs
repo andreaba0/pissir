@@ -1,5 +1,7 @@
-using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Collections.Generic;
+using System;
 
 namespace Data;
 
@@ -12,8 +14,8 @@ class KeyString
 
 public class KeyManager
 {
-    private readonly Dictionary<string, RsaSecurityKey> privateKeys = new Dictionary<string, RsaSecurityKey>();
-    private readonly Dictionary<string, RsaSecurityKey> publicKeys = new Dictionary<string, RsaSecurityKey>();
+    private readonly Dictionary<string, RSAParameters> privateKeys = new Dictionary<string, RSAParameters>();
+    private readonly Dictionary<string, RSAParameters> publicKeys = new Dictionary<string, RSAParameters>();
 
     public KeyManager()
     {
@@ -143,39 +145,21 @@ wwIDAQAB
 
         RSA rsa1 = RSA.Create();
         rsa1.ImportFromPem(key1.KeyPrivate.ToCharArray());
-        publicKeys.Add(key1.KeyId, new RsaSecurityKey(rsa1.ExportParameters(false))
-        {
-            KeyId = key1.KeyId
-        });
-        privateKeys.Add(key1.KeyId, new RsaSecurityKey(rsa1.ExportParameters(true))
-        {
-            KeyId = key1.KeyId
-        });
+        publicKeys.Add(key1.KeyId, rsa1.ExportParameters(false));
+        privateKeys.Add(key1.KeyId, rsa1.ExportParameters(true));
 
         RSA rsa2 = RSA.Create();
         rsa2.ImportFromPem(key2.KeyPrivate.ToCharArray());
-        publicKeys.Add(key2.KeyId, new RsaSecurityKey(rsa2.ExportParameters(false))
-        {
-            KeyId = key2.KeyId
-        });
-        privateKeys.Add(key2.KeyId, new RsaSecurityKey(rsa2.ExportParameters(true))
-        {
-            KeyId = key2.KeyId
-        });
+        publicKeys.Add(key2.KeyId, rsa2.ExportParameters(false));
+        privateKeys.Add(key2.KeyId, rsa2.ExportParameters(true));
 
         RSA rsa3 = RSA.Create();
         rsa3.ImportFromPem(key3.KeyPrivate.ToCharArray());
-        publicKeys.Add(key3.KeyId, new RsaSecurityKey(rsa3.ExportParameters(false))
-        {
-            KeyId = key3.KeyId
-        });
-        privateKeys.Add(key3.KeyId, new RsaSecurityKey(rsa3.ExportParameters(true))
-        {
-            KeyId = key3.KeyId
-        });
+        publicKeys.Add(key3.KeyId, rsa3.ExportParameters(false));
+        privateKeys.Add(key3.KeyId, rsa3.ExportParameters(true));
     }
 
-    public RsaSecurityKey GetPublicKey(string keyId)
+    public RSAParameters? GetPublicKey(string keyId)
     {
         if (publicKeys.ContainsKey(keyId))
         {
@@ -187,7 +171,7 @@ wwIDAQAB
         }
     }
 
-    public RsaSecurityKey GetPrivateKey(string keyId)
+    public RSAParameters? GetPrivateKey(string keyId)
     {
         if (privateKeys.ContainsKey(keyId))
         {

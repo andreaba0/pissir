@@ -56,10 +56,11 @@ add constraint consumption_coherence check (available >= (consumed * consumption
 create table farm_field(
     id varchar(26) primary key,
     vat_number varchar(11),
-    company_industry_sector varchar(2) not null check(company_industry_sector = 'FA'),
+    company_industry_sector varchar(2) not null check(company_industry_sector = 'FAR'),
     square_meters float not null,
     crop_type text not null,
-    irrigation_type text not null
+    irrigation_type text not null,
+    created_at timestamptz not null default now(),
 );
 
 create table irrigation_type(
@@ -93,3 +94,38 @@ create table actuator_log(
     object_type text not null check(object_type = 'ACTUATOR'),
     primary key (object_id, log_time)
 );
+
+create table consumption_fact(
+    crop text not null,
+    liters_mq float not null,
+    primary key (crop)
+);
+
+insert into consumption_fact (crop, liters_mq) values
+('rice', 2000),
+('grain', 1500),
+('corn', 1800),
+('wheat', 1600),
+('barley', 1700),
+('soy', 1400),
+('sunflower', 1200),
+('sugar_beet', 1300),
+('potato', 1100),
+('tomato', 1000),
+('onion', 900),
+('cotton', 800),
+('tobacco', 700),
+('olive', 600),
+('vine', 500),
+('fruit', 400),
+('vegetable', 300),
+('flower', 200),
+('greenhouse', 100);
+
+
+CREATE VIEW combined_sensor_log AS
+SELECT object_id, object_type, log_time, umdty AS value
+FROM umdty_sensor_log
+UNION ALL
+SELECT object_id, object_type, log_time, tmp AS value
+FROM tmp_sensor_log;

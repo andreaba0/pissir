@@ -13,7 +13,7 @@ public class SignInModel : PageModel
         try
         {
             // Controllo variabili d'ambiente
-            string[] requiredVariables = { "ipbackend", "googleClientId", "googleSecretId", "facebookClientId", "facebookSecretId" };
+            string[] requiredVariables = { "redirectUriFB", "redirectUriGO", "ipbackend", "googleClientId", "googleSecretId", "facebookClientId", "facebookSecretId" };
 
             foreach (string variable in requiredVariables)
             {
@@ -29,14 +29,14 @@ public class SignInModel : PageModel
                 "access_type=online&" +
                 "response_type=code&" +
                 "state=1234567890qwerty&" +
-                "redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/google&" +
+                "redirect_uri=" + Environment.GetEnvironmentVariable("redirectUriGO") + "&" +
                 "client_id=" + Environment.GetEnvironmentVariable("googleClientId");
 
             string authFacebook = "https://www.facebook.com/v18.0/dialog/oauth?" +
                 "scope=openid&" +
                 "response_type=code&" +
                 "state=1234567890qwerty&" +
-                "redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/facebook&" +
+                "redirect_uri=" + Environment.GetEnvironmentVariable("redirectUriFB") + "&" +
                 "client_id=" + Environment.GetEnvironmentVariable("facebookClientId");
 
             // Richiesta parametri nell'url

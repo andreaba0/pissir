@@ -7,6 +7,12 @@ Filippo Checchia
 ### Note generali
 Questo progetto &egrave; stato sviluppato principalmente in ambiente Linux (Ubuntu) con versione SDK 8.0 di DotNet
 
+## Requisiti
+* OS Linux
+* Docker
+
+> ATTENZIONE: **Docker per eseguire e gestire i container necessita dei permessi di root**. Per evitare di eseguire il container preposto a interfacciarsi con Docker Engine potrebbe essere necessario assegnare l'utente al gruppo Docker. Istruzioni presenti al link: [Docker without sudo](https://docs.docker.com/engine/install/linux-postinstall/)
+
 ## Struttura delle cartelle
 
 * api-definition: contiene la lista di endpoint per i backend del progetto
@@ -19,34 +25,40 @@ richieste alle relative applicazioni (frontend, backend api, backend auth)
 * test: cartella che contiene i test utili a verificare il corretto funzionamento dei due backend.
 * mosquitto: contiene i file di configurazione per il server mosquitto
 
+NOTA: In questo progetto sono presenti molte componenti: broker, proxy, backend, database. Per semplificarne la gestione e l'esecuzione,
+ogni componente &egrave; eseguibile in un container. Per creare i container &egrave; presente un file denominato "build.sh" che permette
+di eseguire la build dei vari container in modo automatico.
+> ATTENZIONE: Prima di poter eseguire i test &egrave; necessario eseguire la build di tutti i componenti del progetto. Solo successivamente
+&egrave; possibile eseguire i test
+Anche la suite di test ha il proprio container.
+
+## Overview esecuzione
+Per visionare il progetto sia in fase di test, sia in fase demo &egrave; sufficiente eseguire da terminale 2 file
+```
+- build.sh [auth, api, auth_database, api_database, proxy, fake_oauth, mosquitto, frontend]
+- test/manager.sh [build, start]
+```
+Dove la parentesi quadra rappresenta uno tra i possibili argomenti da riga di comando.
+
 ## Struttura dei test
 Nella cartella test si trova un progetto creato in Python utile per la fase di component testing di ciascuno dei due backend. I vari test presenti nella cartella cicd_test_suite/backend/*/routes effettuano quanto segue: inserimento dei dati di test nel database, esecuzioni di chiamate rest al componente da testare, e controllo finale che i risultati ottenuti siano congrui a quanto ci si aspetta. I test per i server di backend necessitano per varie ragioni di un database e di un server che emuli un provider oauth. Tale richiesta viene soddisfatta mediante l'ausilio di Container usati per eseguire le rispettive applicazioni in ambienti isolati e facili da gestire.
 ### Eseguire i test
-Per il progetto in Python viene usato Poetry come package manager al posto di Pip, tuttavia rimane possibile eseguire i test senza dover installare Poetry. Per eseguire i test senza Poetry bisogna installare manualmente le dipendenze presenti nel file pyproject.toml tramite Pip o con il package manager a disposizione.<br />
-Le dipendenze in questione si trovano nella sezione tool.poetry.dependencies del file pyproject.toml<br />
-Per installarle manualmente eseguire il comando sottostante per ciascuna dipendenza
-```console
-~$ pip install dep_name
+Per eseguire i test &egrave; sufficiente entrare da terminale nella cartella test ed eseguire:
 ```
-Per installare le dipendenze con Poetry, eseguire il comando:
-```console
-~$ poetry install
+> sh manager.sh build
 ```
-Una volta installate le dipendenze necessarie, i test sono eseguibili con il comando: 
-```console
-~$ python cicd_test_suite/main.py
+Il comando sopra ha lo scopo di creare il container con all'interno la suite di test scritti in Python.
+Per avviare la suite di test eseguire il comando:
 ```
-O, se viene usato Poetry:
-```console
-~$ poetry run python3 cicd_test_suite/main.py
+> sh manager.sh start
 ```
-Una volta avviata l'applicazione, gli step da eseguire sono i seguenti:
-1. Setup del network tra container
-2. Setup dei container
-3. Esecuzione dei test
-Segliere dal menu del programma l'opzione in base allo step che si sta per eseguire
-Il progetto, per essere eseguito, necessita oltre alle varie dipendenze, anche di Docker, software usato per la gestione dei container che conterranno le varie parti sotto test.
-> ATTENZIONE: **Docker per eseguire e gestire i container necessita dei permessi di root**. Per evitare di eseguire l'intera applicazione Python con permessi di root potrebbe essere necessario assegnare l'utente al gruppo Docker. Istruzioni presenti al link: [Docker without sudo](https://docs.docker.com/engine/install/linux-postinstall/)
+Una volta eseguito il comando sopra verr&agrave; mostrato il terminale del container che contiene la suite di test.<br />
+Nell'output del file manager.sh &egrave; gi&agrave; mostrato il comando da eseguire all'interno del container, ma per ulteriore
+chiarezza:
+```
+> poetry run python3 cicd_test_suite/main.py
+```
+Ora verr&agrave; mostrato il menu della suite di test con le varie opzioni.
 
 > ATTENZIONE: Appena effettuato il setup dei container con Docker, i test potrebbero fallire se eseguiti l'istante successivo al termine del setup. Tale problematica si deve alla progettazione interna del server di autenticazione che effettua una query al database dei provider OpenId consentiti appena viene avviato. Questo potrebbe causare errori 401 per qualche secondo dall'avvio.
 

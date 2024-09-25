@@ -33,7 +33,6 @@ if [ $obj = "start" ]; then
 
     docker run \
     -e IP_ADDRESS_SPACE='172.16.10.0/26' \
-    -e BASE_PATH='/home/andrea/Documents/C#/appweb_pissir' \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --label test_suite \
     --network host \

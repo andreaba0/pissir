@@ -23,7 +23,14 @@ api_server_config = {
         "DOTNET_ENV_AUTH_URI": f"http://{oauth_server_config['network']['ip']}:{oauth_server_config['internal_port']}",
         "DOTNET_ENV_PISSIR_ISS": "https://appweb.andreabarchietto.it",
         "DOTNET_ENV_PISSIR_AUD": "https://pissir.andreabarchietto.it",
-        "INITIAL_DATE": "01/01/2024 00:00:00"
+        "INITIAL_DATE": "01/01/2024 00:00:00",
+        "DOTNET_ENV_MQTT_HOST": mosquitto_server_config["network"]["ip"],
+        "DOTNET_ENV_MQTT_PORT": mosquitto_server_config["internal_port"],
+        "DOTNET_ENV_MQTT_USER": "mosquitto",
+        "DOTNET_ENV_MQTT_PASSWORD": "password",
+        "DOTNET_ENV_MQTT_POOLSIZE": "5",
+        "DOTNET_ENV_MQTT_PERCLIENTCAPACITY": "15",
+        "DOTNET_ENV_MQTT_TOPIC": "backend/measure/#"
     },
     "internal_port": internalPort,
     "exposed_port": address_manager.get_port(),

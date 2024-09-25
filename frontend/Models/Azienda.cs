@@ -7,16 +7,16 @@ namespace frontend.Models
         [JsonProperty("vat_number")]
         public string PartitaIva { get; set; }
 
-        [JsonProperty("company_name")]
+        [JsonProperty("name")]
         public string Nome { get; set; }
 
-        [JsonProperty("working_address")]
+        [JsonProperty("address")]
         public string Indirizzo { get; set; }
 
-        [JsonProperty("working_phone_number")]
+        [JsonProperty("phone")]
         public string Telefono { get; set; }
 
-        [JsonProperty("working_email_address")]
+        [JsonProperty("email")]
         public string Email { get; set; }
 
         [JsonProperty("industry_sector")]

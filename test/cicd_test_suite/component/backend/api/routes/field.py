@@ -44,7 +44,7 @@ def test1(scope):
         "aud": backendConfig["aud"],
         "iss": backendConfig["iss"]
     }
-    keys = JWTRegistry.uuidMappedKeys()
+    keys = JWTRegistry.plainMappedKeys()
     sign_key = keys[0]["key"]
 
     #sign jwt with custom iat time

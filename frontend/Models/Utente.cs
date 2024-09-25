@@ -23,7 +23,7 @@ namespace frontend.Models
         [JsonProperty("role")]
         public string? Role { get; set; }
 
-        [JsonProperty("company_vat_number")]
+        [JsonProperty("company")]
         public string? PartitaIva { get; set; }
     }
 

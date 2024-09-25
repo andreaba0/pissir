@@ -3,30 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-// Controllo variabili d'ambiente
-string[] requiredVariables = { 
-    "listener_uri", 
-    "redirectUriFB", 
-    "redirectUriGO", 
-    "ipbackend", 
-    "googleClientId", 
-    "googleSecretId", 
-    "facebookClientId", 
-    "facebookSecretId" 
-};
-
-foreach (string variable in requiredVariables)
-{
-    if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(variable)))
-    {
-        Console.WriteLine($"Missing environment variable: {variable}");
-        throw new Exception($"Missing environment variable: {variable}");
-    }
-}
-
-var listenerUri = Environment.GetEnvironmentVariable("listener_uri");
-
-var builder = WebApplication.CreateBuilder(args: new string[] { "--urls", listenerUri });
+var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();

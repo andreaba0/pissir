@@ -32,6 +32,14 @@ class JWTRegistry:
         list = []
         for kid, key in KeyRegistry.keys.items():
             list.append({
+                "kid": KeyRegistry.namedKeys[kid],
+                "key": key
+            })
+        return list
+    def plainMappedKeys():
+        list = []
+        for kid, key in KeyRegistry.keys.items():
+            list.append({
                 "kid": kid,
                 "key": key
             })

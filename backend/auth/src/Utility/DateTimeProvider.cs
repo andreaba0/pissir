@@ -1,3 +1,8 @@
+using System;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
+
+
 namespace Utility;
 
 public interface IDateTimeProvider
@@ -29,6 +34,10 @@ public class DateTimeProvider : IDateTimeProvider
             DateTimeOffset now = DateTimeOffset.Now;
             DateTimeOffset startOffset = new DateTimeOffset(start);
             offsetSeconds = (long) now.ToUnixTimeSeconds() - (long) startOffset.ToUnixTimeSeconds();
+            return this;
+        }
+        else {
+            throw new ArgumentException("Invalid start time format");
         }
     }
     public DateTimeProvider(DateTime startTime)

@@ -9,6 +9,54 @@ servers:
   - url: http://localhost
 
 paths:
+  /crops:
+    get:
+      summary: Get crops
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '500':
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            plain/text:
+              schema:
+                type: string
+  /irrigation:
+    get:
+      summary: Get irrigation types
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '500':
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            plain/text:
+              schema:
+                type: string
   /water/recommendation/{field_id}:
     get:
       parameters:

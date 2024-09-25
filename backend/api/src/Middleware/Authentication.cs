@@ -109,6 +109,9 @@ public static class Authentication
     {
         DateTime now = dateTimeProvider.UtcNow;
         DateTime expiration = dateTimeProvider.FromUnixTime(token.exp);
+        Console.WriteLine(now);
+        Console.WriteLine(expiration);
+        
         return now > expiration;
     }
 

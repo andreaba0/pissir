@@ -1,16 +1,7 @@
 class PostgresSuite:
     def clearDatabase(conn):
         cur = conn.cursor()
-        cur.execute('''delete from presentation_letter returning user_account''')
-        cur.execute('''delete from api_acl''')
-        cur.execute('''delete from api_acl_request''')
-        cur.execute('''delete from person_fa''')
-        cur.execute('''delete from person_wa''')
-        cur.execute('''delete from person''')
-        cur.execute('''delete from company_far''')
-        cur.execute('''delete from company_wsp''')
         cur.execute('''delete from company''')
-        cur.execute('''delete from user_account''')
         cur.close()
         conn.commit()
         conn.close()

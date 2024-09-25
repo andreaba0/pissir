@@ -60,7 +60,7 @@ create table farm_field(
     square_meters float not null,
     crop_type text not null,
     irrigation_type text not null,
-    created_at timestamptz not null default now(),
+    created_at timestamptz not null default now()
 );
 
 create table irrigation_type(
@@ -121,6 +121,15 @@ insert into consumption_fact (crop, liters_mq) values
 ('vegetable', 300),
 ('flower', 200),
 ('greenhouse', 100);
+
+insert into irrigation_type(irrigation_name) values
+('drip'),
+('sprinkler'),
+('center_pivot'),
+('flood'),
+('furrow'),
+('subsurface'),
+('manual');
 
 
 CREATE VIEW combined_sensor_log AS

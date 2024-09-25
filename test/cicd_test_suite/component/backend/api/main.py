@@ -1,7 +1,8 @@
 import copy
 
 
-from component.backend.api.routes import ping as test_a1
+from component.backend.api.routes import ping as test_ping
+from component.backend.api.routes import field as test_field
 
 from utility.state import StateManager, Block, State
 
@@ -28,7 +29,8 @@ from config.address_manager import address_manager
 
 
 def EntryPoint(*args, **kwargs):
-    test_a1.EntryPoint(*args, **kwargs)
+    test_ping.EntryPoint(*args, **kwargs)
+    test_field.EntryPoint(*args, **kwargs)
 
 def checkApiDatabaseConnectivity(container, config):
     ct = Container(container)
@@ -59,6 +61,8 @@ def ApiMain():
     apiServerConfig = copy.deepcopy(api_server_config)
     apiDatabaseConfig = copy.deepcopy(api_database_config)
     oauthServerConfig = copy.deepcopy(oauth_server_config)
+
+
     containers = StateManager.converge([
         Block(auth_server, auth_server_config, State.CLEAR),
         Block(auth_database, auth_database_config, State.CLEAR),
@@ -68,6 +72,10 @@ def ApiMain():
         Block(mosquitto_server, mosquitto_server_config, State.NEW),
         Block(proxy_server, proxy_server_config, State.CLEAR)
     ])
+
+    # run oauth server before api server to make sure that
+    # api server can query oauth keys at boot time
+
     checkApiDatabaseConnectivity(containers[4], apiDatabaseConfig)
     initApiDatabase(oauthServerConfig, apiDatabaseConfig)
     checkOAuthServerConnectivity(containers[2], oauthServerConfig)
@@ -90,5 +98,7 @@ def ApiMain():
         apiDatabaseConfig["environment"]["POSTGRES_USER"],
         apiDatabaseConfig["environment"]["POSTGRES_PASSWORD"],
         "localhost",
-        apiServerConfig["exposed_port"]
+        apiServerConfig["exposed_port"],
+        apiServerConfig["environment"]["DOTNET_ENV_PISSIR_ISS"],
+        apiServerConfig["environment"]["DOTNET_ENV_PISSIR_AUD"]
     )

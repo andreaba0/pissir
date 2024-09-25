@@ -32,7 +32,7 @@ class JWTRegistry:
         list = []
         for kid, key in KeyRegistry.keys.items():
             list.append({
-                "kid": KeyRegistry.namedKeys[kid],
+                "kid": kid,
                 "key": key
             })
         return list

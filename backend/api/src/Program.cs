@@ -64,7 +64,10 @@ class Program
 
         string webserverBound = GetProperty(configuration, "webserver:bound");
 
+        string initialDate = GetProperty(configuration, "initial:date");
+
         CancellationTokenSource cts = new CancellationTokenSource();
+        DateTimeProvider dateTimeProvider = DateTimeProvider.parse(initialDate);
 
         //Shared thread safe instances
         DbDataSource dataSource = NpgsqlDataSource.Create($"host={postgresHost};port={postgresPort};database={postgresDatabaseName};username={postgresUsername};password={postgresPassword};Pooling=true");
@@ -88,7 +91,7 @@ class Program
         WebServer webServer = new WebServer(
             dataSource,
             remoteKeyManager,
-            new DateTimeProvider(),
+            dateTimeProvider,
             pissirIssuer,
             pissirAudience,
             webserverBound

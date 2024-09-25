@@ -115,6 +115,9 @@ class custom_env_routine:
             if choice == "1":
                 cer.run_latest(api_database.api_database_config, api_database.api_database)
                 continue
+            if choice == "2":
+                cer.run_latest(api_server.api_server_config, api_server.api_server)
+                continue
             if choice == "3":
                 cer.run_latest(mosquitto_server_config, mosquitto_server.mosquitto_server)
                 continue

@@ -40,6 +40,16 @@ public class WaterLimit {
         }
     }
 
+
+    /*
+    
+        In this Microservices setup, it is possible that a company that exists in authentication service does 
+        not exist in this api service. This is because company record in database is created when the user
+        issues a post request to create a field (see jwt access token payload for more information).
+        Therefore, if a limit is set to a company that does not exists in this service yet, the following
+        endpoint will return a 404 error (Not yet available). 
+
+    */
     public static Task PostWaterLimit(
         IHeaderDictionary headers,
         Stream body,

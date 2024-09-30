@@ -53,6 +53,10 @@ public class WebServer
             await context.Response.WriteAsync("pong");
         });
 
+        app.MapGet("/time", async context => {
+            await context.Response.WriteAsync(_dateTimeProvider.Now.ToString());
+        });
+
         app.MapPost("/water/limit", async context => {
             try {
                 WaterLimit.PostWaterLimit(
@@ -175,6 +179,9 @@ public class WebServer
                 );
                 context.Response.StatusCode = 200;
                 await context.Response.WriteAsJsonAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
             } catch(AuthorizationException e) {
                 context.Response.StatusCode = 403;
                 await context.Response.WriteAsync(e.Message);
@@ -195,6 +202,12 @@ public class WebServer
                 ).Wait();
                 context.Response.StatusCode = 200;
                 await context.Response.WriteAsync("Field created");
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
             } catch(FieldException e) {
                 context.Response.StatusCode = 400;
                 await context.Response.WriteAsync(e.Message);

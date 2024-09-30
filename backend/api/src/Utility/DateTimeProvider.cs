@@ -33,7 +33,15 @@ public class DateTimeProvider : IDateTimeProvider
             DateTime start = new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
             DateTimeOffset now = DateTimeOffset.Now;
             DateTimeOffset startOffset = new DateTimeOffset(start);
-            long offsetSeconds = (long) now.ToUnixTimeSeconds() - (long) startOffset.ToUnixTimeSeconds();
+
+            //get offset based on time zone
+            TimeZone localZone = TimeZone.CurrentTimeZone;
+            TimeSpan localOffset = localZone.GetUtcOffset(DateTime.Now);
+            int offset = localOffset.Hours * 3600 + localOffset.Minutes * 60;
+
+            long offsetSeconds = (long) now.ToUnixTimeSeconds() - (long) startOffset.ToUnixTimeSeconds() + offset;
+
+            //long offsetSeconds = (long) now.ToUnixTimeSeconds() - (long) startOffset.ToUnixTimeSeconds();
             return new DateTimeProvider(offsetSeconds);
         }
         else {

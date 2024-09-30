@@ -56,7 +56,7 @@ add constraint consumption_coherence check (available >= (consumed * consumption
 create table farm_field(
     id varchar(26) primary key,
     vat_number varchar(11),
-    company_industry_sector varchar(2) not null check(company_industry_sector = 'FAR'),
+    company_industry_sector varchar(3) not null check(company_industry_sector = 'FAR'),
     square_meters float not null,
     crop_type text not null,
     irrigation_type text not null,
@@ -130,6 +130,10 @@ insert into irrigation_type(irrigation_name) values
 ('furrow'),
 ('subsurface'),
 ('manual');
+
+insert into industry_sector (sector_name) values
+('WSP'),
+('FAR');
 
 
 CREATE VIEW combined_sensor_log AS

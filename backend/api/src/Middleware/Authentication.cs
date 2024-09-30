@@ -107,12 +107,13 @@ public static class Authentication
 
     public static bool IsExpired(Token token, IDateTimeProvider dateTimeProvider)
     {
-        DateTime now = dateTimeProvider.UtcNow;
-        DateTime expiration = dateTimeProvider.FromUnixTime(token.exp);
+        DateTime now = dateTimeProvider.Now;
+        TimeSpan ts = now - new DateTime(1970, 1, 1);
+        long epoch = (long)ts.TotalSeconds;
         Console.WriteLine(now);
-        Console.WriteLine(expiration);
-        
-        return now > expiration;
+        int expiration = token.exp;
+        //Console.WriteLine(expiration);
+        return epoch > expiration;
     }
 
     public static bool IsActuallyValid(Token token, IDateTimeProvider dateTimeProvider)

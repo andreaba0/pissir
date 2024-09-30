@@ -46,8 +46,16 @@ def checkApiServerConnectivity(container, config):
     internalPort = config["internal_port"]
     ct.WaitRunningProcessOnPort("tcp", f"0.0.0.0:{internalPort}", "LISTEN")
     ct.WaitIpAssignment(config["network"]["ip"] , address_manager.get_netmask())
+    ct.WaitForStringInLogs(f"Updated RSA parameters for: {config['environment']['DOTNET_ENV_PISSIR_ISS']}", 30)
 
 def checkOAuthServerConnectivity(container, config):
+    ct = Container(container)
+    ct.WaitTillRunning()
+    internalPort = config["internal_port"]
+    ct.WaitRunningProcessOnPort("tcp", f"0.0.0.0:{internalPort}", "LISTEN")
+    ct.WaitIpAssignment(config["network"]["ip"], address_manager.get_netmask())
+
+def checkMosquittoServerConnectivity(container, config):
     ct = Container(container)
     ct.WaitTillRunning()
     internalPort = config["internal_port"]
@@ -63,6 +71,10 @@ def ApiMain():
     oauthServerConfig = copy.deepcopy(oauth_server_config)
 
 
+    # Just for testing purposes api database, broker server, and fake_oauth server are run first
+    # This is to ensure that they are available to connect instantly when the api server is run
+    # This facilitates the testing of the api server (so, only api can be tested without worrying about other services availability)
+
     containers = StateManager.converge([
         Block(auth_server, auth_server_config, State.CLEAR),
         Block(auth_database, auth_database_config, State.CLEAR),
@@ -73,10 +85,8 @@ def ApiMain():
         Block(proxy_server, proxy_server_config, State.CLEAR)
     ])
 
-    # run oauth server before api server to make sure that
-    # api server can query oauth keys at boot time
-
     checkApiDatabaseConnectivity(containers[4], apiDatabaseConfig)
+    checkMosquittoServerConnectivity(containers[5], mosquitto_server_config)
     initApiDatabase(oauthServerConfig, apiDatabaseConfig)
     checkOAuthServerConnectivity(containers[2], oauthServerConfig)
 
@@ -100,5 +110,6 @@ def ApiMain():
         "localhost",
         apiServerConfig["exposed_port"],
         apiServerConfig["environment"]["DOTNET_ENV_PISSIR_ISS"],
-        apiServerConfig["environment"]["DOTNET_ENV_PISSIR_AUD"]
+        apiServerConfig["environment"]["DOTNET_ENV_PISSIR_AUD"],
+        apiServerConfig["environment"]["DOTNET_ENV_INITIAL_DATE"]
     )

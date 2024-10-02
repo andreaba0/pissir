@@ -74,7 +74,6 @@ public static class Authentication
                 Authentication.ToBase64Url(key.Exponent),
                 Authentication.ToBase64Url(key.Modulus)
             ), JwsAlgorithm.RS256);
-
             Token payloadVerified = JsonSerializer.Deserialize<Token>(json, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
@@ -87,7 +86,7 @@ public static class Authentication
             if (!Authentication.IsActuallyValid(
                 payloadVerified,
                 dateTimeProvider
-            )) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token");
+            )) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Token issued in the future");
             return payloadVerified;
         }
         catch (AuthenticationException)
@@ -96,6 +95,7 @@ public static class Authentication
         }
         catch (JsonException e)
         {
+            Console.WriteLine(e);
             throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token", e);
         }
         catch (Exception e)
@@ -107,19 +107,16 @@ public static class Authentication
 
     public static bool IsExpired(Token token, IDateTimeProvider dateTimeProvider)
     {
-        DateTime now = dateTimeProvider.Now;
-        TimeSpan ts = now - new DateTime(1970, 1, 1);
-        long epoch = (long)ts.TotalSeconds;
-        Console.WriteLine(now);
+        long epoch = (long)DateTimeProvider.epoch(dateTimeProvider.UtcNow);
         int expiration = token.exp;
-        //Console.WriteLine(expiration);
+        Console.WriteLine($"Epoch: {epoch}, Expiration: {expiration}");
         return epoch > expiration;
     }
 
     public static bool IsActuallyValid(Token token, IDateTimeProvider dateTimeProvider)
     {
-        DateTime now = dateTimeProvider.UtcNow;
-        DateTime issuedAt = dateTimeProvider.FromUnixTime(token.iat-(60*2));
+        long now = (long)DateTimeProvider.epoch(dateTimeProvider.UtcNow);
+        int issuedAt = token.iat;
         return now >= issuedAt;
     }
     public static bool IsExpired(

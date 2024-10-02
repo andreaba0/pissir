@@ -17,6 +17,7 @@ faker = "^23.1.0"
 pycryptodome = "^3.20.0"
 python-dotenv = "^1.0.1"
 ulid-py = "^1.1.0"
+pytz = "^2024.2"
 
 
 [build-system]

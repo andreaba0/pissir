@@ -59,15 +59,25 @@ public class MqttClientConcurrent
         }
 
         this.mqttClient.ApplicationMessageReceivedAsync += OnMessageReceivedAsync;
+        bool previousConnectionState = true;
         while (!ct.IsCancellationRequested)
         {
-            Console.WriteLine("MqttClientConcurrent running");
             if (!this.mqttClient.IsConnected)
             {
-                Console.WriteLine("MqttClientConcurrent not connected");
+                if (previousConnectionState == true)
+                {
+                    previousConnectionState = false;
+                    Console.WriteLine("MqttClientConcurrent not connected");
+                }
                 //let the queue fill up while client is disconnected
                 await Task.Delay(1000);
                 continue;
+            } else {
+                if (previousConnectionState == false)
+                {
+                    previousConnectionState = true;
+                    Console.WriteLine("MqttClientConcurrent connected");
+                }
             }
             IMqttBusPacket message = await this.sendChannel.Reader.ReadAsync(ct);
             if (message is Message.MqttChannelSubscribe subscribeMessage)

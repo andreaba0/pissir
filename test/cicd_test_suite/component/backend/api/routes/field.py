@@ -51,11 +51,12 @@ def test1(scope):
     sign_key = keys[0]["key"]
 
     cDae = CustomDate.parse(backendConfig["initial_date"])
-    initial_date = int(cDae.date.timestamp())
+
+    utc_date = cDae.epoch()
 
     #sign jwt with custom iat time
-    jwt_payload["iat"] = initial_date - 3600 - 3600
-    jwt_payload["exp"] = initial_date - 3600
+    jwt_payload["iat"] = utc_date - 3600 - 3600
+    jwt_payload["exp"] = utc_date - 3600
 
     jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
     print(jwt)
@@ -90,8 +91,6 @@ def test2(scope):
 
     vat_number = fake.random_number(digits=11)
     ids = [UlidGenerator.generate() for _ in range(5)]
-    print(vat_number)
-    print(ids)
 
     conn = getPostgresConnection()
     cur = conn.cursor()
@@ -125,11 +124,11 @@ def test2(scope):
     sign_key = keys[0]["key"]
 
     cDae = CustomDate.parse(backendConfig["initial_date"])
-    initial_date = int(cDae.date.timestamp())
+    utc_date = cDae.epoch()
 
     #sign jwt with custom iat time
-    jwt_payload["iat"] = initial_date - 3600
-    jwt_payload["exp"] = initial_date + 3600
+    jwt_payload["iat"] = utc_date - 3600
+    jwt_payload["exp"] = utc_date + 3600
 
     jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
     print(jwt)

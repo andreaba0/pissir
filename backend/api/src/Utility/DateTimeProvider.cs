@@ -19,54 +19,63 @@ public class DateTimeProvider : IDateTimeProvider
         offsetSeconds = 0;
     }
 
-    public static DateTimeProvider parse(string baseDate) {
+    //Parsing is always done in local timezone.
+    public static DateTimeProvider parse(string baseDate)
+    {
         Regex regex = new Regex(@"^(\d{2})-(\d{2})-(\d{4})T(\d{2}):(\d{2}):(\d{2})$");
         Match match = regex.Match(baseDate);
-        if (match.Success) {
+        if (match.Success)
+        {
             int year = int.Parse(match.Groups[3].Value);
             int month = int.Parse(match.Groups[2].Value);
             int day = int.Parse(match.Groups[1].Value);
             int hour = int.Parse(match.Groups[4].Value);
             int minute = int.Parse(match.Groups[5].Value);
             int second = int.Parse(match.Groups[6].Value);
-            //datetime should be in GMT+2
-            DateTime start = new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
-            DateTimeOffset now = DateTimeOffset.Now;
-            DateTimeOffset startOffset = new DateTimeOffset(start);
 
-            //get offset based on time zone
-            TimeZone localZone = TimeZone.CurrentTimeZone;
-            TimeSpan localOffset = localZone.GetUtcOffset(DateTime.Now);
-            int offset = localOffset.Hours * 3600 + localOffset.Minutes * 60;
+            // parameter is loaded as local timezone
+            DateTime start = new DateTime(year, month, day, hour, minute, second, DateTimeKind.Local);
 
-            long offsetSeconds = (long) now.ToUnixTimeSeconds() - (long) startOffset.ToUnixTimeSeconds() + offset;
-
-            //long offsetSeconds = (long) now.ToUnixTimeSeconds() - (long) startOffset.ToUnixTimeSeconds();
-            return new DateTimeProvider(offsetSeconds);
+            return new DateTimeProvider(start);
         }
-        else {
+        else
+        {
             throw new ArgumentException("Invalid start time format");
         }
     }
 
-    public DateTimeProvider(long offsetSeconds)
-    {
-        this.offsetSeconds = offsetSeconds;
-    }
-
     public DateTimeProvider(DateTime startTime)
     {
-        DateTimeOffset now = DateTimeOffset.Now;
-        DateTimeOffset start = new DateTimeOffset(startTime);
-        offsetSeconds = (long) now.ToUnixTimeSeconds() - (long) start.ToUnixTimeSeconds();
+        // This create a DateTime object and the timezone is supposed to be Europe/Rome
+        DateTime initial = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, startTime.Minute, startTime.Second, startTime.Kind);
+
+        // With initial DateTime it is necessary to calculate the offset between its utc time and the actual utc time
+        long epoch_initial = epoch(initial);
+        long epoch_now = epoch(DateTime.UtcNow);
+        offsetSeconds = epoch_initial - epoch_now;
     }
-    public DateTime Now => DateTime.Now.AddSeconds(offsetSeconds*(-1));
-    public DateTime UtcNow => DateTime.UtcNow.AddSeconds(offsetSeconds*(-1));
+    public DateTime Now => DateTime.Now.AddSeconds(offsetSeconds);
+    public DateTime UtcNow => DateTime.UtcNow.AddSeconds(offsetSeconds);
     public DateTime FromUnixTime(long unixTime)
     {
         DateTimeOffset start = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
         DateTimeOffset now = DateTimeOffset.Now;
         DateTimeOffset offset = start.AddSeconds(unixTime);
-        return offset.AddSeconds(offsetSeconds*(-1)).DateTime;
+        return offset.AddSeconds(offsetSeconds * (-1)).DateTime;
+    }
+
+    public static long epoch(DateTime dt)
+    {
+        DateTime utcTime = new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, DateTimeKind.Utc);
+        if (dt.Kind == DateTimeKind.Local || dt.Kind == DateTimeKind.Unspecified)
+        {
+            DateTime dtNew = new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, DateTimeKind.Unspecified);
+            string timeZoneName = "Europe/Rome";
+            TimeZoneInfo timeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneName);
+            utcTime = TimeZoneInfo.ConvertTimeToUtc(dtNew, timeZone);
+        }
+        DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        TimeSpan epochTimeSpan = utcTime - epoch;
+        return (long)epochTimeSpan.TotalSeconds;
     }
 }

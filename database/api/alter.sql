@@ -4,6 +4,9 @@ add foreign key (industry_sector) references industry_sector(sector_name);
 alter table company_far
 add foreign key (vat_number, industry_sector) references company(vat_number, industry_sector) on delete cascade;
 
+alter table secret_key
+add foreign key (vat_number) references company_far(vat_number) on delete cascade;
+
 alter table company_wsp
 add foreign key (vat_number, industry_sector) references company(vat_number, industry_sector) on delete cascade;
 

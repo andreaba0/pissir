@@ -32,19 +32,28 @@ public static class Authentication
         }) ?? new Dictionary<string, object>();
     }
 
-    internal static string GetValue(IDictionary<string, object> dictionary, string key)
-    {
-        return key switch
-        {
-            "iss" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.ISSUER_REQUIRED, "Issuer required"),
-            "aud" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.AUDIENCE_REQUIRED, "Audience required"),
-            "exp" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.EXPIRATION_REQUIRED, "Expiration required"),
-            "iat" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.IAT_REQUIRED, "Issued at required"),
-            "alg" => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.ALGORITHM_REQUIRED, "Algorithm required"),
-            _ => dictionary.ContainsKey(key) ? dictionary[key].ToString() : throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, $"Unknown key {key} in token")
-        };
+    internal static void CheckFieldPresence(IDictionary<string, object> dictionary) {
+        foreach(var field in typeof(Token).GetProperties()) {
+            if(!dictionary.ContainsKey(field.Name)) {
+                throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, $"Missing field(s) in token");
+            }
+        }
     }
 
+    internal static void CheckAlgAndKidPresence(IDictionary<string, object> dictionary)
+    {
+        if (!dictionary.ContainsKey("alg")) throw new AuthenticationException(AuthenticationException.ErrorCode.ALGORITHM_REQUIRED, "Algorithm required");
+        if (!dictionary.ContainsKey("kid")) throw new AuthenticationException(AuthenticationException.ErrorCode.KID_REQUIRED, "Key ID required");
+    }
+
+    /// <summary>
+    /// Verify a JWT token
+    /// </summary>
+    /// <param name="id_token">a jwt token</param>
+    /// <param name="remoteManager">An object that store verification keys</param>
+    /// <param name="dateTimeProvider">An object that allow to verify token at a specific time</param>
+    /// <returns>Token object with the information stored in the token provided as parameter</returns>
+    /// <exception cref="AuthenticationException">An exception if an error occurs during token verification</exception>
     internal static Token VerifiedPayload(
         string id_token,
         RemoteManager remoteManager,
@@ -61,10 +70,12 @@ public static class Authentication
             IDictionary<string, object> header = Jose.JWT.Headers(id_token);
             IDictionary<string, object> payload = ToDictionary(Encoding.UTF8.GetString(Base64Url.Decode(parts[1])));
             string signature = parts[2];
-            string alg = Authentication.GetValue(header, "alg");
-            string kid = Authentication.GetValue(header, "kid");
-            string iss = Authentication.GetValue(payload, "iss");
-            string aud = Authentication.GetValue(payload, "aud");
+            CheckFieldPresence(payload); // Will throw exception if field is missing based on Token class
+            CheckAlgAndKidPresence(header); // Will throw exception if field is missing based on Token class
+            string alg = header["alg"].ToString();
+            string kid = header["kid"].ToString();
+            string iss = payload["iss"].ToString();
+            string aud = payload["aud"].ToString();
             string allowed_iss = EnvManager.Get(EnvManager.Variable.PISSIR_ISS);
             string allowed_aud = EnvManager.Get(EnvManager.Variable.PISSIR_AUD);
             if (iss != allowed_iss) throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_ISSUER, "Invalid issuer");

@@ -3,7 +3,7 @@ import psycopg2
 import os
 import requests
 from utility import JWTRegistry, UlidGenerator
-import jose.jwt
+import jose
 from component.backend.api.utility.postgres import PostgresSuite
 import datetime
 import time
@@ -39,6 +39,7 @@ def getPostgresConnection():
     )
 
 def test1(scope):
+    scope.set_header('Test GET /field should reject with expired token')
 
     jwt_payload = {
         "company_vat_number": "test",
@@ -59,9 +60,7 @@ def test1(scope):
     jwt_payload["exp"] = utc_date - 3600
 
     jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
-    print(jwt)
     
-    scope.set_header('Test should reject request with expired token')
     response = requests.get(
         f"http://{backendConfig['host']}:{backendConfig['port']}/field",
         timeout=2,
@@ -71,7 +70,7 @@ def test1(scope):
     )
     Assertion.Equals(
         scope,
-        "Should reject the request",
+        "Should reject the request with a 401",
         401,
         response.status_code
     )
@@ -84,7 +83,7 @@ def test1(scope):
 
 
 def test2(scope):
-    scope.set_header('Should get a list of all fields')
+    scope.set_header('Test GET /field should succeed and return json[FarmField]')
 
     fake = Faker('it_IT')
     Faker.seed(0)
@@ -131,7 +130,6 @@ def test2(scope):
     jwt_payload["exp"] = utc_date + 3600
 
     jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
-    print(jwt)
 
 
     response = requests.get(
@@ -143,17 +141,103 @@ def test2(scope):
     )
     Assertion.Equals(
         scope,
-        "Should accept the request",
+        "Should accept the request with a 200",
         200,
         response.status_code
     )
-    text = response.text
-    print(text)
     Assertion.Equals(
         scope,
         "Should provide the expected list size",
         5,
         len(response.json())
+    )
+
+def test3(scope):
+    scope.set_header('Should reject access to GET /field for WA role')
+
+    jwt_payload = {
+        "company_vat_number": "test",
+        "role": "WA",
+        "aud": backendConfig["aud"],
+        "iss": backendConfig["iss"],
+        "sub": "test-user"
+    }
+    keys = JWTRegistry.plainMappedKeys()
+    sign_key = keys[0]["key"]
+
+    cDae = CustomDate.parse(backendConfig["initial_date"])
+
+    utc_date = cDae.epoch()
+
+    #sign jwt with custom iat time
+    jwt_payload["iat"] = utc_date - 3600
+    jwt_payload["exp"] = utc_date + 3600
+
+    jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
+    
+    response = requests.get(
+        f"http://{backendConfig['host']}:{backendConfig['port']}/field",
+        timeout=2,
+        headers={
+            "Authorization": f"Bearer {jwt}"
+        }
+    )
+    Assertion.Equals(
+        scope,
+        "Should reject the request with a 403",
+        403,
+        response.status_code
+    )
+    Assertion.Equals(
+        scope,
+        "Should provide the expected message",
+        "User unauthorized",
+        response.text
+    )
+
+def test4(scope):
+    scope.set_header('Should reject access to GET /field with invalid token(s)')
+
+    keys = JWTRegistry.plainMappedKeys()
+    sign_key = keys[0]["key"]
+
+    cDae = CustomDate.parse(backendConfig["initial_date"])
+
+    utc_date = cDae.epoch()
+
+    jwt_payload = {}
+
+    #sign jwt with custom iat time
+    jwt_payload["iat"] = utc_date - 3600
+    jwt_payload["exp"] = utc_date + 3600
+
+    jwt_payload = {
+        "company_vat_number": "test",
+        "aud": backendConfig["aud"],
+        "iss": backendConfig["iss"],
+        #"sub": "test-user"
+    }
+
+    jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
+
+    response = requests.get(
+        f"http://{backendConfig['host']}:{backendConfig['port']}/field",
+        timeout=2,
+        headers={
+            "Authorization": f"Bearer {jwt}"
+        }
+    )
+    Assertion.Equals(
+        scope,
+        "Should reject if <sub> is missing",
+        401,
+        response.status_code
+    )
+    Assertion.Equals(
+        scope,
+        "Should provide the expected message",
+        "Missing field(s) in token",
+        response.text
     )
 
 
@@ -192,5 +276,7 @@ def EntryPoint(
     suite.set_middletier(ClearDatabase)
     suite.add_assertion(test1)
     suite.add_assertion(test2)
+    suite.add_assertion(test3)
+    suite.add_assertion(test4)
     suite.run()
     suite.print_stats()

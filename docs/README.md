@@ -35,8 +35,8 @@ Anche la suite di test ha il proprio container.
 ## Overview esecuzione
 Per visionare il progetto sia in fase di test, sia in fase demo &egrave; sufficiente eseguire da terminale 2 file
 ```
-- build.sh [auth, api, auth_database, api_database, proxy, fake_oauth, mosquitto, frontend]
-- test/manager.sh [build, start]
+- sh build.sh [auth, api, auth_database, api_database, proxy, fake_oauth, mosquitto, frontend]
+- sh test/manager.sh [build, start]
 ```
 Dove la parentesi quadra rappresenta uno tra i possibili argomenti da riga di comando.
 
@@ -59,12 +59,12 @@ chiarezza:
 > poetry run python3 cicd_test_suite/main.py
 ```
 Ora verr&agrave; mostrato il menu della suite di test con le varie opzioni.
+Il comando sopracitato pu&ograve; essere usato anche per eseguire i test in locale senza fare uso di container.
+In tal caso sar&agrave; necessario installare python e poetry nel sistema.
 
-> ATTENZIONE: Appena effettuato il setup dei container con Docker, i test potrebbero fallire se eseguiti l'istante successivo al termine del setup. Tale problematica si deve alla progettazione interna del server di autenticazione che effettua una query al database dei provider OpenId consentiti appena viene avviato. Questo potrebbe causare errori 401 per qualche secondo dall'avvio.
+I test sono stati sviluppati in ambienti Linux, cos&igrave; come il backend dell'applicazione. I container fanno uso di immagini basate su sistema Linux (nei Dockerfile), quindi eseguire i test in ambiente Windows non sar&agrave; possibile (se non si fa uso di WSL).
 
-Per ottimizzare i tempi di creazione del container del backend di Applicazioni Web &egrave; stata creata un'opzione apposita nel menu di avvio. Tale creazione &egrave; gi&agrave; inclusa quando viene fatto il setup completo.
-
-I test sono stati sviluppati in ambienti Linux, cos&igrave; come il backend dell'applicazione pertanto, i container fanno uso di immagini basate su sistema Linux (nei Dockerfile), quindi eseguire i test in ambiente Windows potrebbe non essere possibile (se non si fa uso di WSL2).
+Prima di poter effettuare i test &egrave; necessario creare i container (che verranno successivamente istanziati e avviati per testare il sistema) tramite i comandi citati nel paragrafo precedente. Ogni volta che una modifica viene effettuata a un componente del sistema e&grave; necessario creare una nuova immagine ed eseguire nuovamente i test.
 
 ### Approvazione automatica degli utenti
 Siccome per questo progetto &egrave; previsto come unico sistema di autenticazione quello basato su OpenId, per poter testare le funzionalit&agrave; dell'applicazione quando non esiste ancora alcun utente registrato, bisogna seguire i seguenti step:

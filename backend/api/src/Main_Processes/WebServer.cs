@@ -48,6 +48,9 @@ public class WebServer
         var app = WebApplication.Create(args: new string[] { "--urls", _boundAddress });
 
 
+        // The following 2 endpoints are not part of the API specification.
+        // They are used to test the web server
+
         app.MapGet("/ping", async context =>
         {
             await context.Response.WriteAsync("pong");
@@ -55,6 +58,76 @@ public class WebServer
 
         app.MapGet("/time", async context => {
             await context.Response.WriteAsync(_dateTimeProvider.Now.ToString());
+        });
+
+
+
+        // Here are the endpoints that are part of the API specification <api-definition/api.yaml>
+
+        app.MapPost("/company/secret", async context => {
+            try {
+                string data = Secret.PostCompanySecret(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
+        })
+
+        app.MapGet("/crops", async context => {
+            try {
+                string data = Crops.GetCrops(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
+        });
+
+        app.MapGet("/irrigation", async context => {
+            try {
+                string data = Irrigation.GetIrrigations(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapPost("/water/limit", async context => {
@@ -89,7 +162,25 @@ public class WebServer
         });
 
         app.MapGet("/water/limit/all", async context => {
-            await context.Response.WriteAsync("Water limit all");
+            try {
+                string data = WaterLimitAll.GetWaterLimitAll(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapGet("/water/stock", async context => {
@@ -171,14 +262,14 @@ public class WebServer
 
         app.MapGet("/field", async context => {
             try {
-                List<Fields.GetData> data = Fields.GetFields(
+                string data = Fields.GetFields(
                     context.Request.Headers,
                     _dbDataSource,
                     _dateTimeProvider,
                     _remoteManager
                 );
                 context.Response.StatusCode = 200;
-                await context.Response.WriteAsJsonAsync(data);
+                await context.Response.WriteAsync(data);
             } catch(AuthenticationException e) {
                 context.Response.StatusCode = 401;
                 await context.Response.WriteAsync(e.Message);

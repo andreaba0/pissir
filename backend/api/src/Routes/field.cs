@@ -68,7 +68,7 @@ public class Fields
         return Task.CompletedTask;
     }
 
-    public static List<GetData> GetFields(
+    public static string GetFields(
         IHeaderDictionary headers,
         DbDataSource dataSource,
         IDateTimeProvider dateTimeProvider,
@@ -91,7 +91,7 @@ public class Fields
         using DbDataReader reader = commandGetFields.ExecuteReader();
         if (!reader.HasRows)
         {
-            return new List<GetData>();
+            return "[]";
         }
         List<GetData> data = new List<GetData>();
         while (reader.Read())
@@ -106,7 +106,11 @@ public class Fields
         }
         reader.Close();
         connection.Close();
-        return data;
+        
+        string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { 
+            IncludeFields = true
+        });
+        return json;
     }
 }
 

@@ -14,6 +14,10 @@ using System.Text.RegularExpressions;
 
 namespace Main_Processes;
 
+/// <summary>
+/// The scope of this class is to store in database the data received from the MQTT broker
+/// Data includes temperature, humidity and actuator status
+/// </summary>
 public class TopicSchema {
     public enum Type {
         Temperature,

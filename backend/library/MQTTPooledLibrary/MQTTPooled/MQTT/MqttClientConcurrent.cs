@@ -13,19 +13,31 @@ using MQTTConcurrent.Message;
 
 namespace MQTTConcurrent;
 
+/// <summary>
+/// MqttClientConcurrent is a wrapper around MQTTnet's IManagedMqttClient.
+/// It creates 
+/// </summary>
 public class MqttClientConcurrent
 {
     private readonly IManagedMqttClient mqttClient;
     private readonly ConnectionData cData;
     private readonly Channel<IMqttBusPacket> sendChannel;
     private readonly Channel<IMqttBusPacket> receiveChannel;
+    private bool isConnected = false;
     public MqttClientConcurrent(
         ConnectionData cData,
         Channel<IMqttBusPacket> sendChannel,
         Channel<IMqttBusPacket> receiveChannel
     )
     {
+        /*
+            ManagerClient will handle topic subscriptions across connections.
+            So, no need to resubscribe to a topic when a new connection is made after a disconnect.
+            More info: MQTTnet GitHub wiki/ManagedClient
+        */
         this.mqttClient = new MqttFactory().CreateManagedMqttClient();
+        
+        
         this.cData = cData;
         this.sendChannel = sendChannel;
         this.receiveChannel = receiveChannel;
@@ -37,6 +49,16 @@ public class MqttClientConcurrent
         this.cData = cData;
     }
 #endif
+
+    private void ClientConnectionStatusInfo() {
+        if (this.mqttClient.IsConnected&& !this.isConnected) {
+            this.isConnected = true;
+            Console.WriteLine("MqttClientConcurrent connected");
+        } else if (!this.mqttClient.IsConnected && this.isConnected) {
+            this.isConnected = false;
+            Console.WriteLine("MqttClientConcurrent not connected");
+        }
+    }
 
     public async Task<int> RunClient(CancellationToken ct)
     {
@@ -58,27 +80,16 @@ public class MqttClientConcurrent
             Console.WriteLine(e);
         }
 
+        this.mqttClient.ConnectedAsync += async (e) => {
+            ClientConnectionStatusInfo();
+        };
+        this.mqttClient.DisconnectedAsync += async (e) => {
+            ClientConnectionStatusInfo();
+        };
         this.mqttClient.ApplicationMessageReceivedAsync += OnMessageReceivedAsync;
         bool previousConnectionState = true;
         while (!ct.IsCancellationRequested)
         {
-            if (!this.mqttClient.IsConnected)
-            {
-                if (previousConnectionState == true)
-                {
-                    previousConnectionState = false;
-                    Console.WriteLine("MqttClientConcurrent not connected");
-                }
-                //let the queue fill up while client is disconnected
-                await Task.Delay(1000);
-                continue;
-            } else {
-                if (previousConnectionState == false)
-                {
-                    previousConnectionState = true;
-                    Console.WriteLine("MqttClientConcurrent connected");
-                }
-            }
             IMqttBusPacket message = await this.sendChannel.Reader.ReadAsync(ct);
             if (message is Message.MqttChannelSubscribe subscribeMessage)
             {

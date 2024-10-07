@@ -90,6 +90,15 @@ public class Authorization {
         return true;
     }
 
+    /// <summary>
+    /// This method is used to limit access to a specific API endpoint based on user role
+    /// </summary>
+    /// <param name="headers">header of http request</param>
+    /// <param name="remoteManager">Remote openid provider where jwt verification keys are queried</param>
+    /// <param name="dateTimeProvider">Custom time provider</param>
+    /// <param name="roles">List of User.Role that are allowed</param>
+    /// <returns>User info contained in jwt access token</returns>
+    /// <exception cref="AuthorizationException"></exception>
     public static User AllowByRole(
         IHeaderDictionary headers,
         RemoteManager remoteManager,

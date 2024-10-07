@@ -18,6 +18,13 @@ create table company_wsp (
     industry_sector varchar(3) not null check(industry_sector = 'WSP')
 );
 
+create table secret_key (
+    vat_number varchar(11) primary key,
+    secret_key varchar(64) not null,
+    created_at timestamptz not null default now(),
+    last_accessed timestamptz not null default now()
+);
+
 create table offer(
     id varchar(26) primary key,
     vat_number varchar(11) not null,
@@ -49,6 +56,7 @@ create table daily_water_limit(
     primary key (vat_number, on_date)
 );
 
+-- ensure that available is always greater than consumed
 alter table daily_water_limit 
 add constraint consumption_coherence check (available >= (consumed * consumption_sign) and available - (consumed * consumption_sign) >= 0);
 
@@ -57,7 +65,7 @@ create table farm_field(
     id varchar(26) primary key,
     vat_number varchar(11),
     company_industry_sector varchar(3) not null check(company_industry_sector = 'FAR'),
-    square_meters float not null,
+    square_meters real not null,
     crop_type text not null,
     irrigation_type text not null,
     created_at timestamptz not null default now()

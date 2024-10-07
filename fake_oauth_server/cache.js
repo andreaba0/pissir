@@ -1,3 +1,10 @@
+/**
+ * This file does not contain any sensitive information used in production.
+ * It is used to simulate a cache for the OAuth server.
+ * The real OAuth server used in production is available at <oauth_redirect/*>
+ */
+
+
 const key1 = {
     private: `-----BEGIN PRIVATE KEY-----
 MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDKxFpnRoq3nZbL

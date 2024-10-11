@@ -17,6 +17,11 @@ namespace Routes;
 
 public class Secret
 {
+    public enum KeyState { CREATED, EXISTING }
+    public struct PostData {
+        public string secret_key;
+        public KeyState state;
+    }
 
     public static string PostCompanySecret(
         IHeaderDictionary headers,
@@ -34,17 +39,28 @@ public class Secret
 
         using DbCommand commandGetSecretKey = dataSource.CreateCommand();
 
-        // last_accessed is used to trigger the update and be able to return the secret key. Always.
+        // <insert ... on conflict(...) do update ... returning ...> is used to always return the secret_key
         // Without this command, a transaction would be needed:
         // 1> select ... for update; 
         // 2> insert ...;
         commandGetSecretKey.CommandText = $@"
-            insert into secret_key (vat_number, secret_key) values ($1, $2)
-            on conflict do update set last_accessed = now()
-            returning secret_key
+            select coalesce(
+                (insert into secret_key (
+                    company_vat_number,
+                    secret_key,
+                    created_at
+                ) values (
+                    $1,
+                    $2,
+                    $3
+                ) on conflict (company_vat_number) do nothing returning secret_key, extract(epoch from created_at)),
+                (select secret_key, extract(epoch from created_at) from secret_key where company_vat_number = $1)
+            ) as secret_key
         ";
 
         commandGetSecretKey.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
+        commandGetSecretKey.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, key));
+        commandGetSecretKey.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.Now));
 
         using DbDataReader reader = commandGetSecretKey.ExecuteReader();
         if (!reader.HasRows)

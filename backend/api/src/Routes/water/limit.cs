@@ -15,14 +15,14 @@ using System.Text;
 namespace Routes;
 
 public class WaterLimit {
-    public static class PostWaterLimitBody {
-        public class Request {
-            public string vat_number { get; set; }
-            public float limit { get; set; }
-            public string start_date { get; set; }
-            public string end_date { get; set; }
 
-            public Task validate() {
+    public class PostData {
+        public string vat_number { get; set; }
+        public float limit { get; set; }
+        public string start_date { get; set; }
+        public string end_date { get; set; }
+
+        public bool validate() {
                 if (vat_number == null || vat_number == string.Empty) {
                     throw new WaterLimitException(WaterLimitException.ErrorCode.INVALID_BODY, "Vat number required");
                 }
@@ -35,37 +35,44 @@ public class WaterLimit {
                 if (end_date == null || end_date == string.Empty) {
                     throw new WaterLimitException(WaterLimitException.ErrorCode.INVALID_BODY, "End date required");
                 }
-                return Task.CompletedTask;
+                return true;
             }
-        }
     }
 
-
-    /*
-    
-        In this Microservices setup, it is possible that a company that exists in authentication service does 
-        not exist in this api service. This is because company record in database is created when the user
-        issues a post request to create a field (see jwt access token payload for more information).
-        Therefore, if a limit is set to a company that does not exists in this service yet, the following
-        endpoint will return a 404 error (Not yet available). 
-
-    */
-    public static Task PostWaterLimit(
+    public static string PostWaterLimitBody(
         IHeaderDictionary headers,
-        Stream body,
         DbDataSource dataSource,
         IDateTimeProvider dateTimeProvider,
         RemoteManager remoteManager
     ) {
         User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.WA });
-        
-        PostWaterLimitBody.Request _body = JsonSerializer.DeserializeAsync<PostWaterLimitBody.Request>(body, new JsonSerializerOptions {
-            PropertyNameCaseInsensitive = true,
-            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
-        }).Result ?? throw new WaterLimitException(WaterLimitException.ErrorCode.INVALID_BODY, "Invalid body");
-        _body.validate().Wait();
-        
-        return Task.CompletedTask;
+
+        using DbConnection connection = dataSource.OpenConnection();
+
+        using DbCommand commandPostWaterBody = dataSource.CreateCommand();
+
+        commandPostWaterBody.CommandText = $@"
+            select min(on_date), max(on_date), ((consumed*(consumption_sign))+available) as limit, vat_number
+            from daily_water_limit
+            group by vat_number, ((consumed*(consumption_sign))+available)
+        ";
+
+        using DbDataReader reader = commandPostWaterBody.ExecuteReader();
+        if (!reader.HasRows)
+        {
+            return "[]";
+        }
+        List<PostData> data = new List<PostData>();
+        while (reader.Read())
+        {
+            data.Add(new PostData {
+                vat_number = reader.GetString(3),
+                limit = reader.GetFloat(2),
+                start_date = reader.GetDateTime(0).ToString("yyyy-MM-dd"),
+                end_date = reader.GetDateTime(1).ToString("yyyy-MM-dd")
+            });
+        }
+        return JsonSerializer.Serialize(data);
     }
 }
 

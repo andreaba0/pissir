@@ -100,12 +100,12 @@ def test2(scope):
         insert into company_far(vat_number, industry_sector) values('{vat_number}', 'FAR');
     '''.format(vat_number=vat_number))
     cur.execute('''
-        insert into farm_field(id, vat_number, company_industry_sector, square_meters, crop_type, irrigation_type) values
-        ('{ids[0]}', '{vat_number}', 'FAR', 1000, 'wheat', 'drip'),
-        ('{ids[1]}', '{vat_number}', 'FAR', 2000, 'corn', 'drip'),
-        ('{ids[2]}', '{vat_number}', 'FAR', 3000, 'rice', 'drip'),
-        ('{ids[3]}', '{vat_number}', 'FAR', 4000, 'barley', 'drip'),
-        ('{ids[4]}', '{vat_number}', 'FAR', 5000, 'grain', 'drip');            
+        insert into farm_field(id, vat_number, square_meters, crop_type, irrigation_type) values
+        ('{ids[0]}', '{vat_number}', 1000, 'wheat', 'drip'),
+        ('{ids[1]}', '{vat_number}', 2000, 'corn', 'drip'),
+        ('{ids[2]}', '{vat_number}', 3000, 'rice', 'drip'),
+        ('{ids[3]}', '{vat_number}', 4000, 'barley', 'drip'),
+        ('{ids[4]}', '{vat_number}', 5000, 'grain', 'drip');            
     '''.format(ids=ids, vat_number=vat_number))
 
     cur.close()

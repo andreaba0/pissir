@@ -4,7 +4,7 @@ namespace frontend.Models
 {
     public class UtentePeriodo : Utente
     {
-        [JsonProperty("id")]
+        [JsonProperty("acl_id")]
         public string Id { get; set; }
 
         [JsonProperty("email")]
@@ -13,10 +13,10 @@ namespace frontend.Models
         [JsonProperty("tax_code")]
         public string CodiceFiscale { get; set; }
 
-        [JsonProperty("given_name")]
+        [JsonProperty("first_name")]
         public string Nome { get; set; }
 
-        [JsonProperty("family_name")]
+        [JsonProperty("last_name")]
         public string Cognome { get; set; }
 
         [JsonProperty("company_vat_number")]

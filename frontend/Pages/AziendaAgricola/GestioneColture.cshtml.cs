@@ -11,6 +11,8 @@ namespace frontend.Pages.AziendaAgricola
     {
         public List<Coltura>? Colture { get; set; }
         public List<ColturaStock>? ColtureStock { get; set; }
+        public List<String>? CropsType { get; set; }
+        public List<String>? IrrigationType { get; set; }
 
         // Chiamata API per lista colture
         public async Task<IActionResult> OnGet()
@@ -27,15 +29,26 @@ namespace frontend.Pages.AziendaAgricola
                 // Simulazione dati
                 Colture = GetListaColture();
                 ColtureStock = GetStockColture();
+                CropsType = GetCropsType();
+                IrrigationType = GetIrrigationType();
+                
 
                 return Page();
 
-                // Richiesta API
-                string dataC = await ApiReq.GetDataFromApi(HttpContext, "/field");
-                Colture = JsonConvert.DeserializeObject<List<Coltura>>(dataC);
+                // Richieste API
+                String data = "";
 
-                string dataCS = await ApiReq.GetDataFromApi(HttpContext, "/water/stock");
-                ColtureStock = JsonConvert.DeserializeObject<List<ColturaStock>>(dataCS);
+                data = await ApiReq.GetDataFromApi(HttpContext, "/crops");
+                CropsType = JsonConvert.DeserializeObject<List<string>>(data);
+
+                data = await ApiReq.GetDataFromApi(HttpContext, "/irrigation");
+                IrrigationType = JsonConvert.DeserializeObject<List<string>>(data);
+
+                data = await ApiReq.GetDataFromApi(HttpContext, "/field");
+                Colture = JsonConvert.DeserializeObject<List<Coltura>>(data);
+
+                data = await ApiReq.GetDataFromApi(HttpContext, "/water/stock");
+                ColtureStock = JsonConvert.DeserializeObject<List<ColturaStock>>(data);
             }
             catch (HttpRequestException ex)
             {
@@ -107,7 +120,7 @@ namespace frontend.Pages.AziendaAgricola
             }
             */
 
-            TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova pi� tardi.";
+            TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova più tardi.";
 
             return RedirectToPage();
         }
@@ -206,7 +219,7 @@ namespace frontend.Pages.AziendaAgricola
             }
             */
 
-            TempData["MessaggioErrore"] = "Errore durante l'eliminazione della coltura. Riprova pi� tardi.";
+            TempData["MessaggioErrore"] = "Errore durante l'eliminazione della coltura. Riprova più tardi.";
 
             return RedirectToPage();
         }
@@ -225,7 +238,9 @@ namespace frontend.Pages.AziendaAgricola
                 new Coltura { Id = "1", PartitaIva = "12345678901", MetriQuadrati = 100, TipoColtura = "Grano", TipoIrrigazione = "Goccia" },
                 new Coltura { Id = "2", PartitaIva = "12345678901", MetriQuadrati = 200, TipoColtura = "Sorgo", TipoIrrigazione = "Goccia" },
                 new Coltura { Id = "3", PartitaIva = "12345678901", MetriQuadrati = 150, TipoColtura = "Mais", TipoIrrigazione = "Spruzzo" },
-                new Coltura { Id = "4", PartitaIva = "12345678901", MetriQuadrati = 10, TipoColtura = "Cotone", TipoIrrigazione = "Goccia" }
+                new Coltura { Id = "4", PartitaIva = "12345678901", MetriQuadrati = 10, TipoColtura = "Cotone", TipoIrrigazione = "Goccia" },
+                new Coltura { Id = "5", PartitaIva = "12345678901", MetriQuadrati = 120, TipoColtura = "Canna da zucchero", TipoIrrigazione = "Inondazione" }
+
             };
         }
 
@@ -237,6 +252,33 @@ namespace frontend.Pages.AziendaAgricola
                 new ColturaStock {  Id = "2", AmountRemaining= 190.0f},
                 new ColturaStock {  Id = "3", AmountRemaining= 100.0f},
                 new ColturaStock {  Id = "4", AmountRemaining= 10.0f}
+            };
+        }
+
+        private List<String>? GetCropsType()
+        {
+            return new List<String>
+            {
+                "Grano",
+                "Orzo",
+                "Farro",
+                "Avena",
+                "Patate",
+                "Canna da zucchero",
+                "Sorgo",
+                "Mais",
+                "Cotone"
+            };
+        }
+
+        private List<String>? GetIrrigationType()
+        {
+            return new List<String>
+            {
+                "Goccia",
+                "Spruzzo",
+                "Centralizzata",
+                "Inondazione"
             };
         }
     }

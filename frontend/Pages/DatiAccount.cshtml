@@ -59,6 +59,40 @@
         document.getElementById("emailAzienda").value = datiOriginaliAzienda.emailAzienda;
         document.getElementById("categoria").value = datiOriginaliAzienda.categoria;
     }
+
+
+    // Script per richiedere la chiave del gestore IOT
+    window.onload = function () {
+        // URL
+        let urlTask = "@(ApiReq.urlGenerico)" + "/company/secret";
+
+        // Token JWT dal cookie
+        let token = "@(Request.Cookies["Token"])";
+
+        // Verifica se il token esiste
+        if (!token) {
+            console.error("Token JWT non trovato");
+            return;
+        }
+
+        // Effettua una richiesta POST per ottenere la chiave segreta
+        fetch(urlTask, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Stampa la chiave segreta nel campo con id 'secretKey'
+            document.getElementById('secretKey').value = data.secretKey;
+        })
+        .catch(error => {
+            console.error('Errore durante la richiesta della secret key:', error);
+        });
+    };
+
 </script>
 
 <div style="margin: 1em;">
@@ -107,7 +141,7 @@
                     <h5>Informazioni azienda</h5>
                     <div style="display: flex; justify-content: flex-end;">
                         <button type="button" id="btnModifica" class="btn btn-primary" onclick="abilitaModifica()">Modifica Azienda</button>
-                        <button type="submit" id="btnInviaModifiche" class="btn btn-primary" style="display: none; margin-right:0.5em;">Invia modifiche</button>
+                        <button type="submit" id="btnInviaModifiche" class="btn btn-primary" style="display: none; margin-right:0.5em;">Invia Modifiche</button>
                         <button type="button" id="btnAnnullaModifica" class="btn btn-secondary" style="display: none;" onclick="annullaModifica()">Annulla Modifica</button>
                     </div>
                 </div>
@@ -128,6 +162,10 @@
                 <text>Azienda Agricola</text>
                 }" class="form-control">
             </form>
+            <div style="margin-top: 20px;">
+                <label>Chiave per l'accesso al gestore IOT:</label>
+                <input id="secretKey" type="text" class="form-control" disabled />
+            </div>
         </div>
         
     </div>

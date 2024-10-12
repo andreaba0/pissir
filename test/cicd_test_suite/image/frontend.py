@@ -11,18 +11,17 @@ class frontend_server:
 
     def run(name_with_tag, env_list):
         print("Creating container")
-        # container_name = f"{auth_server_config['image_name']}_{actual time in seconds}"
-        container_name = f"{oauth_server_config['image_name']}_{int(time.time())}"
+        container_name = f"{frontend_server_config['image_name']}"
         container = client.containers.run(
             name_with_tag,
-            #name=container_name,
+            name=container_name,
             environment=env_list,
-            ports={f"{oauth_server_config['internal_port']}/tcp": oauth_server_config['exposed_port']},
+            ports={f"{frontend_server_config['internal_port']}/tcp": frontend_server_config['exposed_port']},
             detach=True,
             labels={
                 "com.pissir.env": "testing",
                 "com.pissir.role": name_with_tag.split(":")[0],
             },
-            remove=True
+            remove=False
         )
         return container

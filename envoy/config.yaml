@@ -1,3 +1,7 @@
+# This is just a sample configuration for this project
+# If for any reason ports are changed (especially api/auth/frontend server ports), this file should be updated accordingly
+
+
 static_resources:
   listeners:
     - name: listener_1
@@ -50,7 +54,10 @@ static_resources:
   clusters:
     - name: "api"
       connect_timeout: 0.25s
-      type: strict_dns
+      type: logical_dns
+      dns_refresh_rate:
+        seconds: 10
+      respect_dns_ttl: true
       load_assignment:
         cluster_name: "api"
         endpoints:
@@ -63,6 +70,12 @@ static_resources:
     - name: "auth"
       connect_timeout: 0.25s
       type: strict_dns
+      dns_refresh_rate:
+        seconds: 10
+      respect_dns_ttl: true
+      dns_failure_refresh_rate:
+        base_interval: 1s
+        max_interval: 30s
       load_assignment:
         cluster_name: "auth"
         endpoints:
@@ -75,6 +88,12 @@ static_resources:
     - name: "frontend"
       connect_timeout: 5s
       type: strict_dns
+      dns_refresh_rate:
+        seconds: 10
+      respect_dns_ttl: true
+      dns_failure_refresh_rate:
+        base_interval: 1s
+        max_interval: 30s
       load_assignment:
         cluster_name: "frontend"
         endpoints:
@@ -83,4 +102,4 @@ static_resources:
                   address:
                     socket_address:
                       address: appweb_frontend_server
-                      port_value: 80
+                      port_value: 8000

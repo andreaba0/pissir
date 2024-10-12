@@ -18,6 +18,15 @@ class StateManager:
             if block.state == State.RUNNING:
                 containers.append(None)
                 continue
+            if block.state == State.RESTART:
+                for container in ls_raw:
+                    if container.labels.get("com.pissir.env") != "testing":
+                        continue
+                    if container.labels.get("com.pissir.role") == block.config.get("image_name"):
+                        client.containers.get(container.id).restart()
+                        containers.append(container)
+                        break
+                continue
             for container in ls_raw:
                 if container.labels.get("com.pissir.env") != "testing":
                     continue
@@ -40,6 +49,7 @@ class State(Enum):
     RUNNING = 1
     NEW = 2
     CLEAR = 3
+    RESTART = 4
 
 
 class NetworkState:

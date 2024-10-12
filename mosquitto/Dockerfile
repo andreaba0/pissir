@@ -1,4 +1,5 @@
 from eclipse-mosquitto:2.0.18
+run apk update && apk add net-tools iproute2
 
 COPY mosquitto.conf /mosquitto/config/mosquitto.conf
 COPY mosquitto.acl /mosquitto/config/mosquitto.acl

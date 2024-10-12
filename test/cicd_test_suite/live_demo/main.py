@@ -129,6 +129,8 @@ def IntegrationMain():
     uploadKeys(authServerConfig, authDatabaseConfig)
     checkDatabaseConnectivity(containers[4], apiDatabaseConfig)
     checkServerConnectivity(containers[2], oauthServerConfig)
+    checkServerConnectivity(containers[5], mosquittoServerConfig)
+    checkServerConnectivity(containers[6], proxyServerConfig)
     initAuthDatabase(oauthServerConfig, authDatabaseConfig)
 
     containers = StateManager.converge([
@@ -145,3 +147,17 @@ def IntegrationMain():
     checkServerConnectivity(containers[3], apiServerConfig)
     ct = Container(containers[0])
     ct.WaitForStringInLogs(f"Updated RSA parameters for: {authServerConfig['environment']['DOTNET_ENV_PISSIR_ISS']}", 30)
+
+    # Restarting proxy server is necessary and not doing so will make envoy essentially useless
+    # For more information see: /docs/Envoy.md
+    containers = StateManager.converge([
+        Block(auth_server, authServerConfig, State.RUNNING),
+        Block(auth_database, authDatabaseConfig, State.RUNNING),
+        Block(oauth_server, oauthServerConfig, State.RUNNING),
+        Block(api_server, apiServerConfig, State.RUNNING),
+        Block(api_database, apiDatabaseConfig, State.RUNNING),
+        Block(mosquitto_server, mosquittoServerConfig, State.RUNNING),
+        Block(proxy_server, proxy_server_config, State.RESTART),
+        Block(frontend_server, frontendServerConfig, State.RUNNING)
+    ])
+    checkServerConnectivity(containers[6], proxyServerConfig)

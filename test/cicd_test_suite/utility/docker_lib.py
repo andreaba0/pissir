@@ -71,6 +71,10 @@ class Container:
                 ])
                 return
 
+
+    # The following function connects to a container and checks if a process is running on a specific port
+    # This method is required to test that the process running in the container is effectively listening for incoming connections
+    # In this case package net-tools is required to run netstat
     def WaitRunningProcessOnPort(self, proto, local_address, state, timeout=30):
         currentTime = 0
         while True:
@@ -99,6 +103,9 @@ class Container:
                 return
             time.sleep(1)
         raise Exception("Time for process to start timed out")
+    
+    # The following function connects to a container and checks if an IP address has been assigned to a specific interface
+    # This method is required to test that the network configuration of the container is correct
     def WaitIpAssignment(self, ip, netmask, timeout=30):
         currentTime = 0
         while True:

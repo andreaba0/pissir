@@ -60,6 +60,10 @@ public class WebServer
             await context.Response.WriteAsync(_dateTimeProvider.Now.ToString());
         });
 
+        app.MapGet("/health", async context => {
+            context.Response.StatusCode = 204;
+        });
+
 
 
         // Here are the endpoints that are part of the API specification <api-definition/api.yaml>
@@ -84,7 +88,7 @@ public class WebServer
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync(e.Message);
             }
-        })
+        });
 
         app.MapGet("/crops", async context => {
             try {

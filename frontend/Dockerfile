@@ -1,4 +1,4 @@
-from mcr.microsoft.com/dotnet/aspnet:8.0 as dotnet8_runtime_nettools
+from mcr.microsoft.com/dotnet/aspnet:7.0 as dotnet8_runtime_nettools
 run apt update && apt install -y net-tools iproute2
 
 from mcr.microsoft.com/dotnet/sdk:8.0 as build
@@ -19,7 +19,7 @@ WORKDIR /app/frontend
 # Copy source code
 COPY ./Models /app/frontend/Models
 COPY ./Pages /app/frontend/Pages
-COPY ./Properties /app/frontend/Properties
+#COPY ./Properties /app/frontend/Properties
 COPY ./Styles /app/frontend/Styles
 COPY ./wwwroot /app/frontend/wwwroot
 COPY ./Program.cs /app/frontend
@@ -45,3 +45,4 @@ expose 8000
 
 #run dotnet and redirect output to file /app_compiled/log.txt
 entrypoint ["dotnet", "frontend.dll"]
+CMD ["--urls", "http://0.0.0.0:8000"]

@@ -23,6 +23,6 @@ class oauth_server:
                 "com.pissir.env": "testing",
                 "com.pissir.role": name_with_tag.split(":")[0],
             },
-            remove=True
+            remove=False
         )
         return container

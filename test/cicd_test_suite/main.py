@@ -1,6 +1,6 @@
 from component.backend.auth.main import AuthMain
 from component.backend.api.main import ApiMain
-from integration.main import IntegrationMain
+from live_demo.main import IntegrationMain
 from custom_env.main import custom_env_routine
 
 
@@ -19,7 +19,7 @@ def main():
         if choice == "2":
             ApiMain()
             continue
-        if choice == "3":
+        if choice == "4":
             IntegrationMain()
             continue
         if choice == "6":

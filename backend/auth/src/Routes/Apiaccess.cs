@@ -278,6 +278,19 @@ public class ApiAccess {
         }
     }
 
+    /// <summary>
+    /// This method returns a JWT access token to allow user to access API endpoints
+    /// User with role FA must have rights to access the API
+    /// User with role WA has right access by default
+    /// </summary>
+    /// <param name="headers"></param>
+    /// <param name="dataSource"></param>
+    /// <param name="dateTimeProvider"></param>
+    /// <param name="remoteJwksHub"></param>
+    /// <param name="localKeyManager"></param>
+    /// <param name="issuer"></param>
+    /// <param name="audience"></param>
+    /// <returns></returns>
     public static Task<string> PostMethod_Token(
         IHeaderDictionary headers,
         DbDataSource dataSource,
@@ -295,40 +308,49 @@ public class ApiAccess {
             User user = AuthorizationService.GetUser(remoteJwksHub, dataSource, token.sub, remoteJwksHub.GetIssuerName(token.iss)).Result;
 
             if(user.role != "FA" && user.role != "WA") throw new ProfileException(ProfileException.ErrorCode.UNKNOW_USER_ROLE, "Unknow user role");
-            if(user.role == "WA") throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User is not authorized to perform this action");
+            //if(user.role == "WA") throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User is not authorized to perform this action");
 
-            using DbConnection connection = dataSource.OpenConnection();
-            DbCommand command = connection.CreateCommand();
-            command.CommandText = @"
-                select extract(epoch from 
-                    edate::timestamp - sdate::timestamp
-                ) / 60 as remaining_time
-                from api_acl
-                where person_fa=(
-                    select account_id
-                    from person
-                    where global_id=$1
-                ) and sdate<=$2 and edate>$2
-                order by remaining_time desc
-                limit 1
-            ";
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(user.global_id)));
-            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.UtcNow));
             int remaining_time = 0;
-            using (DbDataReader reader = command.ExecuteReader()) {
-                if(reader.HasRows) {
-                    while(reader.Read()) {
-                        remaining_time = reader.GetInt32(0);
+            using DbConnection connection = dataSource.OpenConnection();
+
+            if (user.role == "FA") {
+                DbCommand command = connection.CreateCommand();
+                command.CommandText = @"
+                    select extract(epoch from 
+                        edate::timestamp - sdate::timestamp
+                    ) / 60 as remaining_time
+                    from api_acl
+                    where person_fa=(
+                        select account_id
+                        from person
+                        where global_id=$1
+                    ) and sdate<=$2 and edate>$2
+                    order by remaining_time desc
+                    limit 1
+                ";
+                command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Guid, Guid.Parse(user.global_id)));
+                command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.UtcNow));
+                
+                using (DbDataReader reader = command.ExecuteReader()) {
+                    if(reader.HasRows) {
+                        while(reader.Read()) {
+                            remaining_time = reader.GetInt32(0);
+                        }
                     }
                 }
+            } else {
+                // User has role WA
+                remaining_time = 10;
             }
 
             if(remaining_time <= 0) throw new ApiAccessException(ApiAccessException.ErrorCode.UNAUTHORIZED, "No remaining time");
             if(remaining_time > 10) remaining_time = 10; // access token max lifespan is 10 minutes
 
             DateTime currentDate = dateTimeProvider.UtcNow;
-            int iatSeconds = (int)currentDate.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-            int expSeconds = (int)currentDate.AddMinutes(remaining_time).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            long iatSeconds = DateTimeProvider.epoch(currentDate);
+            long expSeconds = iatSeconds + (remaining_time * 60);
+            //int iatSeconds = (int)currentDate.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            //int expSeconds = (int)currentDate.AddMinutes(remaining_time).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
 
             IDictionary<string, object> payload = new Dictionary<string, object>();
             payload.Add("sub", user.global_id);

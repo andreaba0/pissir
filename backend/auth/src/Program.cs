@@ -52,6 +52,7 @@ class Program
         string issuer = GetProperty(configuration, "pissir:iss");
         string audience = GetProperty(configuration, "pissir:aud");
         string boundAddress = GetProperty(configuration, "webserver:bound");
+        string initialDate = GetProperty(configuration, "initial:datetime");
 
         CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -68,7 +69,7 @@ class Program
         HttpClient httpClient = new HttpClient();
         httpClient.Timeout = TimeSpan.FromSeconds(5);
 
-        string initialDate = Environment.GetEnvironmentVariable("INITIAL_DATE") ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+        /*string initialDate = Environment.GetEnvironmentVariable("INITIAL_DATE") ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
         Regex dateRegex = new Regex("^(?<day>[0-9]{2})/(?<month>[0-9]{2})/(?<year>[0-9]{4}) (?<hour>[0-9]{2}):(?<minute>[0-9]{2}):(?<second>[0-9]{2})$");
         Match match = dateRegex.Match(initialDate);
         if (!match.Success)
@@ -87,7 +88,8 @@ class Program
         IDateTimeProvider dateTimeProvider = new DateTimeProvider(
             startDate
         );
-        Console.WriteLine($"Start date: {startDate}");
+        Console.WriteLine($"Start date: {startDate}");*/
+        IDateTimeProvider dateTimeProvider = DateTimeProvider.parse(initialDate);
 
         ISharedStorage dbHasChanged = new SharedStorage((bool)false);
 

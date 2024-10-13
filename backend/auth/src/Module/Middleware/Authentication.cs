@@ -263,15 +263,22 @@ public static class Authentication
 
     public static bool IsExpired(Token token, IDateTimeProvider dateTimeProvider)
     {
-        DateTime now = dateTimeProvider.UtcNow;
+        /*DateTime now = dateTimeProvider.UtcNow;
         DateTime expiration = dateTimeProvider.FromUnixTime(token.exp);
-        return now > expiration;
+        return now > expiration;*/
+        long epoch = (long)DateTimeProvider.epoch(dateTimeProvider.UtcNow);
+        int expiration = token.exp;
+        Console.WriteLine($"Epoch: {epoch}, Expiration: {expiration}");
+        return epoch > expiration;
     }
 
     public static bool IsActuallyValid(Token token, IDateTimeProvider dateTimeProvider)
     {
-        DateTime now = dateTimeProvider.UtcNow;
+        /*DateTime now = dateTimeProvider.UtcNow;
         DateTime issuedAt = dateTimeProvider.FromUnixTime(token.iat-(60*2));
+        return now >= issuedAt;*/
+        long now = (long)DateTimeProvider.epoch(dateTimeProvider.UtcNow);
+        int issuedAt = token.iat;
         return now >= issuedAt;
     }
     public static bool IsExpired(

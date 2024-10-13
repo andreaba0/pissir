@@ -1,4 +1,4 @@
-from utility import TestSuite, Assertion
+from utility import TestSuite, Assertion, custom_date
 import psycopg2
 import os
 import requests
@@ -8,6 +8,7 @@ import datetime
 import random
 import uuid
 from component.backend.auth.utility.postgres import PostgresSuite
+from config.auth_server import auth_server_config
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -17,7 +18,8 @@ databaseConfig = {
     "port": None,
     "database": None,
     "user": None,
-    "password": None
+    "password": None,
+    "initial_datetime": auth_server_config["environment"]["DOTNET_ENV_INITIAL_DATETIME"]
 }
 
 backendConfig = {
@@ -209,6 +211,7 @@ def test1(scope):
     conn.commit()
     conn.close()
     
+    date = custom_date.CustomDate.parse(databaseConfig["initial_datetime"])
     token = JWTRegistry.generate({
         "kid": "key1",
         "alg": "RS256",
@@ -220,8 +223,8 @@ def test1(scope):
         "email": userWSP.email,
         "iss": "https://appweb.andreabarchietto.it",
         "aud": "internal_workspace@appweb.andreabarchietto.it",
-        "iat": 1316239022,
-        "exp": 1899999999
+        "iat": date.epoch() - 3600,
+        "exp": date.epoch() + 3600
     })
     response = requests.get(
         f"http://{backendConfig['host']}:{backendConfig['port']}/apiaccess",
@@ -543,7 +546,8 @@ def EntryPoint(
     database_user,
     database_password,
     server_ip,
-    server_port
+    server_port,
+    *args,
 ):
     databaseConfig["host"] = database_ip
     databaseConfig["port"] = database_port

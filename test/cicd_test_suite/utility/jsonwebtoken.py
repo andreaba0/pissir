@@ -5,6 +5,18 @@ from uuid import uuid4
 
 class JWTRegistry: 
     cache = {}
+    def returnJsonPayload(token):
+        return jwt.decode(token, "", options={
+            "verify_signature": False,
+            "verify_exp": False,
+            "verify_iat": False,
+            "verify_nbf": False,
+            "verify_aud": False,
+            "verify_iss": False,
+            "verify_sub": False,
+            "verify_jti": False
+
+        })
     def generate(header, payload):
         #create string base64(header).base64(payload)
         strHeader = str(header)

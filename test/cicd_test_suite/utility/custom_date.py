@@ -26,6 +26,8 @@ class CustomDate:
     def secondsTimeZone(self):
         return -int(time.timezone)
 
+    # epoch is generated as the number of seconds since 1st January 1970 (This is the Unix epoch)
+    # It is used as <iat> and <exp> fields in the JWT token
     def epoch(self):
         utc_date = self.tz.localize(self.date).astimezone(pytz.utc)
         return int(utc_date.timestamp())

@@ -1,8 +1,9 @@
-from utility import TestSuite, Assertion
+from utility import TestSuite, Assertion, CustomDate
 import psycopg2
 import os
 import requests
 from utility import JWTRegistry
+from config.auth_server import auth_server_config
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -12,7 +13,8 @@ databaseConfig = {
     "port": None,
     "database": None,
     "user": None,
-    "password": None
+    "password": None,
+    "initial_datetime": auth_server_config["environment"]["DOTNET_ENV_INITIAL_DATETIME"]
 }
 
 backendConfig = {
@@ -79,6 +81,46 @@ def test1(scope):
         scope,
         "Should be an array of 3 elements",
         "Not Found",
+        data
+    )
+
+    date = CustomDate.parse(databaseConfig["initial_datetime"])
+
+    token = JWTRegistry.generate({
+        "kid": "key1",
+        "alg": "RS256",
+        "typ": "JWT",
+    }, {
+        "sub": "1234567890",
+        "given_name": "Sam",
+        "family_name": "Marz",
+        "email": "sam.marz@gmail.com",
+        "iss": "https://appweb.andreabarchietto.it",
+        "aud": "internal_workspace@appweb.andreabarchietto.it",
+        "iat": date.epoch() - (3600*2),
+        "exp": date.epoch() - 3600
+    })
+    response = requests.get(
+        f"http://{backendConfig['host']}:{backendConfig['port']}/profile",
+        timeout=2,
+        headers={
+            "Authorization": f"bearer {token}"
+        }
+    )
+
+    Assertion.Equals(
+        scope,
+        "Should reject with an expired token",
+        401,
+        response.status_code
+    )
+
+    data = response.text
+
+    Assertion.Equals(
+        scope,
+        "Should return an expired token message",
+        "Token expired",
         data
     )
 

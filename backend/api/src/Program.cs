@@ -24,11 +24,7 @@ class Program
         string? value = configuration[key];
         if (value == null)
         {
-#if LOAD_APPSETTINGS
-            throw new Exception($"Missing configuration key: {key} in appsettings.json");
-#else
             throw new Exception($"Missing configuration key: {key} in environment variables");
-#endif
         }
         return value;
     }
@@ -36,12 +32,7 @@ class Program
     {
         var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-#if LOAD_APPSETTINGS
-            .AddJsonFile("appsettings.json", optional:true, reloadOnChange:true)
-            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional:false, reloadOnChange:true);
-#else
             .AddEnvironmentVariables();
-#endif
         var configuration = builder.Build();
 
         string mqttHost = GetProperty(configuration, "mqtt:host");
@@ -64,10 +55,15 @@ class Program
 
         string webserverBound = GetProperty(configuration, "webserver:bound");
 
-        string initialDate = GetProperty(configuration, "initial:date");
+        // If initial_date is not set in the environment, the DateTimeProvider will use the current time
+        string? initialDate = Environment.GetEnvironmentVariable("DOTNET_ENV_INITIAL_DATE");
+        IDateTimeProvider dateTimeProvider = new DateTimeProvider();
+        if (initialDate != null)
+        {
+            dateTimeProvider = DateTimeProvider.parse(initialDate);
+        }
 
         CancellationTokenSource cts = new CancellationTokenSource();
-        DateTimeProvider dateTimeProvider = DateTimeProvider.parse(initialDate);
 
         //Shared thread safe instances
         DbDataSource dataSource = NpgsqlDataSource.Create($"host={postgresHost};port={postgresPort};database={postgresDatabaseName};username={postgresUsername};password={postgresPassword};Pooling=true");

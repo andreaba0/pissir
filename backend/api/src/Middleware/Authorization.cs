@@ -32,6 +32,14 @@ public class Authorization {
         {"Farm", Authorization.Scheme.Farm}
     };
 
+    public static bool getAuthorizationHeader(
+        IHeaderDictionary headers,
+        out string authorizationHeader
+    ) {
+        authorizationHeader = headers["Authorization"].Count > 0 ? headers["Authorization"].ToString() : string.Empty;
+        return authorizationHeader != string.Empty;
+    }
+
     public static bool tryParseAuthorizationHeader(string authorizationHeader, out Authorization.Scheme _scheme, out string _token, out string error_message) {
         _scheme = Authorization.Scheme.Bearer;
         _token = string.Empty;

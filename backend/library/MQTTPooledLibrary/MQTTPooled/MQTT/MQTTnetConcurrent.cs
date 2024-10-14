@@ -224,7 +224,7 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
             IMqttBusPacket message = await this.sharedInputChannel.Reader.ReadAsync(ct);
             if (message is MqttChannelMessage mqttMessage)
             {
-                this.dispatcher.Push(mqttMessage);
+                await this.dispatcher.Push(mqttMessage);
                 continue;
             }
             if (message is MqttChannelSubscribeCommand mqttSubscription)
@@ -237,7 +237,7 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
                 if (!this.subscriptionsToChannels.ContainsKey(topic))
                 {
                     this.subscriptionsToChannels[topic] = 1;
-                    this.dispatcher.PushAll(pubsubMessage);
+                    await this.dispatcher.PushAll(pubsubMessage);
                 }
                 else
                 {
@@ -254,7 +254,7 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
                     if (this.subscriptionsToChannels[Topic] == 0)
                     {
                         MqttChannelUnsubscribe pubsubMessage2 = new MqttChannelUnsubscribe("$share/" + this.ServerTopic + "/" + Topic);
-                        this.dispatcher.PushAll(pubsubMessage2);
+                        await this.dispatcher.PushAll(pubsubMessage2);
                         this.subscriptionsToChannels.Remove(Topic);
                     }
                     this.subscriptionsToChannels[Topic]--;
@@ -284,7 +284,7 @@ public class MQTTnetConcurrent : IMQTTnetConcurrent, IDisposable
             {
                 for (int i = 0; i < this.channelSubscriptions.Count; i++)
                 {
-                    this.channelSubscriptions[i].Writer.WriteAsync(mqttMessage);
+                    await this.channelSubscriptions[i].Writer.WriteAsync(mqttMessage);
                 }
                 continue;
             }

@@ -20,8 +20,6 @@ WORKDIR /app/frontend
 COPY ./Models /app/frontend/Models
 COPY ./Pages /app/frontend/Pages
 #COPY ./Properties /app/frontend/Properties
-COPY ./Styles /app/frontend/Styles
-COPY ./wwwroot /app/frontend/wwwroot
 COPY ./Program.cs /app/frontend
 
 workdir /app/frontend
@@ -37,6 +35,8 @@ copy --from=build /publish_compiled /app_compiled
 #copy ./auth/src/appsettings.json /app_compiled
 #copy /auth/src/appsettings.Testing.json /app_compiled
 workdir /app_compiled
+COPY ./Styles /app_compiled/Styles
+COPY ./wwwroot /app_compiled/wwwroot
 
 env ASPNETCORE_ENVIRONMENT=Testing
 env DOTNET_ENVIRONMENT=Testing

@@ -6,9 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Inputs="Styles\app.pcss" Outputs="wwwroot\css\app.min.css">
-    <Exec Command="npm run build" />
-  </Target>
+
 
   <ItemGroup>
     <Compile Remove="Pages\Shared\_Layout.cshtml.cs" />

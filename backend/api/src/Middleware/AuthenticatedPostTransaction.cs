@@ -49,7 +49,7 @@ public class AuthenticatedPostTransaction : IDisposable {
     /// </summary>
     /// <param name="user">a User object that store information provided in JWT access token</param>
     /// <returns></returns>
-    public async Task createUserInDatabase(User user) {
+    public Task createUserInDatabase(User user) {
         using DbConnection conn = dataSource.OpenConnection();
         string table = (User.GetRole(user) == User.Role.FA) ? "company_far" : "company_wsp";
         string industry_sector = (User.GetRole(user) == User.Role.FA) ? "FAR" : "WSP";

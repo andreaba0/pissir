@@ -249,15 +249,15 @@ public class RemoteManager : Manager
                 );
             }
             Console.WriteLine(JsonSerializer.Serialize(_rsaParameters));
-            base.SwitchArray(_rsaParameters);
+            await base.SwitchArray(_rsaParameters);
         }
         catch (Exception ex)
         {
             Console.WriteLine("Error in RemoteManager");
             Console.WriteLine(ex.Message);
-            base.SwitchArray(new RSAKey[0]);
+            await base.SwitchArray(new RSAKey[0]);
             Console.WriteLine(ex.Message);
-            throw ex;
+            throw;
         }
     }
 }

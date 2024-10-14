@@ -39,8 +39,9 @@ public class WaterLimit {
             }
     }
 
-    public static string PostWaterLimitBody(
+    public static string Post(
         IHeaderDictionary headers,
+        Stream body,
         DbDataSource dataSource,
         IDateTimeProvider dateTimeProvider,
         RemoteManager remoteManager

@@ -80,31 +80,32 @@ public class MqttClientConcurrent
             Console.WriteLine(e);
         }
 
-        this.mqttClient.ConnectedAsync += async (e) => {
+        this.mqttClient.ConnectedAsync += (e) => {
             ClientConnectionStatusInfo();
+            return Task.CompletedTask;
         };
-        this.mqttClient.DisconnectedAsync += async (e) => {
+        this.mqttClient.DisconnectedAsync += (e) => {
             ClientConnectionStatusInfo();
+            return Task.CompletedTask;
         };
         this.mqttClient.ApplicationMessageReceivedAsync += OnMessageReceivedAsync;
-        bool previousConnectionState = true;
         while (!ct.IsCancellationRequested)
         {
             IMqttBusPacket message = await this.sendChannel.Reader.ReadAsync(ct);
             if (message is Message.MqttChannelSubscribe subscribeMessage)
             {
                 Console.WriteLine($"Client is subscribing to topic {subscribeMessage.Topic}");
-                ProcessTopicSubscription(subscribeMessage);
+                await ProcessTopicSubscription(subscribeMessage);
                 continue;
             }
             if (message is Message.MqttChannelUnsubscribe unsubscribeMessage)
             {
-                ProcessTopicUnsubscribe(unsubscribeMessage.Topic);
+                await ProcessTopicUnsubscribe(unsubscribeMessage.Topic);
                 continue;
             }
             if (message is Message.MqttChannelMessage publishMessage)
             {
-                ProcessPublish(publishMessage);
+                await ProcessPublish(publishMessage);
                 continue;
             }
         }

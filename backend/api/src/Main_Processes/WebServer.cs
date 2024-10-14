@@ -68,6 +68,28 @@ public class WebServer
 
         // Here are the endpoints that are part of the API specification <api-definition/api.yaml>
 
+        app.MapGet("/resourcemanager/field", async context => {
+            try {
+                string data = ResourceManagerField.Get(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
+        });
+
         app.MapPost("/company/secret", async context => {
             try {
                 string data = Secret.PostCompanySecret(
@@ -136,13 +158,13 @@ public class WebServer
 
         app.MapPost("/water/limit", async context => {
             try {
-                WaterLimit.PostWaterLimit(
+                WaterLimit.Post(
                     context.Request.Headers,
                     context.Request.Body,
                     _dbDataSource,
                     _dateTimeProvider,
                     _remoteManager
-                ).Wait();
+                );
                 context.Response.StatusCode = 200;
                 await context.Response.WriteAsync("Water limit set");
             } catch(WaterLimitException e) {

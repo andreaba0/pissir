@@ -64,6 +64,11 @@ public class DateTimeProvider : IDateTimeProvider
         return offset.AddSeconds(offsetSeconds * (-1)).DateTime;
     }
 
+    /// <summary>
+    /// Convert a DateTime object to epoch time
+    /// </summary>
+    /// <param name="dt">DateTime in UTC</param>
+    /// <returns></returns>
     public static long epoch(DateTime dt)
     {
         DateTime utcTime = new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, DateTimeKind.Utc);

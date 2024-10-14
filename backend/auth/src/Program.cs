@@ -24,11 +24,7 @@ class Program
         string? value = configuration[key];
         if (value == null)
         {
-#if LOAD_APPSETTINGS
-            throw new Exception($"Missing configuration key: {key} in appsettings.json");
-#else
             throw new Exception($"Missing configuration key: {key} in environment variables");
-#endif
         }
         return value;
     }
@@ -36,12 +32,7 @@ class Program
     {
         var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-#if LOAD_APPSETTINGS
-            .AddJsonFile("appsettings.json", optional:true, reloadOnChange:true)
-            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional:false, reloadOnChange:true);
-#else
             .AddEnvironmentVariables();
-#endif
         var configuration = builder.Build();
 
         string postgresHost = GetProperty(configuration, "database:host");
@@ -52,7 +43,6 @@ class Program
         string issuer = GetProperty(configuration, "pissir:iss");
         string audience = GetProperty(configuration, "pissir:aud");
         string boundAddress = GetProperty(configuration, "webserver:bound");
-        string initialDate = GetProperty(configuration, "initial:datetime");
 
         CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -63,33 +53,17 @@ class Program
             cts.Cancel();
         };
 
+        string? initialDate = Environment.GetEnvironmentVariable("INITIAL_DATE");
+        IDateTimeProvider dateTimeProvider = new DateTimeProvider();
+        if (initialDate != null) {
+            dateTimeProvider = DateTimeProvider.parse(initialDate);
+        }
+
         //Shared thread safe instances
         DbDataSource dataSource = NpgsqlDataSource.Create($"host={postgresHost};port={postgresPort};database={postgresDatabaseName};username={postgresUsername};password={postgresPassword};Pooling=true;");
 
         HttpClient httpClient = new HttpClient();
         httpClient.Timeout = TimeSpan.FromSeconds(5);
-
-        /*string initialDate = Environment.GetEnvironmentVariable("INITIAL_DATE") ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
-        Regex dateRegex = new Regex("^(?<day>[0-9]{2})/(?<month>[0-9]{2})/(?<year>[0-9]{4}) (?<hour>[0-9]{2}):(?<minute>[0-9]{2}):(?<second>[0-9]{2})$");
-        Match match = dateRegex.Match(initialDate);
-        if (!match.Success)
-        {
-            throw new Exception("Invalid date format");
-        }
-        DateTime startDate = new DateTime(
-            int.Parse(match.Groups["year"].Value),
-            int.Parse(match.Groups["month"].Value),
-            int.Parse(match.Groups["day"].Value),
-            int.Parse(match.Groups["hour"].Value),
-            int.Parse(match.Groups["minute"].Value),
-            int.Parse(match.Groups["second"].Value)
-        );
-
-        IDateTimeProvider dateTimeProvider = new DateTimeProvider(
-            startDate
-        );
-        Console.WriteLine($"Start date: {startDate}");*/
-        IDateTimeProvider dateTimeProvider = DateTimeProvider.parse(initialDate);
 
         ISharedStorage dbHasChanged = new SharedStorage((bool)false);
 

@@ -35,11 +35,9 @@ WORKDIR /app/backend/api/src
 COPY ./library/OpenIdManager/src/Module /app/backend/library/OpenIdManager/src/
 COPY ./library/MQTTPooledLibrary/MQTTPooled/MQTT /app/backend/library/MQTTPooledLibrary/MQTTPooled/
 
-COPY ./api/src/Module /app/backend/api/src/
 COPY ./api/src/Routes /app/backend/api/src/
 COPY ./api/src/Middleware /app/backend/api/src/
 COPY ./api/src/Main_Processes /app/backend/api/src/
-COPY ./api/src/Interface /app/backend/api/src/
 COPY ./api/src/Types /app/backend/api/src/
 COPY ./api/src/Utility /app/backend/api/src/
 COPY ./api/src/Program.cs /app/backend/api/src/

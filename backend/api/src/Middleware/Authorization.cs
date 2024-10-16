@@ -29,7 +29,7 @@ public class Authorization {
     public static readonly Dictionary<string, Authorization.Scheme> _schemeMap = new Dictionary<string, Authorization.Scheme> {
         {"Bearer", Authorization.Scheme.Bearer},
         {"Internal", Authorization.Scheme.Internal},
-        {"Farm", Authorization.Scheme.Farm}
+        {"Pissir-farm-hmac-sha256", Authorization.Scheme.Farm}
     };
 
     public static bool getAuthorizationHeader(
@@ -90,7 +90,7 @@ public class Authorization {
 
     public static bool validateFarmSyntax(Regex tokenRegex, string authorizationHeader) {
         string token = tokenRegex.Match(authorizationHeader).Groups["token"].Value;
-        Regex jwtRegex = new Regex(@"^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$");
+        Regex jwtRegex = new Regex(@"^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$");
         string jwtToken = jwtRegex.Match(token).Value;
         if(jwtToken == string.Empty) {
             return false;
@@ -135,6 +135,71 @@ public class Authorization {
             throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User unauthorized");
         }
         return user;
+    }
+
+    /// <summary>
+    /// This method is used to return the payload of a resource manager token
+    /// Token syntax header follows the format:
+    /// "Authorization: Pissir-farm-hmac-sha256 <base64url(payload)>.<base64url(signature)>"
+    /// </summary>
+    /// <param name="headers"></param>
+    /// <param name="dateTimeProvider"></param>
+    /// <param name="dataSource"></param>
+    /// <returns></returns>
+    /// <exception cref="AuthenticationException"></exception>
+    /// <exception cref="AuthorizationException"></exception>
+    public static FarmToken AuthorizedPayload(
+        IHeaderDictionary headers,
+        IDateTimeProvider dateTimeProvider,
+        DbDataSource dataSource
+    ) {
+        bool foundAH = Authorization.getAuthorizationHeader(headers, out string authorizationHeader);
+        if (!foundAH) {
+            throw new AuthenticationException(AuthenticationException.ErrorCode.MISSING_AUTHORIZATION_HEADER, "Missing Authorization header");
+        }
+        bool parsedAH = Authorization.tryParseAuthorizationHeader(authorizationHeader, out Authorization.Scheme _scheme, out string _token, out string error_message);
+        if (!parsedAH) {
+            throw new AuthorizationException(AuthorizationException.ErrorCode.INVALID_AUTHORIZATION_HEADER, error_message);
+        }
+        string[] parts = _token.Split(".");
+        string encoded_payload = parts[0];
+        string payload = Utility.Utility.Base64URLDecode(parts[0]);
+        string request_signature = Utility.Utility.Base64URLDecode(parts[1]);
+        FarmToken farmToken = JsonSerializer.Deserialize<FarmToken>(request_info, new JsonSerializerOptions {
+            PropertyNameCaseInsensitive = true,
+        });
+        if(farmToken.method != headers["Method"]&& farmToken.path != headers["Path"]){
+            throw new AuthorizationException(AuthorizationException.ErrorCode.INVALID_AUTHORIZATION_HEADER, "Invalid path or method");
+        }
+        long epochNow = DateTimeProvider.epoch(dateTimeProvider.UtcNow);
+        if (epochNow > farmToken.exp) {
+            throw new AuthenticationException(AuthenticationException.ErrorCode.TOKEN_EXPIRED, "Token expired");
+        }
+        if (epochNow < farmToken.iat) {
+            throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Token issued in the future");
+        }
+        string vat_number = farmToken.sub;
+        using DbConnection connection = dataSource.OpenConnection();
+        using DbCommand commandGetSecret = dataSource.CreateCommand();
+        commandGetSecret.CommandText = $@"
+            select secret_key
+            from secret_key
+            where vat_number = $1
+        ";
+        commandGetSecret.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, vat_number));
+        using DbDataReader readerSecret = commandGetSecret.ExecuteReader();
+        if (!readerSecret.HasRows) {
+            throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User unauthorized");
+        }
+        string secret_key = readerSecret.GetString(0);
+        readerSecret.Close();
+
+        string signature = Utility.Utility.HmacSha256(secret_key, encoded_payload);
+        if (signature != request_signature) {
+            throw new ResourceManagerFieldException(ResourceManagerFieldException.ErrorCode.INVALID_SIGNATURE, "Invalid signature");
+        }
+        dbConnection.Close();
+        return farmToken;
     }
 
     public Authorization(string authorizationHeader) {

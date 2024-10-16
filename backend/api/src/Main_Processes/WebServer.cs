@@ -90,6 +90,28 @@ public class WebServer
             }
         });
 
+        app.MapGet("/resourcemanager/water/stock", async context => {
+            try {
+                string data = ResourceManagerWaterStock.Get(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
+        });
+
         app.MapPost("/company/secret", async context => {
             try {
                 string data = Secret.PostCompanySecret(

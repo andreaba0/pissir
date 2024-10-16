@@ -67,8 +67,6 @@ public class MqttHeadRoutine {
         this.topic_schema = topic_schema;
     }
     public async Task<int> RunAsync(CancellationToken tk) {
-        // TODO: subscribe to topics
-        // TODO: loop through messages
 
 
         //create a subscribe message for the topic
@@ -95,8 +93,30 @@ public class MqttHeadRoutine {
                 Console.WriteLine("A malformed topic was received");
                 continue;
             }
+            int res = await ProcessMessage(result, mqttMessage);
+            if (res != 0) {
+                Console.WriteLine("An error occurred while processing the message");
+            }
         }
 
         return 0;
+    }
+
+    internal async Task<int> ProcessMessage(
+        TopicSchema topicSchema,
+        MqttChannelMessage mqttMessage
+    ) {
+        return 0;
+    }
+}
+
+public class MqttAuthorization {
+    public static MqttMessage ParseMqttMessage(
+        TopicSchema topicSchema,
+        MqttChannelMessage mqttMessage,
+        DbDataSource dataSource
+        IDateTimeProvider dateTimeProvider
+    ) {
+        
     }
 }

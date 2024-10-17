@@ -11,6 +11,8 @@ using System.Data.Common;
 using System.Data;
 using NpgsqlTypes;
 using System.Text.RegularExpressions;
+using Types;
+using Utility;
 
 namespace Main_Processes;
 
@@ -114,9 +116,9 @@ public class MqttAuthorization {
     public static MqttMessage ParseMqttMessage(
         TopicSchema topicSchema,
         MqttChannelMessage mqttMessage,
-        DbDataSource dataSource
+        DbDataSource dataSource,
         IDateTimeProvider dateTimeProvider
     ) {
-        
+        return null;
     }
 }

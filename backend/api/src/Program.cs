@@ -6,7 +6,6 @@ using Npgsql;
 
 using System.Data.Common;
 
-using Module.JsonWebToken;
 using Module.KeyManager;
 using Utility;
 using Main_Processes;

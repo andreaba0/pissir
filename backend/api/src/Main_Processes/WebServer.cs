@@ -114,14 +114,17 @@ public class WebServer
 
         app.MapPost("/company/secret", async context => {
             try {
-                string data = Secret.PostCompanySecret(
+                CompanySecret.PostResponse response = CompanySecret.Post(
                     context.Request.Headers,
                     _dbDataSource,
                     _dateTimeProvider,
                     _remoteManager
                 );
+                if(response.state==CompanySecret.KeyState.CREATED)
+                context.Response.StatusCode = 201;
+                else
                 context.Response.StatusCode = 200;
-                await context.Response.WriteAsync(data);
+                await context.Response.WriteAsync(response.secret_key);
             } catch(AuthenticationException e) {
                 context.Response.StatusCode = 401;
                 await context.Response.WriteAsync(e.Message);

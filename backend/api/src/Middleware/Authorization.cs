@@ -1,6 +1,16 @@
+using System;
+using System.Collections.Generic;
+using System.Data.Common;
+using System.Data;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using Types;
-using Module.KeyManager;
 using Utility;
+using Module.KeyManager;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text;
+using Npgsql;
 using System.Text.RegularExpressions;
 
 namespace Middleware;
@@ -165,7 +175,7 @@ public class Authorization {
         string encoded_payload = parts[0];
         string payload = Utility.Utility.Base64URLDecode(parts[0]);
         string request_signature = Utility.Utility.Base64URLDecode(parts[1]);
-        FarmToken farmToken = JsonSerializer.Deserialize<FarmToken>(request_info, new JsonSerializerOptions {
+        FarmToken farmToken = JsonSerializer.Deserialize<FarmToken>(payload, new JsonSerializerOptions {
             PropertyNameCaseInsensitive = true,
         });
         if(farmToken.method != headers["Method"]&& farmToken.path != headers["Path"]){
@@ -196,9 +206,9 @@ public class Authorization {
 
         string signature = Utility.Utility.HmacSha256(secret_key, encoded_payload);
         if (signature != request_signature) {
-            throw new ResourceManagerFieldException(ResourceManagerFieldException.ErrorCode.INVALID_SIGNATURE, "Invalid signature");
+            throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token");
         }
-        dbConnection.Close();
+        connection.Close();
         return farmToken;
     }
 

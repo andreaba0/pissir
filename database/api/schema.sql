@@ -59,11 +59,17 @@ add constraint consumption_coherence check (available >= (consumed * consumption
 
 create table farm_field(
     id varchar(26) primary key,
+    vat_number varchar(11)
+);
+
+create table farm_field_versioning(
+    field_id varchar(26),
     vat_number varchar(11),
     square_meters real not null,
     crop_type text not null,
     irrigation_type text not null,
-    created_at timestamptz not null default now()
+    created_at timestamptz not null default now(), /*aka: version*/
+    primary key (field_id, created_at)
 );
 
 create table irrigation_type(

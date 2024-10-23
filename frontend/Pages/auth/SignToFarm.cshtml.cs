@@ -30,7 +30,7 @@ namespace frontend.Pages.auth
 
         public async Task<IActionResult> OnPostIscriviti(string nome, string cognome, string email, string codiceFiscale, string partitaIva, string tipoAzienda)
         {
-            string urlTask = ApiReq.urlGenerico + "/service/apply";
+            string urlTask = ApiReq.authUrlGenerico + "/service/apply";
 
             // Controllo dei parametri in input
             if (string.IsNullOrEmpty(nome) || string.IsNullOrEmpty(cognome) || string.IsNullOrEmpty(codiceFiscale) || string.IsNullOrEmpty(partitaIva) || string.IsNullOrEmpty(tipoAzienda))

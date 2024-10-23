@@ -28,10 +28,10 @@ namespace frontend.Pages.AziendaAgricola
                 return Page();
 
                 // Richiesta API
-                string data = await ApiReq.GetDataFromApi(HttpContext, "/object/sensor");
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/object/sensor", true, true);
                 SensoriLogs = JsonConvert.DeserializeObject<List<SensoreLog>>(data);
 
-                data = await ApiReq.GetDataFromApi(HttpContext, "/object/actuator");
+                data = await ApiReq.GetDataFromApi(HttpContext, "/object/actuator", true, true);
                 AttuatoriLogs = JsonConvert.DeserializeObject<List<AttuatoreLog>>(data);
             }
             catch (HttpRequestException ex)

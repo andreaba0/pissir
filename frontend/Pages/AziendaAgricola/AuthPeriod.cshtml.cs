@@ -50,7 +50,7 @@ namespace frontend.Pages.AziendaAgricola
 
         public async Task<IActionResult> OnPostInviaRichiesta(string dataInizio, string dataFine)
         {
-            string urlTask = ApiReq.urlGenerico + "/apiaccess";
+            string urlTask = ApiReq.authUrlGenerico + "/apiaccess";
 
             // Controllo se le date sono nel formato corretto yyyy-MM-dd
             if (!DateTime.TryParseExact(dataInizio, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime startDate) ||

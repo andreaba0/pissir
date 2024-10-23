@@ -24,7 +24,7 @@ namespace frontend.Pages.AziendaAgricola
                 return Page();
 
                 // Richiesta API
-                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/order");
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/order", true, true);
                 StoricoOrdini = JsonConvert.DeserializeObject<List<OrdineAcquisto>>(data);
             }
             catch (HttpRequestException ex)

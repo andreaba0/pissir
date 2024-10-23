@@ -38,16 +38,16 @@ namespace frontend.Pages.AziendaAgricola
                 // Richieste API
                 String data = "";
 
-                data = await ApiReq.GetDataFromApi(HttpContext, "/crops");
+                data = await ApiReq.GetDataFromApi(HttpContext, "/crops", true, true);
                 CropsType = JsonConvert.DeserializeObject<List<string>>(data);
 
-                data = await ApiReq.GetDataFromApi(HttpContext, "/irrigation");
+                data = await ApiReq.GetDataFromApi(HttpContext, "/irrigation", true, true);
                 IrrigationType = JsonConvert.DeserializeObject<List<string>>(data);
 
-                data = await ApiReq.GetDataFromApi(HttpContext, "/field");
+                data = await ApiReq.GetDataFromApi(HttpContext, "/field", true, true);
                 Colture = JsonConvert.DeserializeObject<List<Coltura>>(data);
 
-                data = await ApiReq.GetDataFromApi(HttpContext, "/water/stock");
+                data = await ApiReq.GetDataFromApi(HttpContext, "/water/stock", true, true);
                 ColtureStock = JsonConvert.DeserializeObject<List<ColturaStock>>(data);
             }
             catch (HttpRequestException ex)
@@ -75,19 +75,19 @@ namespace frontend.Pages.AziendaAgricola
         // Chiamata API per aggiunta coltura
         public async Task<IActionResult> OnPostAggiungiColtura(string metriQuadrati, string tipoColtura, string tipoIrrigazione)
         {
-            string urlTask = ApiReq.urlGenerico + "/field";
+            string urlTask = ApiReq.apiUrlGenerico + "/field";
 
-            /*
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }
+                if (ApiReq.utente.Role!="FA") { throw new Exception("Unauthorized"); }
 
                 // Imposta il token
-                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+                await ApiReq.GetApiToken(HttpContext);
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["ApiToken"]);
 
                 // Creare il corpo della richiesta
                 var requestBody = new
@@ -110,7 +110,7 @@ namespace frontend.Pages.AziendaAgricola
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova pi� tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova più tardi.";
                 }
             }
             catch (Exception ex)
@@ -118,10 +118,7 @@ namespace frontend.Pages.AziendaAgricola
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
-
-            TempData["MessaggioErrore"] = "Errore durante l'aggiunta della coltura. Riprova più tardi.";
-
+            
             return RedirectToPage();
         }
 
@@ -129,19 +126,19 @@ namespace frontend.Pages.AziendaAgricola
         // Chiamata API per modifica coltura
         public async Task<IActionResult> OnPostModificaColtura(string metriQuadrati, string tipoColtura, string tipoIrrigazione, string colturaId)
         {
-            string urlTask = ApiReq.urlGenerico + $"/field/{colturaId}";
+            string urlTask = ApiReq.apiUrlGenerico + $"/field/{colturaId}";
 
-            /*
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }    
+                if (ApiReq.utente.Role!="FA") { throw new Exception("Unauthorized"); }
 
                 // Imposta il token
-                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+                await ApiReq.GetApiToken(HttpContext);
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["ApiToken"]);
 
                 // Creare il corpo della richiesta
                 var requestBody = new
@@ -172,9 +169,8 @@ namespace frontend.Pages.AziendaAgricola
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
 
-            TempData["MessaggioErrore"] = "Errore durante la modifica. Riprova pi� tardi.";
+            //TempData["MessaggioErrore"] = "Errore durante la modifica. Riprova pi� tardi.";
 
             await OnGet();
             return RedirectToPage();
@@ -184,19 +180,19 @@ namespace frontend.Pages.AziendaAgricola
         // Chiamata API per eliminazione coltura
         public async Task<IActionResult> OnPostEliminaColtura(string colturaId)
         {
-            string urlTask = ApiReq.urlGenerico + $"/field/{colturaId}";
+            string urlTask = ApiReq.apiUrlGenerico + $"/field/{colturaId}";
 
-            /*
             try
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
                 
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="FAR") { throw new Exception("Unauthorized"); }
-                
+                if (ApiReq.utente.Role!="FA") { throw new Exception("Unauthorized"); }
+
                 // Imposta il token
-                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["Token"]);
+                await ApiReq.GetApiToken(HttpContext);
+                ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["ApiToken"]);
 
                 // Esegue la chiamata DELETE per l'eliminazione della coltura
                 HttpResponseMessage response = await ApiReq.httpClient.DeleteAsync(urlTask);
@@ -217,9 +213,8 @@ namespace frontend.Pages.AziendaAgricola
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
-            */
 
-            TempData["MessaggioErrore"] = "Errore durante l'eliminazione della coltura. Riprova più tardi.";
+            //TempData["MessaggioErrore"] = "Errore durante l'eliminazione della coltura. Riprova più tardi.";
 
             return RedirectToPage();
         }

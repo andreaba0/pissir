@@ -26,7 +26,7 @@ namespace frontend.Pages.AziendaAgricola
                 return Page();
 
                 // Richiesta API
-                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/consumption");
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/consumption", true, true);
                 StoricoConsumi = JsonConvert.DeserializeObject<List<ConsumoAziendaleCampo>>(data);
             }
             catch (HttpRequestException ex)

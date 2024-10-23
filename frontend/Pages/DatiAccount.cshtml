@@ -64,7 +64,7 @@
     // Script per richiedere la chiave del gestore IOT
     window.onload = function () {
         // URL
-        let urlTask = "@(ApiReq.urlGenerico)" + "/company/secret";
+        let urlTask = "@(ApiReq.apiUrlGenerico)" + "/company/secret";
 
         // Token JWT dal cookie
         let token = "@(Request.Cookies["Token"])";

@@ -12,20 +12,9 @@ public class SignInModel : PageModel
     {
         try
         {
-            // Controllo variabili d'ambiente
-            string[] requiredVariables = { "ipbackend", "googleClientId", "googleSecretId", "facebookClientId", "facebookSecretId" };
-
-            foreach (string variable in requiredVariables)
-            {
-                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(variable)))
-                {
-                    TempData["MessaggioErrore"] = $"La variabile d'ambiente '{variable}' non è definita.";
-                    return Redirect("/Error");
-                }
-            }
 
             string authGoogle = "https://accounts.google.com/o/oauth2/auth?" +
-                "scope=openid&" +
+                "scope=openid%20profile%20email&" +
                 "access_type=online&" +
                 "response_type=code&" +
                 "state=1234567890qwerty&" +

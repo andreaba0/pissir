@@ -25,7 +25,7 @@ namespace frontend.Pages.GestoreIdrico
                 return Page();
 
                 // Richiesta API
-                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/order");
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/order", true, true);
                 Acquisti = JsonConvert.DeserializeObject<List<OrdineAcquisto>>(data);
             }
             catch (Exception ex)

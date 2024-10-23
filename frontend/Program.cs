@@ -3,6 +3,24 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+string[] requiredVariables = { 
+    "ipbackend_api",
+    "ipbackend_auth", 
+    "googleClientId", 
+    "googleSecretId", 
+    "facebookClientId", 
+    "facebookSecretId" 
+};
+
+foreach (string variable in requiredVariables)
+{
+    if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(variable)))
+    {
+        throw new Exception($"La variabile d'ambiente '{variable}' non è impostata.");
+    }
+}
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

@@ -24,10 +24,10 @@ namespace frontend.Pages.GestoreIdrico
                 if (ApiReq.utente.Role!="WA") { throw new Exception("Unauthorized"); }
 
                 // Richiesta API
-                string data = await ApiReq.GetDataFromApi(HttpContext, "/service/application");
+                string data = await ApiReq.GetDataFromAuth(HttpContext, "/service/application");
                 RichiesteUtenti = JsonConvert.DeserializeObject<List<UtenteAp>>(data);
                 
-                data = await ApiReq.GetDataFromApi(HttpContext, "/apiaccess");
+                data = await ApiReq.GetDataFromAuth(HttpContext, "/apiaccess");
                 RichiestePeriodo = JsonConvert.DeserializeObject<List<UtentePeriodo>>(data);
 
                 return Page();
@@ -43,7 +43,7 @@ namespace frontend.Pages.GestoreIdrico
         // Chiamata API per confermare o rifiutare un nuovo utente
         public async Task<IActionResult> OnPostConfermaUtente(string id, string action)
         {
-            string urlTask = ApiReq.urlGenerico + $"/service/application/{id}/{action}";
+            string urlTask = ApiReq.authUrlGenerico + $"/service/application/{id}/{action}";
 
             
             try
@@ -92,7 +92,7 @@ namespace frontend.Pages.GestoreIdrico
         // Chiamata API per confermare un nuovo utente
         public async Task<IActionResult> OnPostConfermaUtentePeriodo(string id, string action)
         {
-            string urlTask = ApiReq.urlGenerico + $"/apiaccess/{id}/{action}";
+            string urlTask = ApiReq.authUrlGenerico + $"/apiaccess/{id}/{action}";
 
             
             try

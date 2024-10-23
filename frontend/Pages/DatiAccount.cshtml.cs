@@ -19,7 +19,7 @@ namespace frontend.Pages
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
                 // Richiesta API
-                string data = await ApiReq.GetDataFromApi(HttpContext, "/company");
+                string data = await ApiReq.GetDataFromAuth(HttpContext, "/company", true);
                 azienda = JsonConvert.DeserializeObject<Azienda>(data);
 
                 return Page();
@@ -34,7 +34,7 @@ namespace frontend.Pages
 
         public async Task<IActionResult> OnPostAggiornaDatiAzienda(string partitaIva, string nomeAzienda, string indirizzoAzienda, string telefonoAzienda, string emailAzienda, string categoria)
         {
-            string urlTask = ApiReq.urlGenerico + "/company";
+            string urlTask = ApiReq.authUrlGenerico + "/company";
 
             
             try

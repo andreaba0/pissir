@@ -17,7 +17,7 @@
             Email = null,
             CodiceFiscale = null
         };
-        string data = await ApiReq.GetDataFromApi(HttpContext, "/service/my_application", false);
+        string data = await ApiReq.GetDataFromAuth(HttpContext, "/service/my_application", false);
         Model.utenteAp = JsonConvert.DeserializeObject<UtenteAp>(data);
 
         if (Model.utenteAp == null)

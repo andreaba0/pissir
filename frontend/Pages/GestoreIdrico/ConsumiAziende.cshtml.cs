@@ -26,7 +26,7 @@ namespace frontend.Pages.GestoreIdrico
                 return Page();
 
                 // Richiesta API
-                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/consumption");
+                string data = await ApiReq.GetDataFromApi(HttpContext, "/water/consumption", true, true);
                 consumiAziende = JsonConvert.DeserializeObject<List<ConsumoAziendaleCampo>>(data);
             }
             catch (Exception ex)

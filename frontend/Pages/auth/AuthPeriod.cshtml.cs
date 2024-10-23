@@ -24,7 +24,7 @@ namespace frontend.Pages.auth
 
                 if (ApiReq.utente == null)
                 {
-                    ViewData["ErrorMessage"] = "Si è verificato un errore durante l'accesso. ";
+                    ViewData["ErrorMessage"] = "Si ï¿½ verificato un errore durante l'accesso. ";
                     return RedirectToPage("/Error");
                 }
             }
@@ -42,7 +42,7 @@ namespace frontend.Pages.auth
 
         public async Task<IActionResult> OnPostInviaRichiesta(string dataInizio, string dataFine)
         {
-            string urlTask = ApiReq.urlGenerico + "/apiaccess";
+            string urlTask = ApiReq.authUrlGenerico + "/apiaccess";
 
             // Controllo se le date sono nel formato corretto yyyy-MM-dd
             if (!DateTime.TryParseExact(dataInizio, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime startDate) ||
@@ -55,17 +55,17 @@ namespace frontend.Pages.auth
             // Ottenere la data odierna
             DateTime today = DateTime.Now.Date;
 
-            // Controllare se la data di inizio è posteriore a quella odierna
+            // Controllare se la data di inizio ï¿½ posteriore a quella odierna
             if (startDate < today)
             {
-                TempData["MessaggioErrore"] = "La data di inizio non può essere posteriore a oggi.";
+                TempData["MessaggioErrore"] = "La data di inizio non puï¿½ essere posteriore a oggi.";
                 return RedirectToPage();
             }
 
-            // Controllare se la data di fine è precedente alla data di inizio
+            // Controllare se la data di fine ï¿½ precedente alla data di inizio
             if (endDate < startDate)
             {
-                TempData["MessaggioErrore"] = "La data di fine non può essere precedente alla data di inizio.";
+                TempData["MessaggioErrore"] = "La data di fine non puï¿½ essere precedente alla data di inizio.";
                 return RedirectToPage();
             }
 
@@ -99,12 +99,12 @@ namespace frontend.Pages.auth
                 else
                 {
                     // Imposta un messaggio di errore
-                    TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
+                    TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova piï¿½ tardi.";
                 }
                 */
 
                 //TempData["Messaggio"] = "Richiesta periodo di accesso al sistema da " + dataInizio + " a " + dataFine + " effettuata con successo!";
-                TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova più tardi.";
+                TempData["MessaggioErrore"] = "Errore durante la richiesta. Riprova piï¿½ tardi.";
 
                 return RedirectToPage();
             }

@@ -53,7 +53,7 @@ class Program
             cts.Cancel();
         };
 
-        string? initialDate = Environment.GetEnvironmentVariable("INITIAL_DATE");
+        string? initialDate = Environment.GetEnvironmentVariable("DOTNET_ENV_INITIAL_DATETIME");
         IDateTimeProvider dateTimeProvider = new DateTimeProvider();
         if (initialDate != null) {
             dateTimeProvider = DateTimeProvider.parse(initialDate);

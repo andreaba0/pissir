@@ -226,6 +226,7 @@ def test1(scope):
         "iat": date.epoch() - 3600,
         "exp": date.epoch() + 3600
     })
+    print(token)
     response = requests.get(
         f"http://{backendConfig['host']}:{backendConfig['port']}/apiaccess",
         params = {"count_per_page": 5, "page_number": 1},

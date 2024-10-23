@@ -62,13 +62,18 @@ def initAuthDatabase(OAuthServerConfig, AuthDatabaseConfig):
         insert into industry_sector(sector_name) values('WSP'), ('FAR')
     ''')
     cur.execute('''
-        insert into registered_provider(provider_name, configuration_uri) values('test_provider', '{provider_uri}')
+        insert into registered_provider(provider_name, configuration_uri) values
+            ('test_provider', '{provider_uri}'),
+            ('facebook', 'https://www.facebook.com/.well-known/openid-configuration'),
+            ('google', 'https://accounts.google.com/.well-known/openid-configuration')
     '''.format(provider_uri=provider_uri))
     cur.execute('''
         insert into 
             allowed_audience(registered_provider, audience) 
         values
-            ('test_provider', 'internal_workspace@appweb.andreabarchietto.it')
+            ('test_provider', 'internal_workspace@appweb.andreabarchietto.it'),
+            ('google', '330493585576-us7lib6fpk4bg0j1vcti09l0jpso2o4k.apps.googleusercontent.com'),
+            ('facebook', '1664159533990922')
     ''')
     cur.close()
     conn.commit()
@@ -105,8 +110,11 @@ def uploadKeys(AuthServerConfig, AuthDatabaseConfig):
 
 def IntegrationMain():
     authServerConfig = copy.deepcopy(auth_server_config)
+    # delete env variable DOTNET_ENV_INITIAL_DATETIME
+    del authServerConfig["environment"]["DOTNET_ENV_INITIAL_DATETIME"]
     authDatabaseConfig = copy.deepcopy(auth_database_config)
     apiServerConfig = copy.deepcopy(api_server_config)
+    del apiServerConfig["environment"]["DOTNET_ENV_INITIAL_DATETIME"]
     apiDatabaseConfig = copy.deepcopy(api_database_config)
     mosquittoServerConfig = copy.deepcopy(mosquitto_server_config)
     oauthServerConfig = copy.deepcopy(oauth_server_config)

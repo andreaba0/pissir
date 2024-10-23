@@ -23,7 +23,7 @@ api_server_config = {
         "DOTNET_ENV_AUTH_URI": f"http://{oauth_server_config['network']['ip']}:{oauth_server_config['internal_port']}",
         "DOTNET_ENV_PISSIR_ISS": "https://appweb.andreabarchietto.it",
         "DOTNET_ENV_PISSIR_AUD": "https://pissir.andreabarchietto.it",
-        "DOTNET_ENV_INITIAL_DATE": "01-01-2010T06:00:00",
+        "DOTNET_ENV_INITIAL_DATETIME": "01-01-2010T06:00:00",
         "DOTNET_ENV_MQTT_TOPIC": "backend/measure/#"
     },
     "internal_port": internalPort,

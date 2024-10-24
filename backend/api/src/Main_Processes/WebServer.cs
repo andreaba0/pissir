@@ -386,7 +386,31 @@ public class WebServer
         });
 
         app.MapPatch("/field/{field_id}", async context => {
-            await context.Response.WriteAsync("Field");
+            try {
+                ValueTask<string> func = Field.Patch(
+                    context.Request.Headers,
+                    context.Request.RouteValues,
+                    context.Request.Body,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                string data = await func;
+                context.Response.StatusCode = 201;
+                await context.Response.WriteAsync(data);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(FieldException e) {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync(e.Message);
+            } catch(JsonException e) {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapGet("/field", async context => {

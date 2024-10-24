@@ -37,9 +37,12 @@ public class ResourceManagerField {
         using DbCommand commandGetFields = dataSource.CreateCommand();
         commandGetFields.CommandText = $@"
             select id, square_meters, crop_type, irrigation_type
-            from farm_field
+            from farm_field inner join farm_field_versioning
+            on farm_field.id = farm_field_versioning.field_id
             where vat_number = $1
-        ";
+            order by farm_field_versioning.created_at desc
+            limit 1
+        "; // select the last version of a field
         commandGetFields.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, vat_number));
         using DbDataReader reader = commandGetFields.ExecuteReader();
         List<GetData> data = new List<GetData>();

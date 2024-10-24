@@ -52,18 +52,35 @@ public class Fields
 
         using DbCommand commandPostField = dataSource.CreateCommand();
 
+        commandPostField.CommandText = "BEGIN TRANSACTION";
+        commandPostField.ExecuteNonQuery();
+
+        string fieldId = Ulid.NewUlid().ToString();
+
         commandPostField.CommandText = $@"
-            insert into farm_field (id, vat_number, company_industry_sector, square_meters, crop_type, irrigation_type)
+            insert into farm_field (id, vat_number) values
+            ($1, $2)
+        ";
+        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, fieldId));
+        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
+        commandPostField.ExecuteNonQuery();
+        commandPostField.Parameters.Clear();
+
+        commandPostField.CommandText = $@"
+            insert into farm_field_versioning (field_id, vat_number, square_meters, crop_type, irrigation_type, created_at)
             values ($1, $2, $3, $4, $5, $6)
         ";
-        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, Ulid.NewUlid().ToString()));
+        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, fieldId));
         commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
-        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, "FAR"));
         commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Single, data.square_meters));
         commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, data.crop_type));
         commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, data.irrigation_type));
-
+        commandPostField.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.UtcNow));
         commandPostField.ExecuteNonQuery();
+
+        commandPostField.CommandText = "COMMIT TRANSACTION";
+        commandPostField.ExecuteNonQuery();
+
         connection.Close();
         return Task.CompletedTask;
     }

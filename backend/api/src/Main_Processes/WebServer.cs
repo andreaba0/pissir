@@ -205,11 +205,50 @@ public class WebServer
         });
 
         app.MapGet("/water/recommendation/{field_id}", async context => {
-            await context.Response.WriteAsync("Water recommendation");
+            try { 
+                ValueTask<string> func = WaterRecommendationFieldId.Get(
+                    context.Request.Headers,
+                    context.Request.RouteValues,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                string data = await func;
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapGet("/water/limit", async context => {
-            await context.Response.WriteAsync("Water limit");
+            try {
+                ValueTask<string> func = WaterLimit.Get(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                string data = await func;
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapGet("/water/limit/all", async context => {
@@ -235,11 +274,50 @@ public class WebServer
         });
 
         app.MapGet("/water/stock", async context => {
-            await context.Response.WriteAsync("Water stock");
+            try {
+                ValueTask<string> func = WaterStock.Get(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                string data = await func;
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapGet("/water/stock/{field_id}", async context => {
-            await context.Response.WriteAsync("Water stock");
+            try {
+                ValueTask<string> func = WaterStockFieldId.Get(
+                    context.Request.Headers,
+                    context.Request.RouteValues,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                string data = await func;
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapPost("/water/buy", async context => {

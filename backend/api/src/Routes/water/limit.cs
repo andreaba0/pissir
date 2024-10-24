@@ -75,6 +75,54 @@ public class WaterLimit {
         }
         return JsonSerializer.Serialize(data);
     }
+
+    public static ValueTask<string> Get(
+        IHeaderDictionary headers,
+        DbDataSource dataSource,
+        IDateTimeProvider dateTimeProvider,
+        RemoteManager remoteManager
+    ) {
+        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.WA });
+
+        using DbConnection connection = dataSource.OpenConnection();
+
+        using DbCommand commandGetWaterLimit = dataSource.CreateCommand();
+
+        commandGetWaterLimit.CommandText = $@"
+            select available
+            from daily_water_limit
+            where vat_number = $1 and on_date = $2
+            union
+            select sum(available_liters + coalesce(qty, 0))
+            from offer inner join buy_order
+            on offer.id = buy_order.offer_id
+            inner join farm_field
+            on buy_order.farm_field_id = farm_field.id
+            where farm_field.vat_number = $1 and publish_date = $2
+        ";
+        commandGetWaterLimit.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
+        commandGetWaterLimit.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.Now.Date));
+
+        using DbDataReader reader = commandGetWaterLimit.ExecuteReader();
+        if (!reader.HasRows)
+        {
+            return new ValueTask<string>("0");
+        }
+        List<float> data = new List<float>();
+        while (reader.Read())
+        {
+            data.Add(reader.GetFloat(0));
+        }
+        if(data.Count == 1)
+        {
+            return new ValueTask<string>(data[0].ToString());
+        }
+        if(data[0]==0)
+        {
+            return new ValueTask<string>(data[1].ToString());
+        }
+        return new ValueTask<string>(data[0].ToString());
+    }
 }
 
 public class WaterLimitException : Exception {

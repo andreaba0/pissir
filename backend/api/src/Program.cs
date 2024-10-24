@@ -55,7 +55,7 @@ class Program
         string webserverBound = GetProperty(configuration, "webserver:bound");
 
         // If initial_date is not set in the environment, the DateTimeProvider will use the current time
-        string? initialDate = Environment.GetEnvironmentVariable("DOTNET_ENV_INITIAL_DATE");
+        string? initialDate = Environment.GetEnvironmentVariable("DOTNET_ENV_INITIAL_DATETIME");
         IDateTimeProvider dateTimeProvider = new DateTimeProvider();
         if (initialDate != null)
         {

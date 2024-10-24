@@ -25,4 +25,133 @@ public static class UtilityTestClass {
             "A second test to make sure it works"
         );
     }
+
+    [Test]
+    public static void TestCountSeconds() {
+        List<Utility.CountEntity> entities = new List<Utility.CountEntity> {
+            new Utility.CountEntity {
+                date = DateTimeOffset.Parse("2022-01-01T00:00:00"),
+                status = true
+            },
+            new Utility.CountEntity {
+                date = DateTimeOffset.Parse("2022-01-01T00:00:10"),
+                status = true
+            },
+            new Utility.CountEntity {
+                date = DateTimeOffset.Parse("2022-01-01T00:00:20"),
+                status = false
+            },
+            new Utility.CountEntity {
+                date = DateTimeOffset.Parse("2022-01-01T00:00:30"),
+                status = true
+            },
+            new Utility.CountEntity {
+                date = DateTimeOffset.Parse("2022-01-01T00:00:40"),
+                status = false
+            }
+        };
+        Assert.AreEqual(
+            Utility.CountSeconds(
+                DateTimeOffset.Parse("2022-01-01T00:00:00").DateTime,
+                entities
+            ),
+            30
+        );
+
+        entities = new List<Utility.CountEntity> {
+            new Utility.CountEntity {
+                date = new DateTimeOffset(new DateTime(2022, 1, 1, 23, 0, 0, DateTimeKind.Utc)),
+                status = true
+            },
+        };
+        Assert.AreEqual(
+            Utility.CountSeconds(
+                new DateTimeOffset(new DateTime(2022, 1, 2, 0, 0, 0, DateTimeKind.Utc)),
+                entities
+            ),
+            (60*60*24)+3600
+        );
+
+        entities = new List<Utility.CountEntity> {
+            new Utility.CountEntity {
+                date = new DateTimeOffset(new DateTime(2022, 1, 1, 23, 0, 0, DateTimeKind.Utc)),
+                status = true
+            },
+            new Utility.CountEntity {
+                date = new DateTimeOffset(new DateTime(2022, 1, 2, 12, 00, 00, DateTimeKind.Utc)),
+                status = true
+            },
+        };
+        Assert.AreEqual(
+            Utility.CountSeconds(
+                new DateTimeOffset(new DateTime(2022, 1, 2, 0, 0, 0, DateTimeKind.Utc)),
+                entities
+            ),
+            (60*60)+(60*60*24)
+        );
+
+        entities = new List<Utility.CountEntity> {
+            new Utility.CountEntity {
+                date = new DateTimeOffset(new DateTime(2022, 1, 1, 23, 0, 0, DateTimeKind.Utc)),
+                status = true
+            },
+            new Utility.CountEntity {
+                date = new DateTimeOffset(new DateTime(2022, 1, 2, 12, 00, 00, DateTimeKind.Utc)),
+                status = false
+            },
+        };
+        Assert.AreEqual(
+            Utility.CountSeconds(
+                new DateTimeOffset(new DateTime(2022, 1, 2, 0, 0, 0, DateTimeKind.Utc)),
+                entities
+            ),
+            (60*60)+(60*60*12)
+        );
+
+        entities = new List<Utility.CountEntity> {
+            new Utility.CountEntity {
+                date = new DateTimeOffset(new DateTime(2022, 1, 1, 23, 0, 0, DateTimeKind.Utc)),
+                status = false
+            },
+            new Utility.CountEntity {
+                date = new DateTimeOffset(new DateTime(2022, 1, 2, 12, 00, 00, DateTimeKind.Utc)),
+                status = true
+            },
+        };
+        Assert.AreEqual(
+            Utility.CountSeconds(
+                new DateTimeOffset(new DateTime(2022, 1, 2, 0, 0, 0, DateTimeKind.Utc)),
+                entities
+            ),
+            (60*60*12)
+        );
+
+        entities = new List<Utility.CountEntity> {
+            new Utility.CountEntity {
+                date = new DateTimeOffset(new DateTime(2022, 1, 2, 12, 00, 00, DateTimeKind.Utc)),
+                status = true
+            },
+        };
+        Assert.AreEqual(
+            Utility.CountSeconds(
+                new DateTimeOffset(new DateTime(2022, 1, 2, 0, 0, 0, DateTimeKind.Utc)),
+                entities
+            ),
+            (60*60*12)
+        );
+
+        entities = new List<Utility.CountEntity> {
+            new Utility.CountEntity {
+                date = new DateTimeOffset(new DateTime(2022, 1, 2, 12, 00, 00, DateTimeKind.Utc)),
+                status = false
+            },
+        };
+        Assert.AreEqual(
+            Utility.CountSeconds(
+                new DateTimeOffset(new DateTime(2022, 1, 2, 0, 0, 0, DateTimeKind.Utc)),
+                entities
+            ),
+            0
+        );
+    }
 }

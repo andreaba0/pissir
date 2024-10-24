@@ -109,7 +109,7 @@ namespace frontend.Pages
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies["Token"]);
 
-            HttpResponseMessage response = await httpClient.GetAsync(urlTask);
+            HttpResponseMessage response = await httpClient.PostAsync(urlTask, null);
 
             if (response.IsSuccessStatusCode)
             {
@@ -135,17 +135,6 @@ namespace frontend.Pages
                         {
                             Path = "/",
                             Expires = expirationTime,
-                            HttpOnly = true,
-                            Secure = false,
-                        });
-                    }
-                    else
-                    {
-                        // Salvataggio dell'apitoken nei cookie
-                        context.Response.Cookies.Append("ApiToken", responseData, new CookieOptions
-                        {
-                            Path = "/",
-                            Expires = DateTime.Now.AddHours(1),
                             HttpOnly = true,
                             Secure = false,
                         });

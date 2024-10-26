@@ -1,4 +1,5 @@
 from .address_manager import address_manager
+from .proxy_server import proxy_server_config
 from utility.env import env_manager
 
 from .proxy_server import proxy_server_config
@@ -15,7 +16,11 @@ frontend_server_config = {
         "googleSecretId": env_manager.get("GOOGLE_CLIENT_SECRET"),
         "facebookClientId": env_manager.get("FACEBOOK_CLIENT_ID"),
         "facebookSecretId": env_manager.get("FACEBOOK_CLIENT_SECRET"),
-        "listener_uri": "http://0.0.0.0:8000"
+        "listener_uri": "http://0.0.0.0:8000",
+        "client_uri": f"http://localhost:{proxy_server_config['exposed_port']}/auth/SignIn",
+        "oauth_uri": "https://appweb.andreabarchietto.it/localhost_redirect/oauth",
+        "oauth_redirect_uri": "https://appweb.andreabarchietto.it/localhost_redirect/back",
+        "oauthKey": "250bac54c19825467ac60a9dc7d70a54"
     },
     "network": {
         "ip": internalIp,

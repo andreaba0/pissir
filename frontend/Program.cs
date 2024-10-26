@@ -9,7 +9,11 @@ string[] requiredVariables = {
     "googleClientId", 
     "googleSecretId", 
     "facebookClientId", 
-    "facebookSecretId" 
+    "facebookSecretId",
+    "client_uri",
+    "oauth_uri",
+    "oauth_redirect_uri",
+    "oauthKey"
 };
 
 foreach (string variable in requiredVariables)

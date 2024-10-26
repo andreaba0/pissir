@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 
 public class SignInModel : PageModel
 {
@@ -13,20 +15,34 @@ public class SignInModel : PageModel
         try
         {
 
-            string authGoogle = "https://accounts.google.com/o/oauth2/auth?" +
+            string client_uri = Environment.GetEnvironmentVariable("client_uri") ?? throw new InvalidOperationException("La variabile d'ambiente 'client_uri' non è impostata.");
+            string oauth_uri = Environment.GetEnvironmentVariable("oauth_uri") ?? throw new InvalidOperationException("La variabile d'ambiente 'oauth_uri' non è impostata.");
+            string oauth_redirect_uri = Environment.GetEnvironmentVariable("oauth_redirect_uri") ?? throw new InvalidOperationException("La variabile d'ambiente 'oauth_redirect_uri' non è impostata.");
+            string hmacKey = Environment.GetEnvironmentVariable("oauthKey") ?? throw new InvalidOperationException("La variabile d'ambiente 'oauthKey' non è impostata.");
+            string authGoogle = //"https://accounts.google.com/o/oauth2/auth?" +
+                $"{oauth_uri}?" +
                 "scope=openid%20profile%20email&" +
                 "access_type=online&" +
                 "response_type=code&" +
                 "state=1234567890qwerty&" +
-                "redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/google&" +
-                "client_id=" + Environment.GetEnvironmentVariable("googleClientId");
+                //"redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/google&" +
+                $"redirect_uri={oauth_redirect_uri}&" +
+                $"client_uri={client_uri}&" +
+                //"client_id=" + Environment.GetEnvironmentVariable("googleClientId")+
+                $"client_id={Environment.GetEnvironmentVariable("googleClientId")}&" +
+                "provider=google";
 
-            string authFacebook = "https://www.facebook.com/v18.0/dialog/oauth?" +
+            string authFacebook = //"https://www.facebook.com/v18.0/dialog/oauth?" +
+                $"{oauth_uri}?" +
                 "scope=openid&" +
                 "response_type=code&" +
                 "state=1234567890qwerty&" +
-                "redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/facebook&" +
-                "client_id=" + Environment.GetEnvironmentVariable("facebookClientId");
+                //"redirect_uri=https%3A//appweb.andreabarchietto.it/localhost_redirect/oauth/facebook&" +
+                $"redirect_uri={oauth_redirect_uri}&" +
+                $"client_uri={client_uri}&" +
+                //"client_id=" + Environment.GetEnvironmentVariable("facebookClientId");
+                $"client_id={Environment.GetEnvironmentVariable("facebookClientId")}&" +
+                "provider=facebook";
 
             // Richiesta parametri nell'url
             string? provider = Request.Query["provider"];
@@ -72,11 +88,32 @@ public class SignInModel : PageModel
             {
                 if (provider == "google")
                 {
-                    return Redirect(authGoogle);
+                    string uriProvider = $"{authGoogle}";
+                    using (HMACSHA256 hmac = new HMACSHA256(Encoding.UTF8.GetBytes(hmacKey)))
+                    {
+                        Console.WriteLine(Environment.GetEnvironmentVariable("googleClientId"));
+                        byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("googleClientId")));
+                        string base64 = Convert.ToBase64String(hash);
+                        Console.WriteLine(base64);
+                        string base64Url = base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
+                        uriProvider = $"{authGoogle}&signature={base64Url}";
+                    }
+                    return Redirect(uriProvider);
                 }
                 else if (provider == "facebook")
                 {
-                    return Redirect(authFacebook);
+                    //return Redirect(authFacebook);
+                    string uriProvider = $"{authFacebook}";
+                    using (HMACSHA256 hmac = new HMACSHA256(Encoding.UTF8.GetBytes(hmacKey)))
+                    {
+                        Console.WriteLine(Environment.GetEnvironmentVariable("facebookClientId"));
+                        byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("facebookClientId")));
+                        string base64 = Convert.ToBase64String(hash);
+                        Console.WriteLine(base64);
+                        string base64Url = base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
+                        uriProvider = $"{authFacebook}&signature={base64Url}";
+                    }
+                    return Redirect(uriProvider);
                 }
                 else
                 {
@@ -116,14 +153,16 @@ public class SignInModel : PageModel
                     tokenEndpoint = "https://oauth2.googleapis.com/token";
                     clientId = Environment.GetEnvironmentVariable("googleClientId");
                     clientSecret = Environment.GetEnvironmentVariable("googleSecretId");
-                    redirectUri = "https://appweb.andreabarchietto.it/localhost_redirect/oauth/google";
+                    //redirectUri = "https://appweb.andreabarchietto.it/localhost_redirect/oauth/google";
+                    redirectUri = oauth_redirect_uri;
                     break;
 
                 case "facebook":
                     tokenEndpoint = "https://graph.facebook.com/v18.0/oauth/access_token";
                     clientId = Environment.GetEnvironmentVariable("facebookClientId");
                     clientSecret = Environment.GetEnvironmentVariable("facebookSecretId");
-                    redirectUri = "https://appweb.andreabarchietto.it/localhost_redirect/oauth/facebook";
+                    //redirectUri = "https://appweb.andreabarchietto.it/localhost_redirect/oauth/facebook";
+                    redirectUri = oauth_redirect_uri;
                     break;
 
                 default:

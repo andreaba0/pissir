@@ -2,6 +2,22 @@ const express = require("express");
 const app = express();
 const fs = require("fs");
 const { createPublicKey } = require("crypto");
+const { ProviderMapper } = require("./provider_mapper");
+const base64url = require("base64url");
+const crypto = require("crypto");
+const cookieParser = require('cookie-parser');
+require("dotenv").config();
+
+app.use(cookieParser(process.env.COOKIE_SECRET));
+
+const secret = process.env.SECRET;
+
+const allowedClients = new Set()
+var index = 1;
+while (process.env[`CLIENT_ID_${index}`]) {
+  allowedClients.add(process.env[`CLIENT_ID_${index}`]);
+  index++;
+}
 
 const privateKeyFileName = ["private1.pem", "private2.pem", "private3.pem"];
 
@@ -22,7 +38,82 @@ privateKeyFileName.forEach((fileName) => {
   });
 });
 
-app.get("/oauth/:provider", (req, res) => {
+app.get("/oauth", (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const query = req.query;
+  const provider = req.query.provider;
+  const providerMapper = new ProviderMapper(provider);
+  const clientEndpoint = providerMapper.getUri();
+  const signature = query.signature;
+  const client_uri = query.client_uri;
+  delete query.signature;
+  delete query.client_uri;
+  delete query.provider;
+  const key_id = crypto.randomBytes(8).toString('hex');
+
+  const hashed_client = crypto.createHmac('sha256', secret).update(query.client_id).digest('base64');
+  const cookie_exp = (new Date()).getTime() + 30*1000;
+  const cookie_expires = new Date(cookie_exp);
+  const cookieObj = {
+    client_uri: client_uri,
+    provider: provider,
+    expires_at: cookie_exp
+  }
+  if (base64url.fromBase64(hashed_client) !== signature) {
+    res.status(400).send("Invalid signature");
+    return;
+  }
+  if(!allowedClients.has(query.client_id)) {
+    res.status(400).send("Invalid client_id");
+    return;
+  }
+  res.cookie("paper", JSON.stringify(cookieObj), {
+    expires: cookie_expires,
+    //httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    signed: true,
+    path: "/localhost_redirect/back"
+  });
+  const url_params = new URLSearchParams(query);
+  const url = `${clientEndpoint}?${url_params}`;
+  console.log(url);
+  res.redirect(301, url);
+})
+
+function parseObject(obj) {
+  if (typeof obj === "object") {
+    return obj;
+  }
+  try {
+    return JSON.parse(obj);
+  } catch (e) {
+    return null;
+  }
+}
+
+app.get("/back", (req, res) => {
+  const cookie = req.signedCookies.paper;
+  if (!cookie) {
+    res.status(400).send("No cookie found");
+    return;
+  }
+  const parsedObj = parseObject(cookie);
+  if (!parsedObj) {
+    res.status(400).send("Invalid cookie");
+    return;
+  }
+  const { client_uri, provider, expires_at } = parsedObj;
+  req.query["provider"] = provider;
+  const now = (new Date()).getTime();
+  if (expires_at < now) {
+    res.status(400).send("Cookie expired");
+    return;
+  }
+  res.redirect(301, `${client_uri}?${new URLSearchParams(req.query)}`);
+})
+
+/*app.get("/oauth/:provider", (req, res) => {
   const query = req.query;
   console.log(query);
   console.log(req.url);
@@ -34,9 +125,9 @@ app.get("/oauth/:provider", (req, res) => {
     301,
     `http://localhost/auth/signin?${new URLSearchParams(newQuery)}`
   );
-});
+});*/
 
-app.get("/oauth/port_redirect/:port/:provider", (req, res) => {
+/*app.get("/oauth/port_redirect/:port/:provider", (req, res) => {
   const query = req.query;
   console.log(query);
   console.log(req.url);
@@ -48,7 +139,7 @@ app.get("/oauth/port_redirect/:port/:provider", (req, res) => {
     301,
     `http://localhost:${req.params.port}/auth/signin?${new URLSearchParams(newQuery)}`
   );
-});
+});*/
 
 app.get("/.well-known/openid-configuration", (req, res) => {
   res.json({

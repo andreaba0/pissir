@@ -5,6 +5,7 @@ from image import auth_server
 from image import auth_database
 from image import oauth_server
 from image import proxy_server
+from image import frontend
 
 import json
 
@@ -17,6 +18,7 @@ from config.mosquitto_server import mosquitto_server_config
 from config.auth_database_server import auth_database_config
 from config.oauth_server import oauth_server_config
 from config.proxy_server import proxy_server_config
+from config.frontend_server import frontend_server_config
 
 class custom_env_routine:
 
@@ -56,6 +58,8 @@ class custom_env_routine:
             return oauth_server_config
         if name == proxy_server.proxy_server.name:
             return proxy_server.proxy_server_config
+        if name == frontend.frontend_server.name:
+            return frontend_server_config
         return None
     
     def container_template(index, container_name):
@@ -108,9 +112,10 @@ class custom_env_routine:
             print(cer.container_template(5, auth_database.auth_database.name))
             print(cer.container_template(6, oauth_server.oauth_server.name))
             print(cer.container_template(7, proxy_server.proxy_server.name))
-            print("8. Exit")
+            print(cer.container_template(8, frontend.frontend_server.name))
+            print("9. Exit")
             choice = input("Enter choice: ")
-            if choice == "8":
+            if choice == "9":
                 break
             if choice == "1":
                 cer.run_latest(api_database.api_database_config, api_database.api_database)
@@ -132,5 +137,8 @@ class custom_env_routine:
                 continue
             if choice == "7":
                 cer.run_latest(proxy_server_config, proxy_server.proxy_server)
+                continue
+            if choice == "8":
+                cer.run_latest(frontend_server_config, frontend.frontend_server)
                 continue
             break

@@ -20,7 +20,8 @@ frontend_server_config = {
         "client_uri": f"http://localhost:{proxy_server_config['exposed_port']}/auth/SignIn",
         "oauth_uri": "https://appweb.andreabarchietto.it/localhost_redirect/oauth",
         "oauth_redirect_uri": "https://appweb.andreabarchietto.it/localhost_redirect/back",
-        "oauthKey": "250bac54c19825467ac60a9dc7d70a54"
+        "oauthKey": "250bac54c19825467ac60a9dc7d70a54",
+        "userId": "abf016df8a720"
     },
     "network": {
         "ip": internalIp,

@@ -91,12 +91,18 @@ public class SignInModel : PageModel
                     string uriProvider = $"{authGoogle}";
                     using (HMACSHA256 hmac = new HMACSHA256(Encoding.UTF8.GetBytes(hmacKey)))
                     {
+                        string timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                        string user_id = Environment.GetEnvironmentVariable("userId");
+                        string gClientId = Environment.GetEnvironmentVariable("googleClientId");
+                        string string_to_sign = $"{gClientId}google{user_id}{timestamp}";
                         Console.WriteLine(Environment.GetEnvironmentVariable("googleClientId"));
-                        byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("googleClientId")));
+                        byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(string_to_sign));
                         string base64 = Convert.ToBase64String(hash);
                         Console.WriteLine(base64);
                         string base64Url = base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
                         uriProvider = $"{authGoogle}&signature={base64Url}";
+                        uriProvider = $"{uriProvider}&request_timestamp={timestamp}";
+                        uriProvider = $"{uriProvider}&user_id={user_id}";
                     }
                     return Redirect(uriProvider);
                 }
@@ -106,12 +112,17 @@ public class SignInModel : PageModel
                     string uriProvider = $"{authFacebook}";
                     using (HMACSHA256 hmac = new HMACSHA256(Encoding.UTF8.GetBytes(hmacKey)))
                     {
-                        Console.WriteLine(Environment.GetEnvironmentVariable("facebookClientId"));
-                        byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("facebookClientId")));
+                        string timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                        string user_id = Environment.GetEnvironmentVariable("userId");
+                        string fClientId = Environment.GetEnvironmentVariable("facebookClientId");
+                        string string_to_sign = $"{fClientId}facebook{user_id}{timestamp}";
+                        byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(string_to_sign));
                         string base64 = Convert.ToBase64String(hash);
                         Console.WriteLine(base64);
                         string base64Url = base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
                         uriProvider = $"{authFacebook}&signature={base64Url}";
+                        uriProvider = $"{uriProvider}&request_timestamp={timestamp}";
+                        uriProvider = $"{uriProvider}&user_id={user_id}";
                     }
                     return Redirect(uriProvider);
                 }

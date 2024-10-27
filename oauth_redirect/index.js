@@ -1,8 +1,22 @@
+/**
+ * This code is in production on address https://appweb.andreabarchietto.it
+ * Its purpose is to route requests directed to a oauth provider
+ * It acts as a proxy between client frontend and oauth provider
+ * Redirection from oauth provider are routed to a localhost address
+ * Request are signed with hmacsha256 and an anti replay mechanism is in place
+ */
+
+
+
+
+
+
 const express = require("express");
 const app = express();
 const fs = require("fs");
 const { createPublicKey } = require("crypto");
 const { ProviderMapper } = require("./provider_mapper");
+const { TokenMemoryStore } = require("./memory");
 const base64url = require("base64url");
 const crypto = require("crypto");
 const cookieParser = require('cookie-parser');
@@ -12,10 +26,17 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 
 const secret = process.env.SECRET;
 
+const tokenMemoryStore = new TokenMemoryStore();
 const allowedClients = new Set()
 var index = 1;
 while (process.env[`CLIENT_ID_${index}`]) {
   allowedClients.add(process.env[`CLIENT_ID_${index}`]);
+  index++;
+}
+const allowedUsers = new Set()
+index = 1;
+while (process.env[`USER_ID_${index}`]) {
+  allowedUsers.add(process.env[`USER_ID_${index}`]);
   index++;
 }
 
@@ -38,20 +59,44 @@ privateKeyFileName.forEach((fileName) => {
   });
 });
 
+
+/**
+ * This endpoint redirects user to the oauth provider uri with the query parameters received
+ * hmacsha256 of client_id is used to authenticate requests and prevent unauthorized access
+ * Only a limited list of client_id are allowed to use this service
+ */
 app.get("/oauth", (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const query = req.query;
   const provider = req.query.provider;
   const providerMapper = new ProviderMapper(provider);
   const clientEndpoint = providerMapper.getUri();
+
+
+  // list of custom parameters that are not part of the oauth standard
   const signature = query.signature;
   const client_uri = query.client_uri;
+  const user_id = query.user_id;
+  let request_timestamp = query.request_timestamp;
   delete query.signature;
   delete query.client_uri;
   delete query.provider;
-  const key_id = crypto.randomBytes(8).toString('hex');
+  delete query.user_id;
+  delete query.request_timestamp; // anti replay
+  if (!signature || !client_uri || !user_id || !request_timestamp) {
+    res.status(400).send("Missing parameters");
+    return;
+  }
 
-  const hashed_client = crypto.createHmac('sha256', secret).update(query.client_id).digest('base64');
+
+  request_timestamp = parseInt(request_timestamp);
+  if (isNaN(request_timestamp)) {
+    res.status(400).send("Invalid timestamp");
+    return;
+  }
+
+  const string_to_sign = `${query.client_id}${provider}${user_id}${request_timestamp}`;
+  const hashed_client = crypto.createHmac('sha256', secret).update(string_to_sign).digest('base64');
   const cookie_exp = (new Date()).getTime() + 30*1000;
   const cookie_expires = new Date(cookie_exp);
   const cookieObj = {
@@ -65,6 +110,15 @@ app.get("/oauth", (req, res) => {
   }
   if(!allowedClients.has(query.client_id)) {
     res.status(400).send("Invalid client_id");
+    return;
+  }
+  if(!allowedUsers.has(user_id)) {
+    res.status(400).send("Invalid user_id");
+    return;
+  }
+  const error = tokenMemoryStore.store(query.client_id, request_timestamp);
+  if (error) {
+    res.status(400).send(error);
     return;
   }
   res.cookie("paper", JSON.stringify(cookieObj), {
@@ -92,6 +146,10 @@ function parseObject(obj) {
   }
 }
 
+
+/**
+ * This endpoint is used to redirect the user back to the client_uri
+ */
 app.get("/back", (req, res) => {
   const cookie = req.signedCookies.paper;
   if (!cookie) {
@@ -141,6 +199,12 @@ app.get("/back", (req, res) => {
   );
 });*/
 
+
+
+
+
+// This endpoint is used just to create a fake custom oauth provider
+// Token generated manually must be signed with one of the private keys in the jwks
 app.get("/.well-known/openid-configuration", (req, res) => {
   res.json({
     issuer: "https://appweb.andreabarchietto.it",

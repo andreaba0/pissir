@@ -13,7 +13,8 @@ string[] requiredVariables = {
     "client_uri",
     "oauth_uri",
     "oauth_redirect_uri",
-    "oauthKey"
+    "oauthKey",
+    "userId"
 };
 
 foreach (string variable in requiredVariables)

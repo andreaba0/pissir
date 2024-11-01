@@ -100,9 +100,15 @@ create table actuator_log(
     object_id varchar(26),
     log_time timestamptz not null,
     is_active boolean not null,
+    active_time integer not null,
+    water_used float not null,
     object_type object_type not null check(object_type = 'ACTUATOR'),
     primary key (object_id, log_time)
 );
+
+-- ensure that log_time + active_time is always smaller than the next day
+alter table actuator_log
+add constraint active_time_coherence check (log_time + (active_time, ' seconds')::interval < date_trunc('day', log_time + interval '1 day'));
 
 create table consumption_fact(
     crop text not null,

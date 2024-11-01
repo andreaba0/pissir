@@ -38,7 +38,7 @@ public class WaterLimitAll
         using DbCommand commandGetWaterLimitAll = dataSource.CreateCommand();
 
         commandGetWaterLimitAll.CommandText = $@"
-            select min(on_date), max(on_date), ((consumed*(consumption_sign))+available) as limit, vat_number
+            select on_date, ((consumed*(consumption_sign))+available) as limit, vat_number
             from daily_water_limit
             group by vat_number, ((consumed*(consumption_sign))+available)
         ";
@@ -48,20 +48,21 @@ public class WaterLimitAll
         {
             return "[]";
         }
-        List<GetData> data = new List<GetData>();
+        List<WaterLimitGroup.Record> data = new List<WaterLimitGroup.Record>();
         while (reader.Read())
         {
-            data.Add(new GetData {
-                vat_number = reader.GetString(3),
-                limit = reader.GetFloat(2),
-                start_date = reader.GetDateTime(0),
-                end_date = reader.GetDateTime(1)
-            });
+            data.Add(new WaterLimitGroup.Record(
+                reader.GetString(2),
+                reader.GetFloat(1),
+                reader.GetDateTime(0)
+            ));
         }
         reader.Close();
         connection.Close();
+
+        List<WaterLimitGroup.GroupedData> groupedData = WaterLimitGroup.GroupData(data);
         
-        string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { 
+        string json = JsonSerializer.Serialize(groupedData, new JsonSerializerOptions { 
             IncludeFields = true
         });
         return json;

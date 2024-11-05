@@ -19,6 +19,25 @@ public class DateTimeProvider : IDateTimeProvider
         offsetSeconds = 0;
     }
 
+    /// <summary>
+    /// This method parses a datetime string from the frontend to a DateTime object.
+    /// </summary>
+    /// <param name="datetime"></param>
+    /// <returns></returns>
+    public static DateTime parseDateFromFrontend(string datetime)
+    {
+        Regex regex = new Regex(@"^(\d{4})-(\d{2})-(\d{2})");
+        Match match = regex.Match(datetime);
+        if (!match.Success)
+        {
+            throw new ArgumentException("Invalid start time format");
+        }
+        int year = int.Parse(match.Groups[1].Value);
+        int month = int.Parse(match.Groups[2].Value);
+        int day = int.Parse(match.Groups[3].Value);
+        return new DateTime(year, month, day);
+    }
+
     //Parsing is always done in local timezone.
     public static DateTimeProvider parse(string baseDate)
     {

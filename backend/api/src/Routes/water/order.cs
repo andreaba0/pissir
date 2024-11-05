@@ -11,7 +11,7 @@ using Module.KeyManager;
 
 namespace Routes;
 
-public class WaterOrderRoute
+public class WaterOrder
 {
     public struct GetData
     {
@@ -21,7 +21,7 @@ public class WaterOrderRoute
         public float quantity;
     }
 
-    public static List<GetData> GetSensorData(
+    public static List<GetData> Get(
         IHeaderDictionary headers,
         DbDataSource dataSource,
         IDateTimeProvider dateTimeProvider,

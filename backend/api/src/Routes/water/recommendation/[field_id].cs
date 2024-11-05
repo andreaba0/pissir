@@ -66,19 +66,13 @@ public class WaterRecommendationFieldId {
         // Union is required to handle edge case where logs for current day do not exist
         // because actuator may have been turned on since the past day
         command.CommandText = $@"
-            select log_time at time zone 'UTC', is_active
+            select sum(active_time)
             from actuator_log as al inner join
             object_logger as ol on al.object_id = ol.id inner join
             farm_field as field on ol.farm_field_id = field.id
             where ol.farm_field_id = $1 and field.vat_number = $3 and
-            al.log_time <= date_trunc('day', $2)
+            date_trunc('day', al.log_time) = date_trunc('day', $2)
             limit 1
-            union
-            select log_time at time zone 'UTC', is_active
-            from actuator_log as al inner join
-            object_logger as ol on al.object_id = ol.id inner join
-            farm_field as field on ol.farm_field_id = field.id
-            where ol.farm_field_id = $1 and al.log_time = $2 and field.vat_number = $3
         ";
 
         command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, fieldId));
@@ -91,19 +85,8 @@ public class WaterRecommendationFieldId {
             }
 
             reader.Read();
-            List<Utility.Utility.CountEntity> entities = new List<Utility.Utility.CountEntity>();
-            while (reader.Read()) {
-                DateTime lt = reader.GetDateTime(0);
-                string ltStr = $"{lt.Year}-{lt.Month}-{lt.Day}T{lt.Hour}:{lt.Minute}:{lt.Second}Z";
-                string fStr = "yyyy-MM-ddTHH:mm:ssZ";
-                DateTimeOffset logTime = DateTimeOffset.ParseExact(ltStr, fStr, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
-                bool isActive = reader.GetBoolean(1);
-                entities.Add(new Utility.Utility.CountEntity {
-                    date = logTime,
-                    status = isActive
-                });
-            }
-            totalOnState = Utility.Utility.CountSeconds(dateTimeProvider.UtcNow, entities);
+            totalOnState = reader.GetInt32(0);
+            reader.Close();
         }
         string res = JsonSerializer.Serialize(new GetData {
             total_estimated = totalEstimated,

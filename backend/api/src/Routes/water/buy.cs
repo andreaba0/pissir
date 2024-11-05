@@ -43,6 +43,7 @@ public class WaterBuy
             transactionCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, data.offer_id));
             transactionCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Date, data.date));
             transactionCommand.ExecuteNonQuery();
+            transactionCommand.Parameters.Clear();
 
             transactionCommand.CommandText = $@"
                 insert into buy_order (offer_id, farm_field_id, qty)
@@ -53,6 +54,18 @@ public class WaterBuy
             transactionCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, data.field_id));
             transactionCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Single, data.amount));
             transactionCommand.ExecuteNonQuery();
+            transactionCommand.Parameters.Clear();
+
+            transactionCommand.CommandText = $@"
+                insert into daily_water_limit (vat_number, consumption_sign, available, consumed, on_date) values
+                ($1, -1, 0, $2, $3)
+                on conflict (vat_number, on_date) do update set consumed = daily_water_limit.consumed + $2
+            ";
+            transactionCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, data.field_id));
+            transactionCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Single, data.amount));
+            transactionCommand.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Date, data.date));
+            transactionCommand.ExecuteNonQuery();
+            transactionCommand.Parameters.Clear();
 
             transactionCommand.CommandText = $@"COMMIT";
             transactionCommand.ExecuteNonQuery();
@@ -66,7 +79,7 @@ public class WaterBuy
         return Task.CompletedTask;
     }
 
-    public static Task PostWaterBuy(
+    public static Task Post(
         IHeaderDictionary headers,
         DbDataSource dataSource,
         IDateTimeProvider dateTimeProvider,

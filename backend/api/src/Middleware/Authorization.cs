@@ -71,7 +71,7 @@ public class Authorization {
         if(scheme.ToLower() == "bearer" && !Authorization.validateBearerSyntax(tokenRegex, authorizationHeader)) {
             return false;
         }
-        if(scheme.ToLower() == "farm" && !Authorization.validateFarmSyntax(tokenRegex, authorizationHeader)) {
+        if(scheme.ToLower() == "pissir-farm-hmac-sha256" && !Authorization.validateFarmSyntax(tokenRegex, authorizationHeader)) {
             return false;
         }
         string token = tokenRegex.Match(authorizationHeader).Groups["token"].Value;

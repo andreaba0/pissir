@@ -73,12 +73,12 @@ create table presentation_letter (
     presentation_id uuid not null unique default gen_random_uuid(),
     given_name text not null,
     family_name text not null,
-    email text not null,
-    tax_code varchar(16) not null,
+    email text not null unique,
+    tax_code varchar(16) not null unique,
     company_vat_number varchar(11) not null,
     company_industry_sector varchar(3) not null,
     created_at timestamptz not null default now(),
-    primary key (user_account)
+    primary key (user_account),
 );
 
 create table api_acl (

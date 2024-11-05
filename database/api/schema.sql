@@ -78,9 +78,10 @@ create table irrigation_type(
 
 create table object_logger(
     id varchar(26) primary key,
+    company_chosen_id varchar(11) not null,
     object_type object_type not null,
     farm_field_id varchar(26) not null,
-    unique (id, object_type)
+    unique (company_chosen_id, farm_field_id)
 );
 create table umdty_sensor_log(
     object_id varchar(26),

@@ -83,7 +83,7 @@ public class WaterOfferOfferId
             commandRollbackTransaction.CommandText = "rollback";
             commandRollbackTransaction.ExecuteNonQuery();
             connection.Close();
-            throw e;
+            throw;
         }
     }
 
@@ -176,7 +176,7 @@ public class WaterOfferOfferId
             commandRollbackTransaction.CommandText = "rollback";
             commandRollbackTransaction.ExecuteNonQuery();
             connection.Close();
-            throw e;
+            throw;
         }
     }
 

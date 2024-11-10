@@ -8,6 +8,9 @@ using Types;
 using Utility;
 using Middleware;
 using Module.KeyManager;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text;
 
 namespace Routes;
 
@@ -21,7 +24,7 @@ public class WaterOrder
         public float quantity;
     }
 
-    public static List<GetData> Get(
+    public static ValueTask<string> Get(
         IHeaderDictionary headers,
         DbDataSource dataSource,
         IDateTimeProvider dateTimeProvider,
@@ -58,7 +61,7 @@ public class WaterOrder
 
         if (!reader.HasRows)
         {
-            return new List<GetData>();
+            return new ValueTask<string>("[]");
         }
 
         List<GetData> data = new List<GetData>();
@@ -75,6 +78,10 @@ public class WaterOrder
         }
         reader.Close();
         connection.Close();
-        return data;
+        string json = JsonSerializer.Serialize(data, new JsonSerializerOptions
+        {
+            IncludeFields = true
+        });
+        return new ValueTask<string>(json);
     }
 }

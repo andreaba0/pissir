@@ -90,14 +90,16 @@ public class WebServer
             }
         });
 
-        app.MapGet("/resourcemanager/water/stock", async context => {
+        app.MapGet("/resourcemanager/water/stock/{field_id}", async context => {
             try {
-                string data = ResourceManagerWaterStock.Get(
+                ValueTask<string> func = ResourceManagerWaterStock.Get(
                     context.Request.Headers,
+                    context.Request.RouteValues,
                     _dbDataSource,
                     _dateTimeProvider,
                     _remoteManager
                 );
+                string data = await func;
                 context.Response.StatusCode = 200;
                 await context.Response.WriteAsync(data);
             } catch(AuthenticationException e) {
@@ -322,14 +324,15 @@ public class WebServer
 
         app.MapPost("/water/buy", async context => {
             try {
-                WaterBuy.PostWaterBuy(
+                WaterBuy.Post(
                     context.Request.Headers,
+                    context.Request.Body,
                     _dbDataSource,
                     _dateTimeProvider,
                     _remoteManager
                 ).Wait();
                 context.Response.StatusCode = 200;
-                await context.Response.WriteAsync("Water bought");
+                await context.Response.WriteAsync("");
             } catch(WaterBuyException e) {
                 context.Response.StatusCode = 400;
                 await context.Response.WriteAsync(e.Message);
@@ -343,27 +346,161 @@ public class WebServer
         });
 
         app.MapGet("/water/offer", async context => {
-            await context.Response.WriteAsync("Water offer");
+            try {
+                ValueTask<string> func = WaterOffer.Get(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                string data = await func;
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapPost("/water/offer", async context => {
-            await context.Response.WriteAsync("Water offer");
+            try {
+                ValueTask<string> func = WaterOffer.Post(
+                    context.Request.Headers,
+                    context.Request.Body,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                string data = await func;
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(WaterOfferException e) {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync(e.Message);
+            } catch(JsonException e) {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapDelete("/water/offer/{offer_id}", async context => {
-            await context.Response.WriteAsync("Water offer");
+            try {
+                ValueTask<WaterOfferOfferId.DeleteResponse> func = WaterOfferOfferId.Delete(
+                    context.Request.Headers,
+                    context.Request.RouteValues,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                WaterOfferOfferId.DeleteResponse r = await func;
+                if(r == WaterOfferOfferId.DeleteResponse.OfferNotFound) {
+                    context.Response.StatusCode = 404;
+                    await context.Response.WriteAsync("Offer not found");
+                } else if(r == WaterOfferOfferId.DeleteResponse.OfferNotDeleted) {
+                    context.Response.StatusCode = 400;
+                    await context.Response.WriteAsync("Offer not deleted");
+                } else {
+                    context.Response.StatusCode = 200;
+                    await context.Response.WriteAsync("Offer deleted");
+                }
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapPatch("/water/offer/{offer_id}", async context => {
-            await context.Response.WriteAsync("Water offer");
+            try {
+                ValueTask<WaterOfferOfferId.PatchResponse> func = WaterOfferOfferId.Patch(
+                    context.Request.Headers,
+                    context.Request.Body,
+                    context.Request.RouteValues,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                WaterOfferOfferId.PatchResponse r = await func;
+                if(r == WaterOfferOfferId.PatchResponse.OfferNotFound) {
+                    context.Response.StatusCode = 404;
+                    await context.Response.WriteAsync("Offer not found");
+                } else if(r == WaterOfferOfferId.PatchResponse.OfferNotPatched) {
+                    context.Response.StatusCode = 400;
+                    await context.Response.WriteAsync("Offer not patched");
+                } else {
+                    context.Response.StatusCode = 200;
+                    await context.Response.WriteAsync("Offer patched");
+                }
+            } catch(WaterOfferException e) {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync(e.Message);
+            } catch(JsonException e) {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapGet("/water/order", async context => {
-            await context.Response.WriteAsync("Water order");
+            try {
+                ValueTask<string> func = WaterOrder.Get(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                string data = await func;
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapGet("/water/consumption", async context => {
-            await context.Response.WriteAsync("Water consumption");
+            try {
+                ValueTask<string> func = WaterConsumption.Get(
+                    context.Request.Headers,
+                    _dbDataSource,
+                    _dateTimeProvider,
+                    _remoteManager
+                );
+                string data = await func;
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync(data);
+            } catch(AuthenticationException e) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync(e.Message);
+            } catch(AuthorizationException e) {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(e.Message);
+            } catch(Exception e) {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(e.Message);
+            }
         });
 
         app.MapGet("/field/{field_id}", async context => {

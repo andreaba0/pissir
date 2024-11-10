@@ -25,7 +25,7 @@ public class WaterOffer
         public DateTime date;
     }
 
-    public static List<GetData> Get(
+    public static ValueTask<string> Get(
         IHeaderDictionary headers,
         DbDataSource dataSource,
         IDateTimeProvider dateTimeProvider,
@@ -53,7 +53,7 @@ public class WaterOffer
         using DbDataReader reader = commandGetWaterOffer.ExecuteReader();
         if (!reader.HasRows)
         {
-            return new List<GetData>();
+            return new ValueTask<string>("[]");
         }
         List<GetData> data = new List<GetData>();
         while (reader.Read())
@@ -68,13 +68,17 @@ public class WaterOffer
         }
         reader.Close();
         connection.Close();
-        return data;
+        string json = JsonSerializer.Serialize(data, new JsonSerializerOptions
+        {
+            IncludeFields = true
+        });
+        return new ValueTask<string>(json);
     }
 
     public struct PostData {
         public float amount;
         public float price;
-        public DateTime date;
+        public string date;
     }
 
     public static ValueTask<string> Post(

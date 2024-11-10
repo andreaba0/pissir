@@ -53,8 +53,8 @@ public class WaterLimit {
             IncludeFields = true
         });
 
-        DateTime start = dateTimeProvider.parseDateFromFrontend(postData.start_date);
-        DateTime end = dateTimeProvider.parseDateFromFrontend(postData.end_date);
+        DateTime start = DateTimeProvider.parseDateFromFrontend(postData.start_date);
+        DateTime end = DateTimeProvider.parseDateFromFrontend(postData.end_date);
 
         int days = (int)(end - start).TotalDays;
 
@@ -79,6 +79,10 @@ public class WaterLimit {
         commandPostWaterBody.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Int32, days));
 
         commandPostWaterBody.ExecuteNonQuery();
+
+        connection.Close();
+
+        return Task.CompletedTask;
     }
 
     public static ValueTask<string> Get(

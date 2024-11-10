@@ -22,7 +22,7 @@ public class WaterBuy
         public string field_id;
         public float amount;
         public string offer_id;
-        public DateTime date;
+        public string date;
     }
 
     private static Task UploadTransaction(
@@ -73,7 +73,7 @@ public class WaterBuy
         } catch (DbException e) {
             transactionCommand.CommandText = $@"ROLLBACK";
             transactionCommand.ExecuteNonQuery();
-            throw e;
+            throw;
         }
 
         return Task.CompletedTask;
@@ -81,6 +81,7 @@ public class WaterBuy
 
     public static Task Post(
         IHeaderDictionary headers,
+        Stream body,
         DbDataSource dataSource,
         IDateTimeProvider dateTimeProvider,
         RemoteManager remoteManager
@@ -89,24 +90,25 @@ public class WaterBuy
         User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.FA });
 
         //field_id is not passed in the headers, so we need to get it from the URL
-        string field_id = headers["field_id"].Count > 0 ? headers["field_id"].ToString() : string.Empty;
+        /*string field_id = headers["field_id"].Count > 0 ? headers["field_id"].ToString() : string.Empty;
         string offer_id = headers["offer_id"].Count > 0 ? headers["offer_id"].ToString() : string.Empty;
         float amount = headers["amount"].Count > 0 ? float.Parse(headers["amount"].ToString()) : 0;
         DateTime date = headers["date"].Count > 0 ? DateTime.Parse(headers["date"].ToString()) : throw new WaterBuyException(WaterBuyException.ErrorCode.DATE_REQUIRED, "Date required");
         if (field_id == string.Empty) throw new WaterBuyException(WaterBuyException.ErrorCode.FIELD_ID_REQUIRED, "Field id required");
         if (offer_id == string.Empty) throw new WaterBuyException(WaterBuyException.ErrorCode.OFFER_ID_REQUIRED, "Offer id required");
         if (amount == 0) throw new WaterBuyException(WaterBuyException.ErrorCode.AMOUNT_REQUIRED, "Amount required");
+*/
+        PostData postData = JsonSerializer.Deserialize<PostData>(body);
 
+        string field_id = postData.field_id;
+        string offer_id = postData.offer_id;
+        float amount = postData.amount;
+        DateTime date = DateTimeProvider.parseDateFromFrontend(postData.date);
         
         using DbConnection connection = dataSource.OpenConnection();
 
         //call the UploadTransaction method to upload the transaction
-        UploadTransaction(connection, new PostData {
-            field_id = field_id,
-            amount = amount,
-            offer_id = offer_id,
-            date = date
-        });
+        UploadTransaction(connection, postData);
 
         connection.Close();
 

@@ -26,6 +26,10 @@ class CustomDate:
     def secondsTimeZone(self):
         return -int(time.timezone)
 
+    def addDays(self, days):
+        self.date += datetime.timedelta(days=days)
+        return self
+
     # epoch is generated as the number of seconds since 1st January 1970 (This is the Unix epoch)
     # It is used as <iat> and <exp> fields in the JWT token
     def epoch(self):
@@ -47,6 +51,9 @@ class CustomDate:
             int(match.group("year")),
             tz
         )
+    
+    def toISODate(self):
+        return self.date.isoformat()
     
     def __str__(self):
         return f"{self.date}"

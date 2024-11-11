@@ -22,10 +22,10 @@ namespace frontend.Pages.AziendaAgricola
                 if (ApiReq.utente.Role!="FA") { return RedirectToPage("/DatiAccount"); }
 
                 // Simulazione dati
-                SensoriLogs = GetSensoriLogs();
-                AttuatoriLogs = GetAttuatoriLogs();
+                //SensoriLogs = GetSensoriLogs();
+                //AttuatoriLogs = GetAttuatoriLogs();
 
-                return Page();
+                //return Page();
 
                 // Richiesta API
                 string data = await ApiReq.GetDataFromApi(HttpContext, "/object/sensor", true, true);
@@ -33,6 +33,8 @@ namespace frontend.Pages.AziendaAgricola
 
                 data = await ApiReq.GetDataFromApi(HttpContext, "/object/actuator", true, true);
                 AttuatoriLogs = JsonConvert.DeserializeObject<List<AttuatoreLog>>(data);
+
+                return Page();
             }
             catch (HttpRequestException ex)
             {
@@ -46,7 +48,7 @@ namespace frontend.Pages.AziendaAgricola
                 }
                 else
                 {
-                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare piï¿½ tardi.";
                     return RedirectToPage("/Error");
                 }
             }

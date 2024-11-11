@@ -20,13 +20,15 @@ namespace frontend.Pages.GestoreIdrico
                 if (ApiReq.utente.Role!="WA") { throw new Exception("Unauthorized"); }
 
                 // Simulazione dati
-                Acquisti = GetListaAcquisti();
+                //Acquisti = GetListaAcquisti();
 
-                return Page();
+                //return Page();
 
                 // Richiesta API
                 string data = await ApiReq.GetDataFromApi(HttpContext, "/water/order", true, true);
                 Acquisti = JsonConvert.DeserializeObject<List<OrdineAcquisto>>(data);
+
+                return Page();
             }
             catch (Exception ex)
             {

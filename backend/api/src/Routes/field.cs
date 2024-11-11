@@ -26,30 +26,21 @@ public class Fields
         public string irrigation_type;
     }
 
-    public struct PostData {
+    public struct PostData
+    {
         public float square_meters;
         public string crop_type;
         public string irrigation_type;
     }
 
-    public static Task PostField(
-        IHeaderDictionary headers,
-        Stream body,
-        DbDataSource dataSource,
+    internal static Task PostTransactionField(
+        DbConnection connection,
+        PostData data,
         IDateTimeProvider dateTimeProvider,
-        RemoteManager remoteManager
-    ) {
-        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.FA });
-
-        PostData data = JsonSerializer.DeserializeAsync<PostData>(
-            body,
-            new JsonSerializerOptions { 
-                PropertyNameCaseInsensitive = true
-            }
-        ).Result;
-
-        using DbConnection connection = dataSource.OpenConnection();
-
+        DbDataSource dataSource,
+        User user
+    )
+    {
         using DbCommand commandPostField = dataSource.CreateCommand();
 
         commandPostField.CommandText = "BEGIN TRANSACTION";
@@ -81,8 +72,74 @@ public class Fields
         commandPostField.CommandText = "COMMIT TRANSACTION";
         commandPostField.ExecuteNonQuery();
 
-        connection.Close();
         return Task.CompletedTask;
+    }
+
+    internal static Task PostTransaction(
+        DbConnection connection,
+        PostData data,
+        IDateTimeProvider dateTimeProvider,
+        DbDataSource dataSource,
+        User user
+    )
+    {
+        Exception exception;
+        try
+        {
+            PostTransactionField(connection, data, dateTimeProvider, dataSource, user);
+            return Task.CompletedTask;
+        }
+        catch (DbException ex)
+        {
+            DbCommand commandPostField = dataSource.CreateCommand();
+            commandPostField.CommandText = "ROLLBACK TRANSACTION";
+            commandPostField.ExecuteNonQuery();
+            if (!AuthenticatedPostTransaction.ExceptionMatchCompanyNotFound(ex))
+            {
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+        try
+        {
+            AuthenticatedPostTransaction.CreateUserInDatabase(dataSource, user);
+            PostTransactionField(connection, data, dateTimeProvider, dataSource, user);
+            return Task.CompletedTask;
+        }
+        catch (DbException ex)
+        {
+            DbCommand commandPostField = dataSource.CreateCommand();
+            commandPostField.CommandText = "ROLLBACK TRANSACTION";
+            commandPostField.ExecuteNonQuery();
+            throw;
+        }
+    }
+
+    public static ValueTask<string> PostField(
+        IHeaderDictionary headers,
+        Stream body,
+        DbDataSource dataSource,
+        IDateTimeProvider dateTimeProvider,
+        RemoteManager remoteManager
+    )
+    {
+        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.FA });
+
+        PostData data = JsonSerializer.DeserializeAsync<PostData>(body, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            IncludeFields = true
+        }).Result;
+
+        using DbConnection connection = dataSource.OpenConnection();
+        PostTransaction(connection, data, dateTimeProvider, dataSource, user);
+        connection.Close();
+
+
+        return new ValueTask<string>("Created");
     }
 
     public static string GetFields(
@@ -99,9 +156,11 @@ public class Fields
         using DbCommand commandGetFields = dataSource.CreateCommand();
 
         commandGetFields.CommandText = $@"
-            select id, square_meters, crop_type, irrigation_type
-            from farm_field
-            where vat_number = $1
+            select distinct on (farm_field.id) farm_field.id, square_meters, crop_type, irrigation_type
+            from farm_field inner join farm_field_versioning
+            on farm_field.id = farm_field_versioning.field_id
+            where farm_field.vat_number = $1
+            order by farm_field.id, farm_field_versioning.created_at desc
         ";
 
         commandGetFields.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
@@ -123,8 +182,9 @@ public class Fields
         }
         reader.Close();
         connection.Close();
-        
-        string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { 
+
+        string json = JsonSerializer.Serialize(data, new JsonSerializerOptions
+        {
             IncludeFields = true
         });
         return json;

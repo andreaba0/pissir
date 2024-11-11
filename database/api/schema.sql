@@ -1,4 +1,4 @@
-create type industry_sector as enum ('WSP', 'FAR');
+create type industry_sector as enum ('WSP', 'FAR', 'wsp', 'far');
 create type object_type as enum ('UMDTY', 'TMP', 'ACTUATOR');
 
 create table company(
@@ -9,12 +9,12 @@ create table company(
 
 create table company_far (
     vat_number varchar(11) primary key,
-    industry_sector industry_sector not null check(industry_sector = 'FAR')
+    industry_sector industry_sector not null check(industry_sector = 'FAR' or industry_sector = 'far')
 );
 
 create table company_wsp (
     vat_number varchar(11) primary key,
-    industry_sector industry_sector not null check(industry_sector = 'WSP')
+    industry_sector industry_sector not null check(industry_sector = 'WSP' or industry_sector = 'wsp')
 );
 
 create table secret_key (
@@ -27,9 +27,9 @@ create table offer(
     id varchar(26) primary key,
     vat_number varchar(11) not null,
     publish_date date not null,
-    price_liter float not null check(price_liter >= 0),
-    available_liters float not null check(available_liters >= 0),
-    purchased_liters float not null check(purchased_liters >= 0) default 0,
+    price_liter real not null check(price_liter >= 0),
+    available_liters real not null check(available_liters >= 0),
+    purchased_liters real not null check(purchased_liters >= 0) default 0,
     unique(vat_number, publish_date, price_liter)
 );
 
@@ -46,8 +46,8 @@ create table buy_order(
 create table daily_water_limit(
     vat_number varchar(11) not null,
     consumption_sign smallint not null check(consumption_sign in (-1, 1)), --: -1 for unlimited [-inf; 0], 1 for limited [0; +limit]
-    available float not null check (available >= 0),
-    consumed float not null check (consumed >= 0),
+    available real not null check (available >= 0),
+    consumed real not null check (consumed >= 0),
     on_date date not null,
     primary key (vat_number, on_date)
 );
@@ -81,7 +81,8 @@ create table object_logger(
     company_chosen_id varchar(11) not null,
     object_type object_type not null,
     farm_field_id varchar(26) not null,
-    unique (company_chosen_id, farm_field_id)
+    unique (company_chosen_id, farm_field_id),
+    unique(id, object_type)
 );
 create table umdty_sensor_log(
     object_id varchar(26),
@@ -109,7 +110,7 @@ create table actuator_log(
 
 -- ensure that log_time + active_time is always smaller than the next day
 alter table actuator_log
-add constraint active_time_coherence check (log_time + (active_time, ' seconds')::interval < date_trunc('day', log_time + interval '1 day'));
+add constraint active_time_coherence check (log_time + (active_time || ' seconds')::interval < date_trunc('day', log_time + interval '1 day'));
 
 create table consumption_fact(
     crop text not null,

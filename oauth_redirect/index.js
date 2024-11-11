@@ -4,6 +4,14 @@
  * It acts as a proxy between client frontend and oauth provider
  * Redirection from oauth provider are routed to a localhost address
  * Request are signed with hmacsha256 and an anti replay mechanism is in place
+ * 
+ * This method to sign request is not 100% reliable if used in a distributed environment
+ * reason: multiple request can be sent at the same time, buy may arrive in different order
+ * and this may cause errors in this scenario:
+ * request 1 timestamp now     : ----------------------> arrives after request 2
+ * request 2 timestamp now + 1 : --------------> arrives before request 1
+ * server will store timestamp of request 2 and reject request 1
+ * This solution is not suitable for a distributed environment
  */
 
 

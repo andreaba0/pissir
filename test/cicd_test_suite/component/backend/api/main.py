@@ -6,6 +6,12 @@ import pytz
 
 from component.backend.api.routes import ping as test_ping
 from component.backend.api.routes import field as test_field
+from component.backend.api.routes import crops as test_crops
+from component.backend.api.routes import irrigation as test_irrigation
+from component.backend.api.routes.r_water import stock as test_water_stock
+from component.backend.api.routes.r_field import route_field_id as test_field_route_field_id
+from component.backend.api.routes.r_water import offer as test_water_offer
+from component.backend.api.routes.r_water.r_limit import all as test_water_limit_all
 
 from utility.state import StateManager, Block, State
 
@@ -34,6 +40,12 @@ from config.address_manager import address_manager
 def EntryPoint(*args, **kwargs):
     test_ping.EntryPoint(*args, **kwargs)
     test_field.EntryPoint(*args, **kwargs)
+    test_crops.EntryPoint(*args, **kwargs)
+    test_irrigation.EntryPoint(*args, **kwargs)
+    test_water_stock.EntryPoint(*args, **kwargs)
+    test_field_route_field_id.EntryPoint(*args, **kwargs)
+    test_water_offer.EntryPoint(*args, **kwargs)
+    test_water_limit_all.EntryPoint(*args, **kwargs)
 
 def checkApiDatabaseConnectivity(container, config):
     ct = Container(container)
@@ -115,5 +127,5 @@ def ApiMain():
         apiServerConfig["exposed_port"],
         apiServerConfig["environment"]["DOTNET_ENV_PISSIR_ISS"],
         apiServerConfig["environment"]["DOTNET_ENV_PISSIR_AUD"],
-        apiServerConfig["environment"]["DOTNET_ENV_INITIAL_DATE"]
+        apiServerConfig["environment"]["DOTNET_ENV_INITIAL_DATETIME"]
     )

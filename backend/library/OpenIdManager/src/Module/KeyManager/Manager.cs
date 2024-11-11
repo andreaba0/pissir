@@ -356,6 +356,7 @@ public class RemoteJwksHub : IRemoteJwksHub
         IssuerInfo issuerInfo = _nameIndex[name];
         issuerInfo.cts.Cancel();
         issuerInfo.cts.Dispose();
+        //_allowedIssuers.Remove(Provider.GetIssuerWithoutPrococol(issuerInfo.manager._issuer));
     }
 
     public string GetIssuerName(string iss)

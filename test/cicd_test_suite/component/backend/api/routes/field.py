@@ -100,7 +100,15 @@ def test2(scope):
         insert into company_far(vat_number, industry_sector) values('{vat_number}', 'FAR');
     '''.format(vat_number=vat_number))
     cur.execute('''
-        insert into farm_field(id, vat_number, square_meters, crop_type, irrigation_type) values
+        insert into farm_field(id, vat_number) values
+        ('{ids[0]}', '{vat_number}'),
+        ('{ids[1]}', '{vat_number}'),
+        ('{ids[2]}', '{vat_number}'),
+        ('{ids[3]}', '{vat_number}'),
+        ('{ids[4]}', '{vat_number}');
+    '''.format(ids=ids, vat_number=vat_number))
+    cur.execute('''
+        insert into farm_field_versioning(field_id, vat_number, square_meters, crop_type, irrigation_type) values
         ('{ids[0]}', '{vat_number}', 1000, 'wheat', 'drip'),
         ('{ids[1]}', '{vat_number}', 2000, 'corn', 'drip'),
         ('{ids[2]}', '{vat_number}', 3000, 'rice', 'drip'),
@@ -130,6 +138,7 @@ def test2(scope):
     jwt_payload["exp"] = utc_date + 3600
 
     jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
+    print(jwt)
 
 
     response = requests.get(
@@ -241,6 +250,186 @@ def test4(scope):
     )
 
 
+def test5(scope):
+    scope.set_header('Test POST /field should succeed and create a new FarmField')
+
+    fake = Faker('it_IT')
+    Faker.seed(0)
+
+    vat_number = fake.random_number(digits=11)
+
+    conn = getPostgresConnection()
+    cur = conn.cursor()
+    cur.execute('''
+        insert into company(vat_number, industry_sector) values('{vat_number}', 'FAR');
+    '''.format(vat_number=vat_number))
+    cur.execute('''
+        insert into company_far(vat_number, industry_sector) values('{vat_number}', 'FAR');
+    '''.format(vat_number=vat_number))
+
+    cur.close()
+    conn.commit()
+    conn.close()
+
+    jwt_payload = {
+        "company_vat_number": str(vat_number),
+        "role": "FA",
+        "aud": backendConfig["aud"],
+        "iss": backendConfig["iss"],
+        "sub": "test-user"
+    }
+    keys = JWTRegistry.plainMappedKeys()
+    sign_key = keys[0]["key"]
+
+    cDae = CustomDate.parse(backendConfig["initial_date"])
+    utc_date = cDae.epoch()
+
+    #sign jwt with custom iat time
+    jwt_payload["iat"] = utc_date - 3600
+    jwt_payload["exp"] = utc_date + 3600
+
+    jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
+
+
+    response = requests.post(
+        f"http://{backendConfig['host']}:{backendConfig['port']}/field",
+        timeout=2,
+        headers={
+            "Authorization": f"Bearer {jwt}"
+        },
+        json={
+            "square_meters": 1000,
+            "crop_type": "wheat",
+            "irrigation_type": "drip"
+        }
+    )
+    Assertion.Equals(
+        scope,
+        "Should accept the request with a 200",
+        200,
+        response.status_code
+    )
+
+    conn = getPostgresConnection()
+    cur = conn.cursor()
+    cur.execute('''
+        select farm_field.id, farm_field_versioning.square_meters, farm_field_versioning.crop_type, farm_field_versioning.irrigation_type
+        from farm_field inner join farm_field_versioning on farm_field.id = farm_field_versioning.field_id
+        where farm_field.vat_number = '{vat_number}';
+    '''.format(vat_number=vat_number))
+    result = cur.fetchall()
+    cur.close()
+    conn.commit()
+    conn.close()
+    Assertion.Equals(
+        scope,
+        "Should provide the expected list size",
+        1,
+        len(result)
+    )
+    Assertion.Equals(
+        scope,
+        "Should provide the expected square meters",
+        1000,
+        result[0][1]
+    )
+    Assertion.Equals(
+        scope,
+        "Should provide the expected crop type",
+        "wheat",
+        result[0][2]
+    )
+    Assertion.Equals(
+        scope,
+        "Should provide the expected irrigation type",
+        "drip",
+        result[0][3]
+    )
+
+def test6(scope):
+    scope.set_header('Test POST /field should succeed even when company has to be added')
+
+    fake = Faker('it_IT')
+    Faker.seed(0)
+
+    vat_number = fake.random_number(digits=11)
+
+    jwt_payload = {
+        "company_vat_number": str(vat_number),
+        "role": "FA",
+        "aud": backendConfig["aud"],
+        "iss": backendConfig["iss"],
+        "sub": "test-user"
+    }
+    keys = JWTRegistry.plainMappedKeys()
+    sign_key = keys[0]["key"]
+
+    cDae = CustomDate.parse(backendConfig["initial_date"])
+    utc_date = cDae.epoch()
+
+    #sign jwt with custom iat time
+    jwt_payload["iat"] = utc_date - 3600
+    jwt_payload["exp"] = utc_date + 3600
+
+    jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
+
+
+    response = requests.post(
+        f"http://{backendConfig['host']}:{backendConfig['port']}/field",
+        timeout=2,
+        headers={
+            "Authorization": f"Bearer {jwt}"
+        },
+        json={
+            "square_meters": 1000,
+            "crop_type": "wheat",
+            "irrigation_type": "drip"
+        }
+    )
+    Assertion.Equals(
+        scope,
+        "Should accept the request with a 200",
+        200,
+        response.status_code
+    )
+
+    conn = getPostgresConnection()
+    cur = conn.cursor()
+    cur.execute('''
+        select farm_field.id, farm_field_versioning.square_meters, farm_field_versioning.crop_type, farm_field_versioning.irrigation_type
+        from farm_field inner join farm_field_versioning on farm_field.id = farm_field_versioning.field_id
+        where farm_field.vat_number = '{vat_number}';
+    '''.format(vat_number=vat_number))
+    result = cur.fetchall()
+    cur.close()
+    conn.commit()
+    conn.close()
+    Assertion.Equals(
+        scope,
+        "Should provide the expected list size",
+        1,
+        len(result)
+    )
+    Assertion.Equals(
+        scope,
+        "Should provide the expected square meters",
+        1000,
+        result[0][1]
+    )
+    Assertion.Equals(
+        scope,
+        "Should provide the expected crop type",
+        "wheat",
+        result[0][2]
+    )
+    Assertion.Equals(
+        scope,
+        "Should provide the expected irrigation type",
+        "drip",
+        result[0][3]
+    )
+
+
 
 
 
@@ -278,5 +467,7 @@ def EntryPoint(
     suite.add_assertion(test2)
     suite.add_assertion(test3)
     suite.add_assertion(test4)
+    suite.add_assertion(test5)
+    suite.add_assertion(test6)
     suite.run()
     suite.print_stats()

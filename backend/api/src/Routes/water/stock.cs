@@ -26,7 +26,7 @@ public class WaterStock {
         IDateTimeProvider dateTimeProvider,
         RemoteManager remoteManager
     ) {
-        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.WA });
+        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.FA });
 
         using DbConnection connection = dbDataSource.OpenConnection();
         DbCommand command = dbDataSource.CreateCommand();
@@ -37,7 +37,7 @@ public class WaterStock {
             where vat_number = $1 and publish_date = $2
         ";
         command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
-        command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.Now.Date));
+        command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.UtcNow.Date));
         using DbDataReader reader = command.ExecuteReader();
         if (!reader.HasRows)
         {

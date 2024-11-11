@@ -574,15 +574,16 @@ public class WebServer
 
         app.MapPost("/field", async context => {
             try {
-                Fields.PostField(
+                ValueTask<string> func = Fields.PostField(
                     context.Request.Headers,
                     context.Request.Body,
                     _dbDataSource,
                     _dateTimeProvider,
                     _remoteManager
-                ).Wait();
+                );
+                string data = await func;
                 context.Response.StatusCode = 200;
-                await context.Response.WriteAsync("Field created");
+                await context.Response.WriteAsync(data);
             } catch(AuthorizationException e) {
                 context.Response.StatusCode = 403;
                 await context.Response.WriteAsync(e.Message);

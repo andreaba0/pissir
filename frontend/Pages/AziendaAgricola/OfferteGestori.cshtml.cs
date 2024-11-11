@@ -30,7 +30,7 @@ namespace frontend.Pages.AziendaAgricola
                 CampiAcquaStimata = GetAcquaSitmata();
                 LimiteAcquistoAzienda = 500.0f;
 
-                return Page();
+                //return Page();
 
                 // Richiesta API
                 string data = await ApiReq.GetDataFromApi(HttpContext, "/water/offer", true, true);
@@ -50,8 +50,11 @@ namespace frontend.Pages.AziendaAgricola
                     CampiAcquaStimata.Add(new_item);
                 }
 
+
                 //data = await ApiReq.GetDataFromApi(HttpContext, "/water/recommendation");
                 //CampiAcquaStimata = JsonConvert.DeserializeObject<List<AcquaStimata>>(data);
+
+                return Page();
             }
             catch (HttpRequestException ex)
             {

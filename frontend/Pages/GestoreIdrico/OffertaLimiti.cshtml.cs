@@ -27,7 +27,7 @@ namespace frontend.Pages.GestoreIdrico
                 // Simula i dati di esempio
                 SimulaDatiDiEsempio();
 
-                return Page();
+                //return Page();
 
                 // Richiesta API
                 string data = await ApiReq.GetDataFromApi(HttpContext, "/water/offer", true, true);
@@ -35,6 +35,8 @@ namespace frontend.Pages.GestoreIdrico
 
                 data = await ApiReq.GetDataFromApi(HttpContext, "/water/limit/all", true, true);
                 LimitiAcquistoPerAzienda = JsonConvert.DeserializeObject<List<LimiteAcquistoAzienda>>(data);
+
+                return Page();
             }
             catch (Exception ex)
             {

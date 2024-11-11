@@ -20,12 +20,14 @@ namespace frontend.Pages.AziendaAgricola
                 // Controllo utente autorizzato
                 if (ApiReq.utente.Role!="FA") { return RedirectToPage("/DatiAccount"); }
 
-                StoricoOrdini = GetStoricoOrdini();
-                return Page();
+                //StoricoOrdini = GetStoricoOrdini();
+                //return Page();
 
                 // Richiesta API
                 string data = await ApiReq.GetDataFromApi(HttpContext, "/water/order", true, true);
                 StoricoOrdini = JsonConvert.DeserializeObject<List<OrdineAcquisto>>(data);
+
+                return Page();
             }
             catch (HttpRequestException ex)
             {
@@ -39,7 +41,7 @@ namespace frontend.Pages.AziendaAgricola
                 }
                 else
                 {
-                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare piï¿½ tardi.";
                     return RedirectToPage("/Error");
                 }
             }

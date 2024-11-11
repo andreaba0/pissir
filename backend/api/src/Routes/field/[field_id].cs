@@ -100,7 +100,11 @@ public class Field
 
         using DbConnection connection = dataSource.OpenConnection();
 
-        PatchData patchData = JsonSerializer.Deserialize<PatchData>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        PatchData patchData = JsonSerializer.DeserializeAsync<PatchData>(
+            body, new JsonSerializerOptions { 
+                PropertyNameCaseInsensitive = true,
+                IncludeFields = true
+        }).Result;
 
         using DbCommand commandPatchField = dataSource.CreateCommand();
         commandPatchField.CommandText = $@"

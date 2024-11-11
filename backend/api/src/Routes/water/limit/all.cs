@@ -37,11 +37,25 @@ public class WaterLimitAll
 
         using DbCommand commandGetWaterLimitAll = dataSource.CreateCommand();
 
-        commandGetWaterLimitAll.CommandText = $@"
-            select on_date, ((consumed*(consumption_sign))+available) as limit, vat_number
-            from daily_water_limit
-            group by vat_number, ((consumed*(consumption_sign))+available)
-        ";
+        if(User.GetRole(user) == User.Role.FA)
+        {
+            commandGetWaterLimitAll.CommandText = $@"
+                select on_date, consumed+available as limit, vat_number
+                from daily_water_limit
+                where consumption_sign=1 and vat_number=$1
+                order by on_date asc
+            ";
+            commandGetWaterLimitAll.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
+        }
+        else
+        {
+            commandGetWaterLimitAll.CommandText = $@"
+                select on_date, consumed+available as limit, vat_number
+                from daily_water_limit
+                where consumption_sign=1
+                order by on_date asc
+            ";
+        }
 
         using DbDataReader reader = commandGetWaterLimitAll.ExecuteReader();
         if (!reader.HasRows)

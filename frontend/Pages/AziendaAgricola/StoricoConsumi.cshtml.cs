@@ -21,13 +21,15 @@ namespace frontend.Pages.AziendaAgricola
                 if (ApiReq.utente.Role!="FA") { return RedirectToPage("/DatiAccount"); }
 
                 // Simulazione dati
-                StoricoConsumi = GetStoricoConsumi();
+                //StoricoConsumi = GetStoricoConsumi();
 
-                return Page();
+                //return Page();
 
                 // Richiesta API
                 string data = await ApiReq.GetDataFromApi(HttpContext, "/water/consumption", true, true);
                 StoricoConsumi = JsonConvert.DeserializeObject<List<ConsumoAziendaleCampo>>(data);
+
+                return Page();
             }
             catch (HttpRequestException ex)
             {
@@ -41,7 +43,7 @@ namespace frontend.Pages.AziendaAgricola
                 }
                 else
                 {
-                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare più tardi.";
+                    TempData["MessaggioErrore"] = $"Errore: {ex.Message}. Riprovare piï¿½ tardi.";
                     return RedirectToPage("/Error");
                 }
             }

@@ -32,24 +32,31 @@ public class WaterOffer
         RemoteManager remoteManager
     )
     {
-        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.FA });
-
-        //field_id is not passed in the headers, so we need to get it from the URL
-        string field_id = headers["field_id"].Count > 0 ? headers["field_id"].ToString() : string.Empty;
-        if (field_id == string.Empty)
-        {
-            throw new FieldException(FieldException.ErrorCode.FIELD_ID_REQUIRED, "Field id required");
-        }
+        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.FA, User.Role.WA });
 
         using DbConnection connection = dataSource.OpenConnection();
 
         using DbCommand commandGetWaterOffer = dataSource.CreateCommand();
 
-        commandGetWaterOffer.CommandText = $@"
-            select id, price_liter, available_liters, publish_date
-            from offer
-            where publish_date >= CURRENT_DATE + INTERVAL '1 day'
-        ";
+        if (User.GetRole(user) == User.Role.WA)
+        {
+            commandGetWaterOffer.CommandText = $@"
+                select id, price_liter, available_liters, publish_date
+                from offer
+                where vat_number = $1 and publish_date >= date_trunc('day', $2) + INTERVAL '1 day'
+            ";
+            commandGetWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
+            commandGetWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.UtcNow));
+        }
+        else
+        {
+            commandGetWaterOffer.CommandText = $@"
+                select id, price_liter, available_liters, publish_date
+                from offer
+                where publish_date >= date_trunc('day', $1) + INTERVAL '1 day'
+            ";
+            commandGetWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.UtcNow));
+        }
         using DbDataReader reader = commandGetWaterOffer.ExecuteReader();
         if (!reader.HasRows)
         {
@@ -61,8 +68,8 @@ public class WaterOffer
             data.Add(new GetData
             {
                 id = reader.GetString(0),
-                amount = reader.GetFloat(1),
-                price = reader.GetFloat(2),
+                amount = reader.GetFloat(2),
+                price = reader.GetFloat(1),
                 date = reader.GetDateTime(3)
             });
         }
@@ -75,7 +82,8 @@ public class WaterOffer
         return new ValueTask<string>(json);
     }
 
-    public struct PostData {
+    public struct PostData
+    {
         public float amount;
         public float price;
         public string date;
@@ -91,13 +99,14 @@ public class WaterOffer
     {
         User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.WA });
 
-        PostData data = JsonSerializer.Deserialize<PostData>(body, new JsonSerializerOptions { 
+        PostData data = JsonSerializer.Deserialize<PostData>(body, new JsonSerializerOptions
+        {
             IncludeFields = true
         });
 
         DateTime date = DateTimeProvider.parseDateFromFrontend(data.date);
 
-        if(date < dateTimeProvider.UtcNow)
+        if (date < dateTimeProvider.UtcNow)
         {
             throw new WaterOfferException(WaterOfferException.ErrorCode.INVALID_DATE, "Date must be greater than current date");
         }

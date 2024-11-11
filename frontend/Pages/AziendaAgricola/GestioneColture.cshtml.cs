@@ -33,7 +33,7 @@ namespace frontend.Pages.AziendaAgricola
                 IrrigationType = GetIrrigationType();
                 
 
-                return Page();
+                //return Page();
 
                 // Richieste API
                 String data = "";
@@ -49,6 +49,8 @@ namespace frontend.Pages.AziendaAgricola
 
                 data = await ApiReq.GetDataFromApi(HttpContext, "/water/stock", true, true);
                 ColtureStock = JsonConvert.DeserializeObject<List<ColturaStock>>(data);
+
+                return Page();
             }
             catch (HttpRequestException ex)
             {
@@ -79,6 +81,7 @@ namespace frontend.Pages.AziendaAgricola
 
             try
             {
+                float metriQuadratiFloat = float.Parse(metriQuadrati);
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
@@ -92,7 +95,7 @@ namespace frontend.Pages.AziendaAgricola
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
-                    square_meters = metriQuadrati,
+                    square_meters = metriQuadratiFloat,
                     crop_type = tipoColtura,
                     irrigation_type = tipoIrrigazione
                 };
@@ -115,6 +118,7 @@ namespace frontend.Pages.AziendaAgricola
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
@@ -130,6 +134,7 @@ namespace frontend.Pages.AziendaAgricola
 
             try
             {
+                float metriQuadratiFloat = float.Parse(metriQuadrati);
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
 
@@ -143,7 +148,7 @@ namespace frontend.Pages.AziendaAgricola
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
-                    square_meters = metriQuadrati,
+                    square_meters = metriQuadratiFloat,
                     crop_type = tipoColtura,
                     irrigation_type = tipoIrrigazione
                 };

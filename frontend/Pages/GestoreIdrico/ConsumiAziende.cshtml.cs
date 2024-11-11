@@ -21,13 +21,15 @@ namespace frontend.Pages.GestoreIdrico
                 if (ApiReq.utente.Role!="WA") { throw new Exception("Unauthorized"); }
 
                 // Simulazione Dati
-                consumiAziende = GetStoricoConsumi();
+                //consumiAziende = GetStoricoConsumi();
 
-                return Page();
+                //return Page();
 
                 // Richiesta API
                 string data = await ApiReq.GetDataFromApi(HttpContext, "/water/consumption", true, true);
                 consumiAziende = JsonConvert.DeserializeObject<List<ConsumoAziendaleCampo>>(data);
+
+                return Page();
             }
             catch (Exception ex)
             {

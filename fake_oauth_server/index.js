@@ -1,3 +1,13 @@
+/**
+ * This is a fake OAuth server that provides the JWKS endpoint for the OAuth server.
+ * RSA keys are stored in the cache.js file.
+ * Keys are just for testing purposes.
+ * This file is used for component testing when a oauth provider is required.
+ */
+
+
+
+
 const express = require("express");
 const app = express();
 const fs = require("fs");

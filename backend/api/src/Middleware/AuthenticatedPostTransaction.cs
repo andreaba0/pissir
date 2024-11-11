@@ -3,6 +3,10 @@ using System.Data;
 using System.Data.Common;
 using Utility;
 using Types;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Data.Common;
+using System.Data;
 
 namespace Middleware;
 
@@ -10,12 +14,14 @@ namespace Middleware;
 /// This class is essentially a wrapper around every POST request that needs to insert data in database
 /// Company information are stored on demand when a user ask for a service provided by the API backend.
 /// </summary>
-public class AuthenticatedPostTransaction : IDisposable {
+public class AuthenticatedPostTransaction : IDisposable
+{
     private DbDataSource dataSource;
     private readonly User user;
-    public struct BatchItem {}
+    public struct BatchItem { }
 
-    public AuthenticatedPostTransaction(DbDataSource dataSource, User user) {
+    public AuthenticatedPostTransaction(DbDataSource dataSource, User user)
+    {
         this.dataSource = dataSource;
         this.user = user;
     }
@@ -26,7 +32,8 @@ public class AuthenticatedPostTransaction : IDisposable {
     /// </summary>
     /// <param name="e">Database exception</param>
     /// <returns></returns>
-    public bool ExceptionIsForeignKeyViolationCompany(DbException e) {
+    public bool ExceptionIsForeignKeyViolationCompany(DbException e)
+    {
         return (
             e.Message.Contains("foreign key constraint") &&
             (
@@ -49,19 +56,27 @@ public class AuthenticatedPostTransaction : IDisposable {
     /// </summary>
     /// <param name="user">a User object that store information provided in JWT access token</param>
     /// <returns></returns>
-    public Task createUserInDatabase(User user) {
+    public static Task CreateUserInDatabase(
+        DbDataSource dataSource,
+        User user
+    )
+    {
         using DbConnection conn = dataSource.OpenConnection();
         string table = (User.GetRole(user) == User.Role.FA) ? "company_far" : "company_wsp";
         string industry_sector = (User.GetRole(user) == User.Role.FA) ? "FAR" : "WSP";
         using DbCommand command = conn.CreateCommand();
-        command.CommandText="begin transaction isolation level serializable";
+        command.CommandText = "begin transaction isolation level serializable";
         command.ExecuteNonQuery();
         command.CommandText = $@"
             insert into company (vat_number, industry_sector) values($1, $2)
             on conflict do nothing
         ";
         command.Parameters.Add(DbUtility.CreateParameter(conn, DbType.String, user.company_vat_number));
-        command.Parameters.Add(DbUtility.CreateParameter(conn, DbType.String, industry_sector));
+        if(User.GetRole(user)==User.Role.FA) {
+            command.Parameters.Add(DbUtility.CreateParameter(conn, DbType.Object, CustomDbType.IndustrySector.FAR));
+        } else {
+            command.Parameters.Add(DbUtility.CreateParameter(conn, DbType.Object, CustomDbType.IndustrySector.WSP));
+        }
         command.ExecuteNonQuery();
         command.CommandText = $@"
             insert into {table} (vat_number, industry_sector) values($1, $2)
@@ -70,12 +85,20 @@ public class AuthenticatedPostTransaction : IDisposable {
         command.Parameters.Add(DbUtility.CreateParameter(conn, DbType.String, user.company_vat_number));
         command.Parameters.Add(DbUtility.CreateParameter(conn, DbType.String, industry_sector));
         command.ExecuteNonQuery();
-        command.CommandText="commit";
+        command.CommandText = "commit";
         command.ExecuteNonQuery();
         return Task.CompletedTask;
     }
 
-    public void Dispose() {
-        
+    public static bool ExceptionMatchCompanyNotFound(Exception ex)
+    {
+        Regex regexForeignKey = new Regex(@"foreign key constraint");
+        Regex regexVatNumber = new Regex(@"vat_number");
+        return regexForeignKey.IsMatch(ex.Message) && regexVatNumber.IsMatch(ex.Message);
+    }
+
+    public void Dispose()
+    {
+
     }
 }

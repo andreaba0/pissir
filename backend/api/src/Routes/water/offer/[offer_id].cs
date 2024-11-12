@@ -193,9 +193,9 @@ public class WaterOfferOfferId
 
         string offerId = routeValues["offer_id"].ToString();
 
-        PatchData data = JsonSerializer.Deserialize<PatchData>(body, new JsonSerializerOptions {
+        PatchData data = JsonSerializer.DeserializeAsync<PatchData>(body, new JsonSerializerOptions {
             IncludeFields = true
-        });
+        }).Result;
 
         PatchResponse PatchResponse = PatchTransaction(dbDataSource.OpenConnection(), dbDataSource, dateTimeProvider, offerId, user, data).Result;
 

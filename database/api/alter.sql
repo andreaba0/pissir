@@ -9,7 +9,7 @@ add foreign key (company_vat_number) references company_far(vat_number) on delet
 
 alter table offer add foreign key (vat_number) references company_wsp(vat_number) on delete cascade;
  
-alter table buy_order add foreign key (offer_id) references offer(id);
+alter table buy_order add foreign key (offer_id) references offer(id) on delete cascade;
 alter table buy_order add foreign key (farm_field_id) references farm_field(id) on delete cascade;
 
 alter table daily_water_limit add foreign key (vat_number) references company_far(vat_number) on delete cascade;

@@ -108,6 +108,7 @@ public class WaterLimit {
         using DbDataReader reader1 = commandGetWaterLimit.ExecuteReader();
         if (reader1.HasRows)
         {
+            Console.WriteLine("Found limit");
             reader1.Read();
             float limit_set = reader1.GetFloat(0);
             connection.Close();
@@ -115,16 +116,22 @@ public class WaterLimit {
         }
         reader1.Close();
 
+        // if there is no explicit limit set for a company, then we calculate the limit based on the water bought by the company
+        commandGetWaterLimit.Parameters.Clear();
         commandGetWaterLimit.CommandText = $@"
             select sum(qty) as limit
             from buy_order inner join offer on buy_order.offer_id = offer.id
             inner join farm_field on buy_order.farm_field_id = farm_field.id
-            where vat_number = $1 and date_trunc('day', publish_date) = date_trunc('day', $2)
+            where farm_field.vat_number = $1 and date_trunc('day', publish_date) = date_trunc('day', $2)
+            having sum(qty) is not null
         ";
+        commandGetWaterLimit.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
+        commandGetWaterLimit.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.UtcNow));
 
         using DbDataReader reader2 = commandGetWaterLimit.ExecuteReader();
         if (reader2.HasRows)
         {
+            Console.WriteLine("Found limit based on water bought");
             reader2.Read();
             float limit_set = reader2.GetFloat(0);
             connection.Close();

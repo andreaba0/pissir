@@ -117,7 +117,7 @@ public class WebServer
         app.MapPost("/company/secret", async context => {
             try {
                 CompanySecret.PostResponse response = CompanySecret.Post(
-                    context.Request.Headers,
+                    context.Request.Cookies.ContainsKey("ApiToken") ? context.Request.Cookies["ApiToken"] : "",
                     _dbDataSource,
                     _dateTimeProvider,
                     _remoteManager

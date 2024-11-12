@@ -13,79 +13,152 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text;
 using Npgsql;
+using System.Collections.Specialized;
+using System.Threading.Tasks;
+using System.Web;
 
 namespace Routes;
 
 public class CompanySecret
 {
     public enum KeyState { CREATED, EXISTING }
-    public struct PostResponse {
+    public struct PostResponse
+    {
         public string secret_key;
         public KeyState state;
     }
 
+    public static PostResponse PostTransactionSecret(
+        DbConnection connection,
+        string secret,
+        User user,
+        IDateTimeProvider dateTimeProvider,
+        DbDataSource dataSource
+    )
+    {
+        try
+        {
+            using DbCommand commandPostSecret = dataSource.CreateCommand();
+
+            commandPostSecret.CommandText = "BEGIN TRANSACTION";
+            commandPostSecret.ExecuteNonQuery();
+
+            commandPostSecret.CommandText = $@"select secret_key from secret_key where company_vat_number = $1";
+            commandPostSecret.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
+
+            using DbDataReader reader = commandPostSecret.ExecuteReader();
+            if (reader.HasRows)
+            {
+                reader.Read();
+                string secret_key = reader.GetString(0);
+                reader.Close();
+                commandPostSecret.CommandText = "ROLLBACK";
+                commandPostSecret.ExecuteNonQuery();
+                return new PostResponse()
+                {
+                    secret_key = secret_key,
+                    state = KeyState.EXISTING
+                };
+            }
+            reader.Close();
+
+            commandPostSecret.Parameters.Clear();
+            commandPostSecret.CommandText = $@"
+                insert into secret_key (company_vat_number, secret_key, created_at) values
+                ($1, $2, $3)
+            ";
+            commandPostSecret.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
+            commandPostSecret.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, secret));
+            commandPostSecret.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.UtcNow));
+
+            commandPostSecret.ExecuteNonQuery();
+
+            commandPostSecret.CommandText = "COMMIT";
+            commandPostSecret.ExecuteNonQuery();
+
+            return new PostResponse()
+            {
+                secret_key = secret,
+                state = KeyState.CREATED
+            };
+        }
+        catch (DbException ex)
+        {
+            Exception e = ex;
+            DbCommand commandRollback = dataSource.CreateCommand();
+            commandRollback.CommandText = "ROLLBACK";
+            commandRollback.ExecuteNonQuery();
+            throw e;
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+    }
+
+    public static Task<PostResponse> PostTransaction(
+        DbConnection connection,
+        string secret,
+        User user,
+        IDateTimeProvider dateTimeProvider,
+        DbDataSource dataSource
+    )
+    {
+        try
+        {
+            PostResponse response = PostTransactionSecret(connection, secret, user, dateTimeProvider, dataSource);
+            return Task.FromResult(response);
+        }
+        catch (DbException ex)
+        {
+            if (!AuthenticatedPostTransaction.ExceptionMatchCompanyNotFound(ex))
+            {
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+        try
+        {
+            AuthenticatedPostTransaction.CreateUserInDatabase(dataSource, user);
+            PostResponse response = PostTransactionSecret(connection, secret, user, dateTimeProvider, dataSource);
+            return Task.FromResult(response);
+        }
+        catch (DbException ex)
+        {
+            throw;
+        }
+    }
+
     public static PostResponse Post(
-        IHeaderDictionary headers,
+        string cookie,
         DbDataSource dataSource,
         IDateTimeProvider dateTimeProvider,
         RemoteManager remoteManager
     )
     {
-        User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.FA });
+        Token token = Authentication.VerifiedPayload(cookie, remoteManager, dateTimeProvider);
+        User user = new User(
+            global_id: token.sub,
+            role: token.role,
+            company_vat_number: token.company_vat_number
+        );
+        if (User.GetRole(user) != User.Role.FA)
+        {
+            throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "Unauthorized");
+        }
 
         // always generate a new secret_key to insert into the database if it does not exist. If it exists, old one is returned. 
         string key = Convert.ToBase64String(new HMACSHA256().Key);
 
         using DbConnection connection = dataSource.OpenConnection();
 
-        using DbCommand commandGetSecretKey = dataSource.CreateCommand();
+        PostResponse response = PostTransaction(connection, key, user, dateTimeProvider, dataSource).Result;
 
-        DateTime now = dateTimeProvider.Now;
-
-        // <insert ... on conflict(...) do update ... returning ...> is used to always return the secret_key
-        // Without this command, a transaction would be needed:
-        // 1> select ... for update; 
-        // 2> insert ...;
-        commandGetSecretKey.CommandText = $@"
-            select coalesce(
-                (insert into secret_key (
-                    company_vat_number,
-                    secret_key,
-                    created_at
-                ) values (
-                    $1,
-                    $2,
-                    $3
-                ) on conflict (company_vat_number) do nothing returning secret_key, created_at),
-                (select secret_key, created_at from secret_key where company_vat_number = $1)
-            ) as secret_key
-        ";
-
-        commandGetSecretKey.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
-        commandGetSecretKey.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, key));
-        commandGetSecretKey.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, now));
-
-        using DbDataReader reader = commandGetSecretKey.ExecuteReader();
-        if (!reader.HasRows)
-        {
-            throw new Exception("Server side error");
-        }
-        string secret_key = "";
-        reader.Read();
-        string secret = reader.GetString(0);
-        DateTime created_at = reader.GetDateTime(1);
-        
-        reader.Close();
         connection.Close();
-        
-        if(created_at == now) return new PostResponse() {
-            secret_key= secret,
-            state= KeyState.EXISTING
-        };
 
-        return new PostResponse() {
-            secret_key = secret,
-            state=KeyState.CREATED
-        };
+        return response;
     }
 }

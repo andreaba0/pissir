@@ -17,7 +17,7 @@ public class SensorRoute {
         public string field_id;
         public string type;
         public DateTime time;
-        public float value;
+        public float amount;
     }
 
     public static List<GetData> GetSensorData(
@@ -52,12 +52,19 @@ public class SensorRoute {
         List<GetData> data = new List<GetData>();
 
         while (reader.Read()) {
+            CustomDbType.ObjectType type = (CustomDbType.ObjectType)Enum.Parse(typeof(CustomDbType.ObjectType), reader.GetString(4));
+            string typeString = type switch {
+                CustomDbType.ObjectType.UMDTY => "humidity",
+                CustomDbType.ObjectType.TMP => "temperature",
+                CustomDbType.ObjectType.ACTUATOR => "actuator",
+                _ => "unknown"
+            };
             data.Add(new GetData {
                 object_id = reader.GetString(0),
                 time = reader.GetDateTime(1),
                 field_id = reader.GetString(2),
-                value = reader.GetFloat(3),
-                type = reader.GetString(4)
+                amount = reader.GetFloat(3),
+                type = typeString
             });
         }
         reader.Close();

@@ -55,6 +55,9 @@ class CustomDate:
     def toISODate(self):
         return self.date.isoformat()
     
+    def toDateOnly(self):
+        return self.date.date()
+    
     def __str__(self):
         return f"{self.date}"
     

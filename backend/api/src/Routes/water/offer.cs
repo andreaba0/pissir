@@ -89,6 +89,74 @@ public class WaterOffer
         public string date;
     }
 
+    public static Task PostTransactionWaterOffer(
+        DbConnection connection,
+        PostData data,
+        User user,
+        IDateTimeProvider dateTimeProvider,
+        DbDataSource dataSource
+    )
+    {
+        using DbCommand commandPostWaterOffer = dataSource.CreateCommand();
+
+        string offerId = Ulid.NewUlid().ToString();
+
+        commandPostWaterOffer.CommandText = $@"
+            insert into offer (id, vat_number, price_liter, available_liters, purchased_liters, publish_date)
+            values ($1, $2, $3, $4, 0, $5)
+            on conflict (vat_number, publish_date, price_liter) do update
+            set available_liters = offer.available_liters + $4
+        ";
+        DateTime date = DateTimeProvider.parseDateFromFrontend(data.date);
+        DateTimeOffset d = new DateTimeOffset(date, TimeZoneInfo.Local.GetUtcOffset(date));
+        DateTime utcNow = d.UtcDateTime;
+        commandPostWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, offerId));
+        commandPostWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
+        commandPostWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Single, data.price));
+        commandPostWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Single, data.amount));
+        commandPostWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, utcNow));
+
+        commandPostWaterOffer.ExecuteNonQuery();
+
+        return Task.CompletedTask;
+    }
+
+    public static Task PostTransaction(
+        DbConnection connection,
+        PostData data,
+        User user,
+        IDateTimeProvider dateTimeProvider,
+        DbDataSource dataSource
+    )
+    {
+        try
+        {
+            PostTransactionWaterOffer(connection, data, user, dateTimeProvider, dataSource);
+            return Task.CompletedTask;
+        }
+        catch (DbException ex)
+        {
+            if (!AuthenticatedPostTransaction.ExceptionMatchCompanyNotFound(ex))
+            {
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+        try
+        {
+            AuthenticatedPostTransaction.CreateUserInDatabase(dataSource, user);
+            PostTransactionWaterOffer(connection, data, user, dateTimeProvider, dataSource);
+            return Task.CompletedTask;
+        }
+        catch (DbException ex)
+        {
+            throw;
+        }
+    }
+
     public static ValueTask<string> Post(
         IHeaderDictionary headers,
         Stream body,
@@ -99,43 +167,17 @@ public class WaterOffer
     {
         User user = Authorization.AllowByRole(headers, remoteManager, dateTimeProvider, new List<User.Role> { User.Role.WA });
 
-        PostData data = JsonSerializer.Deserialize<PostData>(body, new JsonSerializerOptions
+        PostData data = JsonSerializer.DeserializeAsync<PostData>(body, new JsonSerializerOptions
         {
             IncludeFields = true
-        });
-
-        DateTime date = DateTimeProvider.parseDateFromFrontend(data.date);
-
-        if (date < dateTimeProvider.UtcNow)
-        {
-            throw new WaterOfferException(WaterOfferException.ErrorCode.INVALID_DATE, "Date must be greater than current date");
-        }
+        }).Result;
 
         using DbConnection connection = dataSource.OpenConnection();
 
-        using DbCommand commandPostWaterOffer = dataSource.CreateCommand();
+        PostTransaction(dataSource.OpenConnection(), data, user, dateTimeProvider, dataSource);
 
-        commandPostWaterOffer.CommandText = $@"
-            insert into offer (id, vat_number, price_liter, available_liters, purchased_liters publish_date)
-            values ($1, $2, $3, $4, 0, $5)
-            returning id
-        ";
-        commandPostWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, Guid.NewGuid().ToString()));
-        commandPostWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
-        commandPostWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Single, data.price));
-        commandPostWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Single, data.amount));
-        commandPostWaterOffer.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, data.date));
-
-        using DbDataReader reader = commandPostWaterOffer.ExecuteReader();
-        if (!reader.HasRows)
-        {
-            throw new WaterOfferException(WaterOfferException.ErrorCode.OFFER_NOT_CREATED, "Offer not created");
-        }
-        reader.Read();
-        string offerId = reader.GetString(0);
-        reader.Close();
         connection.Close();
-        return new ValueTask<string>(offerId);
+        return new ValueTask<string>("Created");
     }
 }
 

@@ -40,42 +40,60 @@ def getPostgresConnection():
 
 
 def test1(scope):
-    scope.set_header('Test GET /water/offer should return a list of offers of same WA company')
+    scope.set_header('Test GET /water/limit should succeed and return a float')
 
     fake = Faker('it_IT')
     Faker.seed(0)
 
-    vat_number = fake.random_number(digits=11)
+    vat_number1 = fake.random_number(digits=11)
     vat_number2 = fake.random_number(digits=11)
-    ids = [UlidGenerator.generate() for _ in range(5)]
-    tomorrow = CustomDate.parse(backendConfig["initial_date"]).addDays(1).toISODate()
-    print(tomorrow)
+    vat_number_wsp = fake.random_number(digits=11)
+    offer_ids = [UlidGenerator.generate() for _ in range(2)]
+    farm_field_ids = [UlidGenerator.generate() for _ in range(2)]
 
     conn = getPostgresConnection()
     cur = conn.cursor()
     cur.execute('''
         insert into company(vat_number, industry_sector) values
-        ('{vat_number}', 'WSP'),
-        ('{vat_number2}', 'WSP');
-    '''.format(vat_number=vat_number, vat_number2=vat_number2))
+            ('{vat_number1}', 'FAR'),
+            ('{vat_number2}', 'FAR'),
+            ('{vat_number_wsp}', 'WSP');
+    '''.format(vat_number1=vat_number1, vat_number2=vat_number2, vat_number_wsp=vat_number_wsp))
     cur.execute('''
-        insert into company_wsp(vat_number, industry_sector) values('{vat_number}', 'WSP'), ('{vat_number2}', 'WSP');
-    '''.format(vat_number=vat_number, vat_number2=vat_number2))
+        insert into company_far(vat_number, industry_sector) values('{vat_number1}', 'FAR'), ('{vat_number2}', 'FAR');
+    '''.format(vat_number1=vat_number1, vat_number2=vat_number2))
+    cur.execute('''
+        insert into company_wsp(vat_number, industry_sector) values('{vat_number_wsp}', 'WSP');
+    '''.format(vat_number_wsp=vat_number_wsp))
+    cur.execute('''
+        insert into farm_field(id, vat_number) values
+        ('{ids[0]}', '{vat_number1}'),
+        ('{ids[1]}', '{vat_number2}');
+    '''.format(ids=farm_field_ids, vat_number1=vat_number1, vat_number2=vat_number2))
     cur.execute('''
         insert into offer(id, vat_number, publish_date, price_liter, available_liters, purchased_liters) values
-        ('{ids[0]}', '{vat_number}', '{tomorrow}', 1.0, 1000, 0),
-        ('{ids[1]}', '{vat_number}', '{tomorrow}', 3.0, 1000, 0),
-        ('{ids[2]}', '{vat_number}', '{tomorrow}', 4.0, 1000, 0),
-        ('{ids[3]}', '{vat_number2}', '{tomorrow}', 1.0, 1000, 0),
-        ('{ids[4]}', '{vat_number2}', '{tomorrow}', 2.0, 1000, 0);
-    '''.format(ids=ids, vat_number=vat_number, vat_number2=vat_number2, tomorrow=tomorrow))
+        ('{offer_ids[0]}', '{vat_number_wsp}', '{day1}', 1.0, 1000, 600);
+    '''.format(
+        offer_ids=offer_ids,
+        vat_number_wsp=vat_number_wsp,
+        day1=CustomDate.parse(backendConfig["initial_date"]).toISODate()
+    ))
+    cur.execute('''
+        insert into buy_order(offer_id, farm_field_id, qty) values
+        ('{offer_id}', '{field_id}', 100);
+    '''.format(offer_id=offer_ids[0], field_id=farm_field_ids[0]))
+    cur.execute('''
+        insert into daily_water_limit(vat_number, consumption_sign, available, consumed, on_date) values
+        ('{vat_number2}', 1, 1000, 0, '{date}');
+    '''.format(vat_number2=vat_number2, date=CustomDate.parse(backendConfig["initial_date"]).toISODate()))
+
     cur.close()
     conn.commit()
     conn.close()
 
     jwt_payload = {
-        "company_vat_number": str(vat_number),
-        "role": "WA",
+        "company_vat_number": str(vat_number1),
+        "role": "FA",
         "aud": backendConfig["aud"],
         "iss": backendConfig["iss"],
         "sub": "test-user"
@@ -95,7 +113,7 @@ def test1(scope):
 
 
     response = requests.get(
-        f"http://{backendConfig['host']}:{backendConfig['port']}/water/offer",
+        f"http://{backendConfig['host']}:{backendConfig['port']}/water/limit",
         timeout=2,
         headers={
             "Authorization": f"Bearer {jwt}"
@@ -109,45 +127,64 @@ def test1(scope):
     )
     Assertion.Equals(
         scope,
-        "Should provide the expected list size",
-        3,
-        len(response.json())
+        "Should return the correct value",
+        str(100),
+        response.text
     )
 
 
+
+    jwt_payload = {
+        "company_vat_number": str(vat_number2),
+        "role": "FA",
+        "aud": backendConfig["aud"],
+        "iss": backendConfig["iss"],
+        "sub": "test-user"
+    }
+    keys = JWTRegistry.plainMappedKeys()
+    sign_key = keys[0]["key"]
+
+    cDae = CustomDate.parse(backendConfig["initial_date"])
+    utc_date = cDae.epoch()
+
+    #sign jwt with custom iat time
+    jwt_payload["iat"] = utc_date - 3600
+    jwt_payload["exp"] = utc_date + 3600
+
+    jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
+    print(jwt)
+
+
+    response = requests.get(
+        f"http://{backendConfig['host']}:{backendConfig['port']}/water/limit",
+        timeout=2,
+        headers={
+            "Authorization": f"Bearer {jwt}"
+        }
+    )
+    Assertion.Equals(
+        scope,
+        "Should accept the request with a 200",
+        200,
+        response.status_code
+    )
+    Assertion.Equals(
+        scope,
+        "Should return the correct value",
+        str(1000),
+        response.text
+    )
+
+
+
+
 def test2(scope):
-    scope.set_header('Test GET /water/offer should return a list of all offers from all WA companies')
+    scope.set_header('Test GET /water/limit should return 0 if no limit is set')
 
     fake = Faker('it_IT')
     Faker.seed(0)
 
     vat_number = fake.random_number(digits=11)
-    vat_number2 = fake.random_number(digits=11)
-    ids = [UlidGenerator.generate() for _ in range(5)]
-    tomorrow = CustomDate.parse(backendConfig["initial_date"]).addDays(1).toISODate()
-    print(tomorrow)
-
-    conn = getPostgresConnection()
-    cur = conn.cursor()
-    cur.execute('''
-        insert into company(vat_number, industry_sector) values
-        ('{vat_number}', 'WSP'),
-        ('{vat_number2}', 'WSP');
-    '''.format(vat_number=vat_number, vat_number2=vat_number2))
-    cur.execute('''
-        insert into company_wsp(vat_number, industry_sector) values('{vat_number}', 'WSP'), ('{vat_number2}', 'WSP');
-    '''.format(vat_number=vat_number, vat_number2=vat_number2))
-    cur.execute('''
-        insert into offer(id, vat_number, publish_date, price_liter, available_liters, purchased_liters) values
-        ('{ids[0]}', '{vat_number}', '{tomorrow}', 1.0, 1000, 0),
-        ('{ids[1]}', '{vat_number}', '{tomorrow}', 3.0, 1000, 0),
-        ('{ids[2]}', '{vat_number}', '{tomorrow}', 4.0, 1000, 0),
-        ('{ids[3]}', '{vat_number2}', '{tomorrow}', 1.0, 1000, 0),
-        ('{ids[4]}', '{vat_number2}', '{tomorrow}', 2.0, 1000, 0);
-    '''.format(ids=ids, vat_number=vat_number, vat_number2=vat_number2, tomorrow=tomorrow))
-    cur.close()
-    conn.commit()
-    conn.close()
 
     jwt_payload = {
         "company_vat_number": str(vat_number),
@@ -171,7 +208,7 @@ def test2(scope):
 
 
     response = requests.get(
-        f"http://{backendConfig['host']}:{backendConfig['port']}/water/offer",
+        f"http://{backendConfig['host']}:{backendConfig['port']}/water/limit",
         timeout=2,
         headers={
             "Authorization": f"Bearer {jwt}"
@@ -183,108 +220,11 @@ def test2(scope):
         200,
         response.status_code
     )
-    print(response.json())
     Assertion.Equals(
         scope,
-        "Should provide the expected list size",
-        5,
-        len(response.json())
-    )
-
-
-def test3(scope):
-    scope.set_header('Test POST /water/offer should create a new offer')
-
-    fake = Faker('it_IT')
-    Faker.seed(0)
-
-    vat_number = fake.random_number(digits=11)
-    vat_number2 = fake.random_number(digits=11)
-    ids = [UlidGenerator.generate() for _ in range(5)]
-    tomorrow = CustomDate.parse(backendConfig["initial_date"]).addDays(1)
-    today = CustomDate.parse(backendConfig["initial_date"])
-    print(tomorrow)
-
-    conn = getPostgresConnection()
-    cur = conn.cursor()
-    cur.execute('''
-        insert into company(vat_number, industry_sector) values
-        ('{vat_number}', 'WSP'),
-        ('{vat_number2}', 'WSP');
-    '''.format(vat_number=vat_number, vat_number2=vat_number2))
-    cur.execute('''
-        insert into company_wsp(vat_number, industry_sector) values('{vat_number}', 'WSP'), ('{vat_number2}', 'WSP');
-    '''.format(vat_number=vat_number, vat_number2=vat_number2))
-    cur.close()
-    conn.commit()
-    conn.close()
-
-    jwt_payload = {
-        "company_vat_number": str(vat_number),
-        "role": "WA",
-        "aud": backendConfig["aud"],
-        "iss": backendConfig["iss"],
-        "sub": "test-user"
-    }
-    keys = JWTRegistry.plainMappedKeys()
-    sign_key = keys[0]["key"]
-
-    cDae = CustomDate.parse(backendConfig["initial_date"])
-    utc_date = cDae.epoch()
-
-    #sign jwt with custom iat time
-    jwt_payload["iat"] = utc_date - 3600
-    jwt_payload["exp"] = utc_date + 3600
-
-    jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
-    print(jwt)
-
-
-    response = requests.post(
-        f"http://{backendConfig['host']}:{backendConfig['port']}/water/offer",
-        timeout=2,
-        headers={
-            "Authorization": f"Bearer {jwt}"
-        },
-        json={
-            "price": 1.0,
-            "amount": 1000,
-            "date": tomorrow.toISODate()
-        }
-    )
-    Assertion.Equals(
-        scope,
-        "Should accept the request with a 200",
-        200,
-        response.status_code
-    )
-    
-    conn = getPostgresConnection()
-    cur = conn.cursor()
-    cur.execute('''
-        select vat_number, publish_date, price_liter, available_liters from offer;
-    ''')
-    offers = cur.fetchall()
-    cur.close()
-    conn.commit()
-    conn.close()
-    Assertion.Equals(
-        scope,
-        "Should have created the offer",
-        1,
-        len(offers)
-    )
-    Assertion.Equals(
-        scope,
-        "Should have the correct vat number",
-        str(vat_number),
-        offers[0][0]
-    )
-    Assertion.Equals(
-        scope,
-        "Should have the correct publish date",
-        today.addDays(1).toDateOnly(),
-        offers[0][1]
+        "Should return the correct value",
+        str(0),
+        response.text
     )
 
 
@@ -323,6 +263,5 @@ def EntryPoint(
     suite.set_middletier(ClearDatabase)
     suite.add_assertion(test1)
     suite.add_assertion(test2)
-    suite.add_assertion(test3)
     suite.run()
     suite.print_stats()

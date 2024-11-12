@@ -12,7 +12,7 @@ namespace frontend.Pages.AziendaAgricola
         public List<Offerta>? Offerte { get; set; }
         public List<Coltura>? Colture { get; set; }
         public float? LimiteAcquistoAzienda { get; set; }
-        public List<AcquaStimata>? CampiAcquaStimata {  get; set; }
+        public List<AcquaStimata>? CampiAcquaStimata { get; set; }
 
         public async Task<IActionResult> OnGet()
         {
@@ -44,10 +44,19 @@ namespace frontend.Pages.AziendaAgricola
 
                 foreach (Coltura campo in Colture)
                 {
-                    data = await ApiReq.GetDataFromApi(HttpContext, "/water/recommendation/"+campo.Id, true, true);
-                    AcquaStimata new_item = JsonConvert.DeserializeObject<AcquaStimata>(data);
-                    new_item.CampoId = campo.Id;
-                    CampiAcquaStimata.Add(new_item);
+                    try
+                    {
+                        data = await ApiReq.GetDataFromApi(HttpContext, "/water/recommendation/" + campo.Id, true, true);
+
+                        AcquaStimata new_item = JsonConvert.DeserializeObject<AcquaStimata>(data);
+                        new_item.CampoId = campo.Id;
+                        CampiAcquaStimata.Add(new_item);
+                    }
+                    catch(HttpRequestException) {}
+                    catch (Exception ex)
+                    {
+                        throw;
+                    }
                 }
 
 
@@ -74,7 +83,7 @@ namespace frontend.Pages.AziendaAgricola
             }
         }
 
-        
+
 
 
         // Chiamata API per acquisto risorse idriche
@@ -89,7 +98,7 @@ namespace frontend.Pages.AziendaAgricola
                 colturaId = colturaIdParts[0];
             }
             // Nessuna coltura selezionata
-            if(colturaId == "null")
+            if (colturaId == "null")
             {
                 TempData["MessaggioErrore"] = "Selezionare una coltura prima di acquistare le risorse.";
                 return RedirectToPage();
@@ -99,19 +108,21 @@ namespace frontend.Pages.AziendaAgricola
             {
                 // Controllo utente autenticato
                 if (!await ApiReq.IsUserAuth(HttpContext)) return RedirectToPage("/auth/SignIn");
-                
+
                 // Controllo utente autorizzato
-                if (ApiReq.utente.Role!="FA") { throw new Exception("Unauthorized"); }
+                if (ApiReq.utente.Role != "FA") { throw new Exception("Unauthorized"); }
 
                 // Imposta il token
                 await ApiReq.GetApiToken(HttpContext);
                 ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["ApiToken"]);
 
+                float quantitaAcquistoFloat = float.Parse(quantitaAcquisto);
+
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
                     field_id = colturaId,
-                    amount = quantitaAcquisto,
+                    amount = quantitaAcquistoFloat,
                     offer_id = offertaId,
                     date = DateTime.Now
                 };
@@ -140,7 +151,7 @@ namespace frontend.Pages.AziendaAgricola
 
             //TempData["Messaggio"] = $"Risorse idriche acquistate ( {quantitaAcquisto}L ) dall'offerta con ID: {offertaId} per il campo con ID: {colturaId}";
             //TempData["MessaggioErrore"] = "Errore durante l'acquisto. Riprova più tardi.";
-            
+
             return RedirectToPage();
         }
 

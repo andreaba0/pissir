@@ -41,7 +41,7 @@ public class WaterConsumption
                 select farm_field_id, sum(qty) as amount_ordered, offer.publish_date as publish_date, (
                     select sum(water_used) as amount_used
                     from actuator_log as al inner join object_logger as ol on al.object_id=ol.id
-                    where ol.farm_field_id = farm_field_id and date_trunc('day', al.timestamp) = date_trunc('day', offer.publish_date)
+                    where ol.farm_field_id = farm_field_id and date_trunc('day', al.log_time) = date_trunc('day', offer.publish_date)
                 ) as amount_used
                 from buy_order inner join offer
                 on buy_order.offer_id = offer.id
@@ -56,7 +56,7 @@ public class WaterConsumption
                 select ff.id, sum(purchased_liters) as amount_ordered, offer.publish_date as publish_date, (
                     select sum(water_used) as amount_used
                     from actuator_log as al inner join object_logger as ol on al.object_id=ol.id
-                    where ol.farm_field_id = ff.id and date_trunc('day', al.timestamp) = date_trunc('day', offer.publish_date)
+                    where ol.farm_field_id = ff.id and date_trunc('day', al.log_time) = date_trunc('day', offer.publish_date)
                 )
                 from buy_order inner join offer
                 on buy_order.offer_id = offer.id
@@ -82,9 +82,10 @@ public class WaterConsumption
                 amount_used = reader.GetFloat(3)
             };
         }
-        return new ValueTask<string>(JsonSerializer.Serialize(data, new JsonSerializerOptions
+        string json = JsonSerializer.Serialize(data, new JsonSerializerOptions
         {
             IncludeFields = true
-        }));
+        });
+        return new ValueTask<string>(json);
     }
 }

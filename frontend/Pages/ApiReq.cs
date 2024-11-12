@@ -13,6 +13,7 @@ namespace frontend.Pages
         //public static readonly string urlGenerico = Environment.GetEnvironmentVariable("ipbackend") ?? throw new InvalidOperationException("La variabile d'ambiente 'ipbackend' non è impostata.");
         public static readonly string authUrlGenerico = Environment.GetEnvironmentVariable("ipbackend_auth") ?? throw new InvalidOperationException("La variabile d'ambiente 'ipbackend_auth' non è impostata.");
         public static readonly string apiUrlGenerico = Environment.GetEnvironmentVariable("ipbackend_api") ?? throw new InvalidOperationException("La variabile d'ambiente 'ipbackend_api' non è impostata.");
+        public static readonly string clientUri = Environment.GetEnvironmentVariable("client_uri") ?? throw new InvalidOperationException("La variabile d'ambiente 'client_uri' non è impostata.");
         public static readonly HttpClient httpClient = new();
         public static Utente? utente { get; set; }
 
@@ -26,10 +27,12 @@ namespace frontend.Pages
             }
 
             string cookieNameToUse = "";
+            string apiToken = "";
             if (useApiToken)
             {
                 cookieNameToUse = "ApiToken";
-                await GetApiToken(context);
+                //await GetApiToken(context);
+                apiToken = await GetApiToken(context);
             }
             else
             {
@@ -39,7 +42,15 @@ namespace frontend.Pages
             // Stringa interpolata
             string urlTask = $"{apiUrlGenerico}{endpoint}";
 
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies[cookieNameToUse]);
+            //httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies[cookieNameToUse]);
+            if (useApiToken)
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
+            }
+            else
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", context.Request.Cookies[cookieNameToUse]);
+            }
 
             HttpResponseMessage response = await httpClient.GetAsync(urlTask);
 
@@ -93,10 +104,10 @@ namespace frontend.Pages
         }
 
         // Metodo per ottenere l'API Token per l'accesso alle api
-        public static async Task GetApiToken(HttpContext context, bool checkAuth = true)
+        public static async Task<string> GetApiToken(HttpContext context, bool checkAuth = true)
         {
             // Controllo api token esistente
-            if (!context.Request.Cookies["ApiToken"].IsNullOrEmpty()) { return; }
+            if (!context.Request.Cookies["ApiToken"].IsNullOrEmpty()) { return context.Request.Cookies["ApiToken"]; }
 
             // Controllo utente autenticato
             if (checkAuth)
@@ -138,6 +149,7 @@ namespace frontend.Pages
                             HttpOnly = true,
                             Secure = false,
                         });
+                        return responseData;
                     }
                 }
                 else
@@ -148,7 +160,7 @@ namespace frontend.Pages
                 string responseContent = await response.Content.ReadAsStringAsync();
                 throw new HttpRequestException($"{response.StatusCode}");
             }
-            return;
+            return "";
         }
        
         // Controllo utente autenticato

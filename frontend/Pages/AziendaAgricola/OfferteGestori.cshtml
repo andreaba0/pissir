@@ -95,7 +95,7 @@
                                                 <option value="null">Seleziona la coltura</option>
                                                 @foreach (var coltura in Model.Colture)
                                                 {
-                                                    @foreach (var stima in Model.CampiAcquaStimata)
+                                                    /*@foreach (var stima in Model.CampiAcquaStimata)
                                                     {
                                                         if (coltura.Id == stima.CampoId)
                                                         {
@@ -103,7 +103,10 @@
                                                                 Id @coltura.Id - @coltura.TipoColtura - @coltura.MetriQuadrati mq
                                                             </option>
                                                         }
-                                                    }
+                                                    }*/
+                                                    <option value="@coltura.Id-@coltura.TipoColtura-@coltura.MetriQuadrati">
+                                                        Id @coltura.Id - @coltura.TipoColtura - @coltura.MetriQuadrati mq
+                                                    </option>
                                                 }
                                             </select>
 

@@ -83,7 +83,6 @@ public class Fields
         User user
     )
     {
-        Exception exception;
         try
         {
             PostTransactionField(connection, data, dateTimeProvider, dataSource, user);

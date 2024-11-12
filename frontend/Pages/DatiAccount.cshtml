@@ -64,10 +64,10 @@
     // Script per richiedere la chiave del gestore IOT
     window.onload = function () {
         // URL
-        let urlTask = "@(ApiReq.apiUrlGenerico)" + "/company/secret";
+        let urlTask = "@(ApiReq.clientUri)" + "api/hydroservice/company/secret";
 
         // Token JWT dal cookie
-        let token = "@(Request.Cookies["Token"])";
+        let token = "@(Request.Cookies["ApiToken"])";
 
         // Verifica se il token esiste
         if (!token) {

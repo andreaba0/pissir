@@ -42,7 +42,7 @@ public class WaterOrder
         {
             /*Get a list of all buy orders for each field of the farm belonging to the user*/
             commandGetSensorData.CommandText = $@"
-                select offer_id, company_vat_number, field_id, quantity
+                select offer_id, offer.vat_number, farm_field.id, qty
                 from buy_order inner join offer on buy_order.offer_id = offer.id
                 inner join farm_field on buy_order.farm_field_id = farm_field.id
                 where farm_field.vat_number = $1
@@ -50,8 +50,9 @@ public class WaterOrder
         } else {
             /*Get a list of all the buy orders made by each farm company that belong to the company user works for*/
             commandGetSensorData.CommandText = $@"
-                select offer_id, company_vat_number, field_id, quantity
+                select offer_id, farm_field.vat_number, farm_field.id, qty
                 from buy_order inner join offer on buy_order.offer_id = offer.id
+                inner join farm_field on buy_order.farm_field_id = farm_field.id
                 where offer.vat_number = $1
             ";
         }

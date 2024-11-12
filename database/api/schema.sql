@@ -19,7 +19,7 @@ create table company_wsp (
 
 create table secret_key (
     company_vat_number varchar(11) primary key,
-    secret_key varchar(64) not null,
+    secret_key text not null,
     created_at timestamptz not null default now()
 );
 
@@ -39,7 +39,7 @@ add constraint purchase_coherence check (available_liters >= purchased_liters an
 create table buy_order(
     offer_id varchar(26),
     farm_field_id varchar(26),
-    qty float not null check(qty >= 0),
+    qty real not null check(qty >= 0),
     primary key (offer_id, farm_field_id)
 );
 
@@ -88,14 +88,14 @@ create table umdty_sensor_log(
     object_id varchar(26),
     object_type object_type not null check(object_type = 'UMDTY'),
     log_time timestamptz not null,
-    umdty float not null check (umdty >= 0 and umdty <= 100),
+    umdty real not null check (umdty >= 0 and umdty <= 100),
     primary key (object_id, log_time)
 );
 create table tmp_sensor_log(
     object_id varchar(26),
     object_type object_type not null check(object_type = 'TMP'),
     log_time timestamptz not null,
-    tmp float not null,
+    tmp real not null,
     primary key (object_id, log_time)
 );
 create table actuator_log(
@@ -103,7 +103,7 @@ create table actuator_log(
     log_time timestamptz not null,
     is_active boolean not null,
     active_time integer not null,
-    water_used float not null,
+    water_used real not null,
     object_type object_type not null check(object_type = 'ACTUATOR'),
     primary key (object_id, log_time)
 );
@@ -114,7 +114,7 @@ add constraint active_time_coherence check (log_time + (active_time || ' seconds
 
 create table consumption_fact(
     crop text not null,
-    liters_mq float not null,
+    liters_mq real not null,
     primary key (crop)
 );
 

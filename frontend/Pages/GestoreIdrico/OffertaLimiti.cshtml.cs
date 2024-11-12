@@ -92,15 +92,18 @@ namespace frontend.Pages.GestoreIdrico
                 await ApiReq.GetApiToken(HttpContext);
                 ApiReq.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Request.Cookies["ApiToken"]);
 
+                float quantitaAcquaFloat = float.Parse(quantitaAcqua);
+                float prezzoAcquaFloat = float.Parse(prezzoAcqua);
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
-                    amount = quantitaAcqua,
-                    price = prezzoAcqua,
+                    amount = quantitaAcquaFloat,
+                    price = prezzoAcquaFloat,
                     date = dataDisp
                 };
                 var jsonRequest = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+                Console.WriteLine(content);
 
                 // Esegue la chiamata PUT
                 HttpResponseMessage response = await ApiReq.httpClient.PostAsync(urlTask, content);
@@ -112,12 +115,14 @@ namespace frontend.Pages.GestoreIdrico
                 }
                 else
                 {
+                    Console.WriteLine(response);
                     // Imposta un messaggio di errore
                     TempData["MessaggioErrore"] = "Errore durante l'inserimento. Riprova più tardi.";
                 }
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 TempData["MessaggioErrore"] = ex.Message;
                 return RedirectToPage("/Error");
             }
@@ -138,6 +143,8 @@ namespace frontend.Pages.GestoreIdrico
                 TempData["MessaggioErrore"] = "Quantità acqua erroneamente impostata.";
                 return RedirectToPage();
             }
+
+            float nuovaQuantitaFloat = float.Parse(nuovaQuantita);
  
             try
             {
@@ -154,7 +161,7 @@ namespace frontend.Pages.GestoreIdrico
                 // Creare il corpo della richiesta
                 var requestBody = new
                 {
-                    update_amount_to = nuovaQuantita
+                    update_amount_to = nuovaQuantitaFloat
                 };
                 var jsonRequest = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");

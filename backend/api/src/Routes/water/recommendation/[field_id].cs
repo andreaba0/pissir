@@ -38,7 +38,7 @@ public class WaterRecommendationFieldId {
         using DbConnection connection = dbDataSource.OpenConnection();
         DbCommand command = dbDataSource.CreateCommand();
         command.CommandText = $@"
-            select field.square_meters*crop.liters_mq as total_estimated
+            select fv.square_meters*cf.liters_mq as total_estimated
             from farm_field as field inner join
             farm_field_versioning as fv on field.id = fv.field_id inner join
             consumption_fact as cf on fv.crop_type = cf.crop
@@ -49,7 +49,8 @@ public class WaterRecommendationFieldId {
         command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, fieldId));
         command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
         float totalEstimated = 0;
-        float totalOnState = 0;
+        float totalWaterUsed = 0;
+        float totalWaterBought = 0;
         //using DbDataReader reader = command.ExecuteReader();
         using (DbDataReader reader = command.ExecuteReader()) {
             if (!reader.HasRows) {
@@ -66,7 +67,7 @@ public class WaterRecommendationFieldId {
         // Union is required to handle edge case where logs for current day do not exist
         // because actuator may have been turned on since the past day
         command.CommandText = $@"
-            select sum(active_time)
+            select sum(water_used)
             from actuator_log as al inner join
             object_logger as ol on al.object_id = ol.id inner join
             farm_field as field on ol.farm_field_id = field.id
@@ -85,12 +86,38 @@ public class WaterRecommendationFieldId {
             }
 
             reader.Read();
-            totalOnState = reader.GetInt32(0);
+            totalWaterUsed = reader.GetFloat(0);
             reader.Close();
         }
+
+        command.Parameters.Clear();
+
+        command.CommandText = $@"
+            select sum(qty)
+            from buy_order as bo inner join
+            offer as o on bo.offer_id = o.id inner join
+            farm_field as field on bo.farm_field_id = field.id
+            where field.id = $1 and field.vat_number = $2 and date_trunc('day', o.publish_date) = date_trunc('day', $3)
+            limit 1
+        ";
+        command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, fieldId));
+        command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
+        command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, dateTimeProvider.UtcNow));
+
+        using (DbDataReader reader = command.ExecuteReader()) {
+            if (!reader.HasRows) {
+                throw new WaterRecommendationFieldIdException(WaterRecommendationFieldIdException.ErrorCode.NOT_FOUND, "Field not found");
+            }
+
+            reader.Read();
+            totalWaterBought = reader.GetFloat(0);
+            reader.Close();
+        }
+
+
         string res = JsonSerializer.Serialize(new GetData {
             total_estimated = totalEstimated,
-            total_remaining = totalEstimated - totalOnState
+            total_remaining = totalWaterBought - totalWaterUsed
         }, new JsonSerializerOptions {
             IncludeFields = true
         });

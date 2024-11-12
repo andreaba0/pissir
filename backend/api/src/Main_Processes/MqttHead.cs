@@ -13,6 +13,9 @@ using NpgsqlTypes;
 using System.Text.RegularExpressions;
 using Types;
 using Utility;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text;
 
 namespace Main_Processes;
 
@@ -108,17 +111,172 @@ public class MqttHeadRoutine {
         TopicSchema topicSchema,
         MqttChannelMessage mqttMessage
     ) {
-        return 0;
+        string data = mqttMessage.Payload;
+        string[] parts = data.Split('.');
+        string info = Utility.Utility.Base64URLDecode(parts[0]);
+        string signature = Utility.Utility.Base64URLDecode(parts[1]);
+        try {
+            MqttMessageIot message = JsonSerializer.Deserialize<MqttMessageIot>(info, new JsonSerializerOptions {
+                PropertyNameCaseInsensitive = true,
+                IncludeFields = true
+            });
+            if (message == null) {
+                return 1;
+            }
+            string vat_number = message.vat_number;
+            DbConnection connection = this.dbDataSource.OpenConnection();
+            DbCommand command = this.dbDataSource.CreateCommand();
+            command.CommandText = "select secret_key from secret_key where company_vat_number = $1";
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, vat_number));
+            DbDataReader reader = command.ExecuteReader();
+            if (!reader.HasRows) {
+                return 1;
+            }
+            reader.Read();
+            string secret_key = reader.GetString(0);
+            reader.Close();
+            connection.Close();
+            if(Utility.Utility.HmacSha256(secret_key, info) != signature) {
+                return 1;
+            }
+            if (message.type == "actuator") {
+                return await AddActuatorData(info, message.log_timestamp, message.obj_id, message.field_id);
+            }
+            if (message.type == "sensor") {
+                return await AddSensorData(info, message.log_timestamp, message.obj_id, message.field_id, topicSchema);
+            }
+            return 1;
+        } catch (Exception e) {
+            return 1;
+        }
     }
-}
 
-public class MqttAuthorization {
-    public static MqttMessage ParseMqttMessage(
-        TopicSchema topicSchema,
-        MqttChannelMessage mqttMessage,
-        DbDataSource dataSource,
-        IDateTimeProvider dateTimeProvider
+    internal Task<int> AddActuatorData(
+        string data,
+        long log_timestamp,
+        string object_id,
+        string field_id
     ) {
-        return null;
+        DbConnection connection = this.dbDataSource.OpenConnection();
+        try {
+            Actuator actuator = JsonSerializer.Deserialize<Actuator>(data, new JsonSerializerOptions {
+                PropertyNameCaseInsensitive = true,
+                IncludeFields = true
+            });
+            if (actuator == null) {
+                return Task.FromResult(1);
+            }
+            DbCommand command = this.dbDataSource.CreateCommand();
+            command.CommandText = "BEGIN TRANSACTION";
+            command.ExecuteNonQuery();
+            command.CommandText = $@"
+                insert into object_logger (id, company_chosen_id, object_type, farm_field_id) values
+                ($1, $2, $3, $4)
+                on conflict (id) do nothing
+            ";
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, object_id));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, object_id));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Object, CustomDbType.ObjectType.ACTUATOR));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, field_id));
+            command.ExecuteNonQuery();
+            command.Parameters.Clear();
+
+            command.CommandText = $@"
+                insert into actuator_log (object_id, object_type, log_time, is_active, water_used) values
+                ($1, $2, $3, $4)
+            ";
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, object_id));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Object, CustomDbType.ObjectType.ACTUATOR));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, new DateTime(log_timestamp)));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Boolean, true));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Single, actuator.water_used));
+            command.ExecuteNonQuery();
+
+            command.CommandText = "COMMIT TRANSACTION";
+            command.ExecuteNonQuery();
+            return Task.FromResult(0);
+        }
+         catch (Exception e) {
+            DbCommand command = this.dbDataSource.CreateCommand();
+            command.CommandText = "ROLLBACK TRANSACTION";
+            command.ExecuteNonQuery();
+            return Task.FromResult(1);
+        }
+    }
+
+    internal Task<int> AddSensorData(
+        string data,
+        long log_timestamp,
+        string object_id,
+        string field_id,
+        TopicSchema topicSchema
+    ) {
+        DbConnection connection = this.dbDataSource.OpenConnection();
+        try {
+            Sensor sensor = JsonSerializer.Deserialize<Sensor>(data, new JsonSerializerOptions {
+                PropertyNameCaseInsensitive = true,
+                IncludeFields = true
+            });
+            if (sensor == null) {
+                return Task.FromResult(1);
+            }
+            DbCommand command = this.dbDataSource.CreateCommand();
+            command.CommandText = "BEGIN TRANSACTION";
+            command.ExecuteNonQuery();
+            command.CommandText = $@"
+                insert into object_logger (id, company_chosen_id, object_type, farm_field_id) values
+                ($1, $2, $3, $4)
+                on conflict (id) do nothing
+            ";
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, object_id));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, object_id));
+            if(topicSchema.type == TopicSchema.Type.Temperature) {
+                command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Object, CustomDbType.ObjectType.TMP));
+            } else if(topicSchema.type == TopicSchema.Type.Humidity) {
+                command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Object, CustomDbType.ObjectType.UMDTY));
+            } else {
+                return Task.FromResult(1);
+            }
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, field_id));
+            command.ExecuteNonQuery();
+            command.Parameters.Clear();
+
+            float value = float.Parse(sensor.value);
+            string table = topicSchema.type switch {
+                TopicSchema.Type.Temperature => "tmp_ssensor_log",
+                TopicSchema.Type.Humidity => "umdty_sensor_log",
+                _ => "unknown"
+            };
+
+            string column = topicSchema.type switch {
+                TopicSchema.Type.Temperature => "tmp",
+                TopicSchema.Type.Humidity => "umdty",
+                _ => "unknown"
+            };
+
+            command.CommandText = $@"
+                insert into {table} (object_id, object_type, log_time, {column}) values
+                ($1, $2, $3, $4)
+            ";
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, object_id));
+            if(topicSchema.type == TopicSchema.Type.Temperature) {
+                command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Object, CustomDbType.ObjectType.TMP));
+            } else if(topicSchema.type == TopicSchema.Type.Humidity) {
+                command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Object, CustomDbType.ObjectType.UMDTY));
+            }
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.DateTime, new DateTime(log_timestamp)));
+            command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.Single, value));
+            command.ExecuteNonQuery();
+
+            command.CommandText = "COMMIT TRANSACTION";
+            command.ExecuteNonQuery();
+            return Task.FromResult(0);
+        }
+         catch (Exception e) {
+            DbCommand command = this.dbDataSource.CreateCommand();
+            command.CommandText = "ROLLBACK TRANSACTION";
+            command.ExecuteNonQuery();
+            return Task.FromResult(1);
+        }
     }
 }

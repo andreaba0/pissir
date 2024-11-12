@@ -1,5 +1,5 @@
 create type industry_sector as enum ('WSP', 'FAR', 'wsp', 'far');
-create type object_type as enum ('UMDTY', 'TMP', 'ACTUATOR');
+create type object_type as enum ('UMDTY', 'TMP', 'ACTUATOR', 'umdty', 'tmp', 'actuator');
 
 create table company(
     vat_number varchar(11) primary key,
@@ -86,14 +86,14 @@ create table object_logger(
 );
 create table umdty_sensor_log(
     object_id varchar(26),
-    object_type object_type not null check(object_type = 'UMDTY'),
+    object_type object_type not null check(object_type = 'UMDTY' or object_type = 'umdty'),
     log_time timestamptz not null,
     umdty real not null check (umdty >= 0 and umdty <= 100),
     primary key (object_id, log_time)
 );
 create table tmp_sensor_log(
     object_id varchar(26),
-    object_type object_type not null check(object_type = 'TMP'),
+    object_type object_type not null check(object_type = 'TMP' or object_type = 'tmp'),
     log_time timestamptz not null,
     tmp real not null,
     primary key (object_id, log_time)
@@ -104,7 +104,7 @@ create table actuator_log(
     is_active boolean not null,
     active_time integer not null,
     water_used real not null,
-    object_type object_type not null check(object_type = 'ACTUATOR'),
+    object_type object_type not null check(object_type = 'ACTUATOR' or object_type = 'actuator'),
     primary key (object_id, log_time)
 );
 

@@ -60,33 +60,20 @@
         document.getElementById("categoria").value = datiOriginaliAzienda.categoria;
     }
 
-
     // Script per richiedere la chiave del gestore IOT
     window.onload = function () {
-        // URL
-        let urlTask = "@(ApiReq.clientUri)" + "api/hydroservice/company/secret";
-
-        // Token JWT dal cookie
-        let token = "@(Request.Cookies["ApiToken"])";
-
-        // Verifica se il token esiste
-        if (!token) {
-            console.error("Token JWT non trovato");
+        if("@ApiReq.utente.Role" == "WA") {
             return;
         }
 
         // Effettua una richiesta POST per ottenere la chiave segreta
-        fetch(urlTask, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
+        fetch(`${window.location.origin}/api/hydroservice/company/secret`, {
+            method: 'POST'
         })
-        .then(response => response.json())
+        .then(response => response.text())
         .then(data => {
             // Stampa la chiave segreta nel campo con id 'secretKey'
-            document.getElementById('secretKey').value = data.secretKey;
+            document.getElementById('secretKey').value = data;
         })
         .catch(error => {
             console.error('Errore durante la richiesta della secret key:', error);
@@ -162,10 +149,13 @@
                 <text>Azienda Agricola</text>
                 }" class="form-control">
             </form>
+            @if (ApiReq.utente.Role == "FA")
+            {
             <div style="margin-top: 20px;">
                 <label>Chiave per l'accesso al gestore IOT:</label>
                 <input id="secretKey" type="text" class="form-control" disabled />
             </div>
+            }
         </div>
         
     </div>

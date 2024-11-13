@@ -19,7 +19,7 @@ create table company_wsp (
 
 create table secret_key (
     company_vat_number varchar(11) primary key,
-    secret_key text not null,
+    secret_key varchar(16) not null,
     created_at timestamptz not null default now()
 );
 

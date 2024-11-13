@@ -16,6 +16,7 @@ using Npgsql;
 using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Web;
+using System.Text.RegularExpressions;
 
 namespace Routes;
 
@@ -132,6 +133,23 @@ public class CompanySecret
         }
     }
 
+    public static string PasswordGenerator(int length) {
+        const string valid = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        StringBuilder res = new StringBuilder();
+        using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+        {
+            byte[] uintBuffer = new byte[sizeof(uint)];
+
+            while (length-- > 0)
+            {
+                rng.GetBytes(uintBuffer);
+                uint num = BitConverter.ToUInt32(uintBuffer, 0);
+                res.Append(valid[(int)(num % (uint)valid.Length)]);
+            }
+        }
+        return res.ToString();
+    }
+
     public static PostResponse Post(
         string cookie,
         DbDataSource dataSource,
@@ -151,7 +169,7 @@ public class CompanySecret
         }
 
         // always generate a new secret_key to insert into the database if it does not exist. If it exists, old one is returned. 
-        string key = Convert.ToBase64String(new HMACSHA256().Key);
+        string key = PasswordGenerator(16);
 
         using DbConnection connection = dataSource.OpenConnection();
 

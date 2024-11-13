@@ -49,7 +49,6 @@ def test1(scope):
     vat_number2 = fake.random_number(digits=11)
     ids = [UlidGenerator.generate() for _ in range(5)]
     tomorrow = CustomDate.parse(backendConfig["initial_date"]).addDays(1).toISODate()
-    print(tomorrow)
 
     conn = getPostgresConnection()
     cur = conn.cursor()
@@ -91,7 +90,6 @@ def test1(scope):
     jwt_payload["exp"] = utc_date + 3600
 
     jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
-    print(jwt)
 
 
     response = requests.get(
@@ -125,7 +123,6 @@ def test2(scope):
     vat_number2 = fake.random_number(digits=11)
     ids = [UlidGenerator.generate() for _ in range(5)]
     tomorrow = CustomDate.parse(backendConfig["initial_date"]).addDays(1).toISODate()
-    print(tomorrow)
 
     conn = getPostgresConnection()
     cur = conn.cursor()
@@ -167,7 +164,6 @@ def test2(scope):
     jwt_payload["exp"] = utc_date + 3600
 
     jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
-    print(jwt)
 
 
     response = requests.get(
@@ -183,7 +179,6 @@ def test2(scope):
         200,
         response.status_code
     )
-    print(response.json())
     Assertion.Equals(
         scope,
         "Should provide the expected list size",
@@ -203,7 +198,6 @@ def test3(scope):
     ids = [UlidGenerator.generate() for _ in range(5)]
     tomorrow = CustomDate.parse(backendConfig["initial_date"]).addDays(1)
     today = CustomDate.parse(backendConfig["initial_date"])
-    print(tomorrow)
 
     conn = getPostgresConnection()
     cur = conn.cursor()
@@ -237,7 +231,6 @@ def test3(scope):
     jwt_payload["exp"] = utc_date + 3600
 
     jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
-    print(jwt)
 
 
     response = requests.post(

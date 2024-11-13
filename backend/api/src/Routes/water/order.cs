@@ -21,7 +21,7 @@ public class WaterOrder
         public string offer_id;
         public string company_vat_number;
         public string field_id;
-        public float quantity;
+        public float amount;
     }
 
     public static ValueTask<string> Get(
@@ -74,7 +74,7 @@ public class WaterOrder
                 offer_id = reader.GetString(0),
                 company_vat_number = reader.GetString(1),
                 field_id = reader.GetString(2),
-                quantity = reader.GetFloat(3)
+                amount = reader.GetFloat(3)
             });
         }
         reader.Close();

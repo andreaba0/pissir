@@ -40,83 +40,81 @@ def getPostgresConnection():
 
 
 def test1(scope):
-    scope.set_header('Test GET /water/order should return a list of orders of same WA company')
+    scope.set_header('Test GET /water/consumption should return a list of water consumption for a given company')
 
     fake = Faker('it_IT')
     Faker.seed(0)
 
-    vat_number = fake.random_number(digits=11)
+    vat_number_far = fake.random_number(digits=11)
+    vat_number_far2 = fake.random_number(digits=11)
     vat_number_wsp = fake.random_number(digits=11)
     company_chosen_id = fake.random_number(digits=11)
-    ids = [UlidGenerator.generate() for _ in range(2)]
+    offer_ids = [UlidGenerator.generate() for _ in range(5)]
     field_ids = [UlidGenerator.generate() for _ in range(2)]
+    fields_ids_company2 = [UlidGenerator.generate() for _ in range(2)]
+    actuator_id = UlidGenerator.generate()
     tomorrow = CustomDate.parse(backendConfig["initial_date"]).addDays(1).toISODate()
+    tomorrow_date = CustomDate.parse(backendConfig["initial_date"]).addDays(1)
 
     conn = getPostgresConnection()
     cur = conn.cursor()
     cur.execute('''
         insert into company(vat_number, industry_sector) values
-        ('{vat_number}', 'FAR'),
-        ('{vat_number_wsp}', 'WSP');
-    '''.format(vat_number=vat_number, vat_number_wsp=vat_number_wsp))
+        ('{vat_number_far}', 'FAR'),
+        ('{vat_number_wsp}', 'WSP'),
+        ('{vat_number_far2}', 'FAR');
+    '''.format(vat_number_far=vat_number_far, vat_number_wsp=vat_number_wsp, vat_number_far2=vat_number_far2))
     cur.execute('''
-        insert into company_far(vat_number, industry_sector) values('{vat_number}', 'FAR');
-    '''.format(vat_number=vat_number))
+        insert into company_wsp(vat_number, industry_sector) values('{vat_number_wsp}', 'WSP');
+    '''.format(vat_number_wsp=vat_number_wsp))
     cur.execute('''
-        insert into company_wsp(vat_number, industry_sector) values('{vat_number}', 'WSP');
-    '''.format(vat_number=vat_number_wsp))
+        insert into company_far(vat_number, industry_sector) values('{vat_number_far}', 'FAR'), ('{vat_number_far2}', 'FAR');
+    '''.format(vat_number_far=vat_number_far, vat_number_far2=vat_number_far2))
     cur.execute('''
         insert into offer(id, vat_number, publish_date, price_liter, available_liters, purchased_liters) values
-        ('{ids[0]}', '{vat_number}', '{day1}', 1.0, 1000, 600);
-    '''.format(
-            ids=ids, 
-            vat_number=vat_number_wsp,
-            day1=CustomDate.parse(backendConfig["initial_date"]).toISODate()
-    ))
+        ('{ids[0]}', '{vat_number_wsp}', '{tomorrow}', 5.0, 100000, 0),
+        ('{ids[1]}', '{vat_number_wsp}', '{tomorrow}', 3.0, 70000, 0),
+        ('{ids[2]}', '{vat_number_wsp}', '{tomorrow}', 4.0, 30000, 0),
+        ('{ids[3]}', '{vat_number_wsp}', '{tomorrow}', 1.0, 30000, 0),
+        ('{ids[4]}', '{vat_number_wsp}', '{tomorrow}', 2.0, 80000, 0);
+    '''.format(ids=offer_ids, vat_number_far=vat_number_far, vat_number_wsp=vat_number_wsp, tomorrow=tomorrow))
     cur.execute('''
         insert into farm_field(id, vat_number) values
-        ('{field_ids[0]}', '{vat_number}'),
-        ('{field_ids[1]}', '{vat_number}');
-    '''.format(field_ids=field_ids, vat_number=vat_number))
-    cur.execute('''
-        insert into farm_field_versioning(field_id, vat_number, square_meters, crop_type, irrigation_type, created_at) values
-        ('{field_ids[0]}', '{vat_number}', 1000, 'wheat', 'drip', '{day1}'),
-        ('{field_ids[0]}', '{vat_number}', 2000, 'corn', 'drip', '{day2}');
-    ''' .format(
-            field_ids=field_ids,
-            vat_number=vat_number,
-            day1=CustomDate.parse(backendConfig["initial_date"]).addDays(-2).toISODate(),
-            day2=CustomDate.parse(backendConfig["initial_date"]).addDays(-1).toISODate()
-    ))
+        ('{ids[0]}', '{vat_number}'),
+        ('{ids[1]}', '{vat_number}'),
+        ('{ids2[0]}', '{vat_number2}'),
+        ('{ids2[1]}', '{vat_number2}');       
+    '''.format(ids=field_ids, vat_number=vat_number_far, ids2=fields_ids_company2, vat_number2=vat_number_far2))
     cur.execute('''
         insert into buy_order(offer_id, farm_field_id, qty) values
-        ('{ids[0]}', '{field_ids[0]}', 600);
-    ''' .format(ids=ids, field_ids=field_ids))
+        ('{ids[0]}', '{field_ids[0]}', 6000),
+        ('{ids[1]}', '{field_ids[0]}', 200),
+        ('{ids[1]}', '{field_ids[1]}', 300);
+    '''.format(ids=offer_ids, field_ids=field_ids))
     cur.execute('''
         insert into object_logger(id, company_chosen_id, object_type, farm_field_id) values
-        ('{ids[0]}', '{company_chosen_id}', 'ACTUATOR', '{field_ids[0]}');
+        ('{id}', '{company_chosen_id}', 'ACTUATOR', '{field_id}');
     '''.format(
-            ids=ids,
+            id=actuator_id,
             company_chosen_id=company_chosen_id,
-            field_ids=field_ids
+            field_id=field_ids[0]
     ))
     cur.execute('''
         insert into actuator_log(object_id, log_time, is_active, active_time, water_used, object_type) values
-        ('{ids[0]}', '{day1time1}', true, 100, 100, 'ACTUATOR'),
-        ('{ids[0]}', '{day1time2}', true, 100, 200, 'ACTUATOR');
+        ('{id}', '{day1time1}', true, 100, 1000, 'ACTUATOR'),
+        ('{id}', '{day1time2}', true, 100, 2000, 'ACTUATOR');
     ''' .format(
-            ids=ids,
-            vat_number=vat_number,
-            field_ids=field_ids,
-            day1time1='2010-01-01T01:00:30',
-            day1time2='2010-01-01T02:00:30'
+            id=actuator_id,
+            day1time1=tomorrow_date.addHours(3).toISODate(),
+            day1time2=tomorrow_date.addHours(8).toISODate()
     ))
+
     cur.close()
     conn.commit()
     conn.close()
 
     jwt_payload = {
-        "company_vat_number": str(vat_number),
+        "company_vat_number": str(vat_number_far),
         "role": "FA",
         "aud": backendConfig["aud"],
         "iss": backendConfig["iss"],
@@ -136,7 +134,7 @@ def test1(scope):
 
 
     response = requests.get(
-        f"http://{backendConfig['host']}:{backendConfig['port']}/water/recommendation/{field_ids[0]}",
+        f"http://{backendConfig['host']}:{backendConfig['port']}/water/consumption",
         timeout=2,
         headers={
             "Authorization": f"Bearer {jwt}"
@@ -154,21 +152,34 @@ def test1(scope):
         2,
         len(response.json())
     )
-    obj = response.json()
-    total_estimated = 1800*2000
-    total_remaining = 600-300 # water bought - water used
-    Assertion.Equals(
-        scope,
-        "Should provide the expected total estimated",
-        total_estimated,
-        obj["total_estimated"]
-    )
-    Assertion.Equals(
-        scope,
-        "Should provide the expected total remaining",
-        total_remaining,
-        obj["total_remaining"]
-    )
+
+    for item in response.json():
+        if item["field_id"] == field_ids[0]:
+            Assertion.Equals(
+                scope,
+                "Should provide the expected water used",
+                3000,
+                item["amount_used"]
+            )
+            Assertion.Equals(
+                scope,
+                "Should provide the expected amount of water ordered",
+                6200,
+                item["amount_ordered"]
+            )
+        elif item["field_id"] == field_ids[1]:
+            Assertion.Equals(
+                scope,
+                "Should provide the expected water used",
+                0,
+                item["amount_used"]
+            )
+            Assertion.Equals(
+                scope,
+                "Should provide the expected amount of water ordered",
+                300,
+                item["amount_ordered"]
+            )
 
 
 

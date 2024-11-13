@@ -138,7 +138,6 @@ def test2(scope):
     jwt_payload["exp"] = utc_date + 3600
 
     jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
-    print(jwt)
 
 
     response = requests.get(

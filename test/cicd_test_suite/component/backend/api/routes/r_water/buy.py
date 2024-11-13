@@ -40,15 +40,43 @@ def getPostgresConnection():
 
 
 def test1(scope):
-    scope.set_header('Test GET /company/secret should succeed and return a secret')
+    scope.set_header('Test POST /water/buy should succeed')
 
     fake = Faker('it_IT')
     Faker.seed(0)
 
-    vat_number = fake.random_number(digits=11)
+    vat_number_far = fake.random_number(digits=11)
+    vat_number_wsp = fake.random_number(digits=11)
+    offer_id = UlidGenerator.generate()
+    field_id = UlidGenerator.generate()
+
+    tomorrow = CustomDate.parse(backendConfig["initial_date"]).addDays(1).toISODate()
+
+    conn = getPostgresConnection()
+    cur = conn.cursor()
+    cur.execute('''
+        insert into company(vat_number, industry_sector) values('{vat_number_far}', 'FAR'), ('{vat_number_wsp}', 'WSP');
+    '''.format(vat_number_far=vat_number_far, vat_number_wsp=vat_number_wsp))
+    cur.execute('''
+        insert into company_far(vat_number, industry_sector) values('{vat_number}', 'FAR');
+    '''.format(vat_number=vat_number_far))
+    cur.execute('''
+        insert into company_wsp(vat_number, industry_sector) values('{vat_number}', 'WSP');
+    '''.format(vat_number=vat_number_wsp))
+    cur.execute('''
+        insert into farm_field(id, vat_number) values
+        ('{field_id}', '{vat_number}');         
+    '''.format(field_id=field_id, vat_number=vat_number_far))
+    cur.execute('''
+        insert into offer(id, vat_number, publish_date, price_liter, available_liters, purchased_liters) values
+        ('{offer_id}', '{vat_number_wsp}', '{tomorrow}', 1.0, 1000, 0);
+    '''.format(offer_id=offer_id, vat_number_wsp=vat_number_wsp, tomorrow=tomorrow))
+    cur.close()
+    conn.commit()
+    conn.close()
 
     jwt_payload = {
-        "company_vat_number": str(vat_number),
+        "company_vat_number": str(vat_number_far),
         "role": "FA",
         "aud": backendConfig["aud"],
         "iss": backendConfig["iss"],
@@ -68,34 +96,24 @@ def test1(scope):
 
 
     response = requests.post(
-        f"http://{backendConfig['host']}:{backendConfig['port']}/company/secret",
+        f"http://{backendConfig['host']}:{backendConfig['port']}/water/buy",
         timeout=2,
         headers={
-            "Cookie": f"ApiToken={jwt}"
+            "Authorization": f"Bearer {jwt}"
+        },
+        json={
+            "offer_id": offer_id,
+            "field_id": field_id,
+            "amount": 100,
+            "date": tomorrow
         }
     )
+    print(response.text)
     Assertion.Equals(
         scope,
         "Should accept the request with a 200",
-        201,
+        200,
         response.status_code
-    )
-
-    conn = getPostgresConnection()
-    cur = conn.cursor()
-    cur.execute('''
-        select secret_key from secret_key where company_vat_number = '{vat_number}';
-    '''.format(vat_number=vat_number))
-    result = cur.fetchone()
-    cur.close()
-    conn.commit()
-    conn.close()
-
-    Assertion.Equals(
-        scope,
-        "Should return 1 row",
-        1,
-        len(result)
     )
 
 

@@ -45,7 +45,7 @@ public class ResourceManagerWaterStock {
             on buy_order.farm_field_id = farm_field.id
             inner join offer
             on offer.id = buy_order.offer_id
-            where farm_field.vat_number = $1 and farm_field.id = $2 and offer.publish_date = $3
+            where farm_field.vat_number = $1 and farm_field.id = $2 and date_trunc('day', offer.publish_date) = date_trunc('day', $3)
         ";
         commandGetFields.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, vat_number));
         commandGetFields.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, field_id));

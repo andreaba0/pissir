@@ -6,7 +6,7 @@ class address_manager:
     network_name = "pissir_network"
     address_space = None #eg. 172.16.10.0/26
     index = 2
-    port_space = 10150
+    port_space = 10350
     gateway_ip = None
 
     def get_address():

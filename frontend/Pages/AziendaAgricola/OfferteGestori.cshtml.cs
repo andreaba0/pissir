@@ -124,7 +124,7 @@ namespace frontend.Pages.AziendaAgricola
                     field_id = colturaId,
                     amount = quantitaAcquistoFloat,
                     offer_id = offertaId,
-                    date = DateTime.Now
+                    date = DateTime.Now // Useless data, should be removed in a future release
                 };
                 var jsonRequest = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");

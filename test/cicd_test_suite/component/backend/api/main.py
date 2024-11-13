@@ -16,6 +16,8 @@ from component.backend.api.routes.r_water import order as test_water_order
 from component.backend.api.routes.r_water.r_recommendation import route_field_id as test_water_recommendation_route_field_id
 from component.backend.api.routes.r_water import limit as test_water_limit
 from component.backend.api.routes.r_company import secret as test_company_secret
+from component.backend.api.routes.r_water import buy as test_water_buy
+from component.backend.api.routes.r_water import consumption as test_water_consumption
 
 from utility.state import StateManager, Block, State
 
@@ -54,6 +56,8 @@ def EntryPoint(*args, **kwargs):
     test_water_recommendation_route_field_id.EntryPoint(*args, **kwargs)
     test_water_limit.EntryPoint(*args, **kwargs)
     test_company_secret.EntryPoint(*args, **kwargs)
+    test_water_buy.EntryPoint(*args, **kwargs)
+    test_water_consumption.EntryPoint(*args, **kwargs)
 
 def checkApiDatabaseConnectivity(container, config):
     ct = Container(container)

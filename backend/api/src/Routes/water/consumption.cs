@@ -38,31 +38,32 @@ public class WaterConsumption
         if (User.GetRole(user) == User.Role.FA)
         {
             command.CommandText = $@"
-                select farm_field_id, sum(qty) as amount_ordered, offer.publish_date as publish_date, (
-                    select sum(water_used) as amount_used
+                select farm_field.id, coalesce(sum(buy_order.qty), 0) as amount_ordered, offer.publish_date as publish_date, coalesce((
+                    select coalesce(sum(water_used), 0) as amount_used
                     from actuator_log as al inner join object_logger as ol on al.object_id=ol.id
-                    where ol.farm_field_id = farm_field_id and date_trunc('day', al.log_time) = date_trunc('day', offer.publish_date)
-                ) as amount_used
+                    where ol.farm_field_id = farm_field.id and date_trunc('day', al.log_time) = date_trunc('day', offer.publish_date)
+                ), 0) as amount_used
                 from buy_order inner join offer
                 on buy_order.offer_id = offer.id
-                where vat_number = $1
-                group by farm_field_id, publish_date
+                inner join farm_field on buy_order.farm_field_id = farm_field.id
+                where farm_field.vat_number = $1
+                group by farm_field.id, offer.publish_date
             ";
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
         }
         else
         {
             command.CommandText = $@"
-                select ff.id, sum(purchased_liters) as amount_ordered, offer.publish_date as publish_date, (
-                    select sum(water_used) as amount_used
+                select farm_field.id, coalesce(sum(buy_order.qty), 0) as amount_ordered, offer.publish_date as publish_date, coalesce((
+                    select coalesce(sum(water_used), 0) as amount_used
                     from actuator_log as al inner join object_logger as ol on al.object_id=ol.id
-                    where ol.farm_field_id = ff.id and date_trunc('day', al.log_time) = date_trunc('day', offer.publish_date)
-                )
+                    where ol.farm_field_id = farm_field.id and date_trunc('day', al.log_time) = date_trunc('day', offer.publish_date)
+                ), 0) as amount_used
                 from buy_order inner join offer
                 on buy_order.offer_id = offer.id
-                inner join farm_field as ff on buy_order.farm_field_id = ff.id
+                inner join farm_field on buy_order.farm_field_id = farm_field.id
                 where offer.vat_number = $1
-                group by ff.id, publish_date
+                group by farm_field.id, offer.publish_date
             ";
             command.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, user.company_vat_number));
         }
@@ -81,6 +82,7 @@ public class WaterConsumption
                 amount_ordered = reader.GetFloat(1),
                 amount_used = reader.GetFloat(3)
             };
+            data.Add(item);
         }
         string json = JsonSerializer.Serialize(data, new JsonSerializerOptions
         {

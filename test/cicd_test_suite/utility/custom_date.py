@@ -29,6 +29,10 @@ class CustomDate:
     def addDays(self, days):
         self.date += datetime.timedelta(days=days)
         return self
+    
+    def addHours(self, hours):
+        self.date += datetime.timedelta(hours=hours)
+        return self
 
     # epoch is generated as the number of seconds since 1st January 1970 (This is the Unix epoch)
     # It is used as <iat> and <exp> fields in the JWT token

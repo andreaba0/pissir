@@ -50,9 +50,6 @@ def test1(scope):
     today = CustomDate.parse(backendConfig["initial_date"]).toISODate()
     tomorrow = CustomDate.parse(backendConfig["initial_date"]).addDays(1).toISODate()
     day_after_tomorrow = CustomDate.parse(backendConfig["initial_date"]).addDays(2).toISODate()
-    print(today)
-    print(tomorrow)
-    print(day_after_tomorrow)
 
     conn = getPostgresConnection()
     cur = conn.cursor()
@@ -99,7 +96,6 @@ def test1(scope):
     jwt_payload["exp"] = utc_date + 3600
 
     jwt = jose.jwt.encode(jwt_payload, sign_key, algorithm="RS256", headers={"kid": keys[0]["kid"]})
-    print(jwt)
 
 
     response = requests.get(
@@ -115,7 +111,6 @@ def test1(scope):
         200,
         response.status_code
     )
-    print(response.json())
     Assertion.Equals(
         scope,
         "Should provide the expected list size",

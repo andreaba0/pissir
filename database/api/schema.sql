@@ -78,7 +78,7 @@ create table irrigation_type(
 
 create table object_logger(
     id varchar(26) primary key,
-    company_chosen_id varchar(11) not null,
+    company_chosen_id text not null,
     object_type object_type not null,
     farm_field_id varchar(26) not null,
     unique (company_chosen_id, farm_field_id),
@@ -87,20 +87,20 @@ create table object_logger(
 create table umdty_sensor_log(
     object_id varchar(26),
     object_type object_type not null check(object_type = 'UMDTY' or object_type = 'umdty'),
-    log_time timestamptz not null,
+    log_time timestamp without time zone not null,
     umdty real not null check (umdty >= 0 and umdty <= 100),
     primary key (object_id, log_time)
 );
 create table tmp_sensor_log(
     object_id varchar(26),
     object_type object_type not null check(object_type = 'TMP' or object_type = 'tmp'),
-    log_time timestamptz not null,
+    log_time timestamp without time zone not null,
     tmp real not null,
     primary key (object_id, log_time)
 );
 create table actuator_log(
     object_id varchar(26),
-    log_time timestamptz not null,
+    log_time timestamp without time zone not null,
     is_active boolean not null,
     active_time integer not null,
     water_used real not null,

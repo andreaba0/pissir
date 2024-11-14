@@ -1,9 +1,9 @@
 namespace Types;
 
 public class Sensor {
-    public string value { get; set; }
+    public float value { get; set; }
 
-    public Sensor(string value) {
+    public Sensor(float value) {
         this.value = value;
     }
 }

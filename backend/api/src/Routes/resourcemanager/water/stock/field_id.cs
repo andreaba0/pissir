@@ -22,6 +22,8 @@ public class ResourceManagerWaterStock {
     }
 
     public static ValueTask<string> Get(
+        string path,
+        string method,
         IHeaderDictionary headers,
         RouteValueDictionary routeValues,
         DbDataSource dataSource,
@@ -29,6 +31,8 @@ public class ResourceManagerWaterStock {
         RemoteManager remoteManager
     ) {
         FarmToken farmToken = Authorization.AuthorizedPayload(
+            path,
+            method,
             headers,
             dateTimeProvider,
             dataSource
@@ -40,7 +44,7 @@ public class ResourceManagerWaterStock {
         using DbCommand commandGetFields = dataSource.CreateCommand();
 
         commandGetFields.CommandText = $@"
-            select sum(qty)
+            select coalesce(sum(qty), 0) as limit
             from buy_order inner join farm_field
             on buy_order.farm_field_id = farm_field.id
             inner join offer

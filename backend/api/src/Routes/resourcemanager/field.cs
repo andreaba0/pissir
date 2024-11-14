@@ -22,12 +22,16 @@ public class ResourceManagerField {
         public string irrigation_type;
     }
     public static string Get(
+        string path,
+        string method,
         IHeaderDictionary headers,
         DbDataSource dataSource,
         IDateTimeProvider dateTimeProvider,
         RemoteManager remoteManager
     ) {
         FarmToken farmToken = Authorization.AuthorizedPayload(
+            path,
+            method,
             headers,
             dateTimeProvider,
             dataSource

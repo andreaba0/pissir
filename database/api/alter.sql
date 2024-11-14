@@ -23,8 +23,8 @@ alter table farm_field_versioning add foreign key (crop_type) references consump
 
 alter table object_logger add foreign key (farm_field_id) references farm_field(id) on delete cascade;
 
-alter table umdty_sensor_log add foreign key (object_id, object_type) references object_logger(id, object_type) on delete cascade;
+alter table umdty_sensor_log add foreign key (object_id) references object_logger(id) on delete cascade;
 
-alter table tmp_sensor_log add foreign key (object_id, object_type) references object_logger(id, object_type) on delete cascade;
+alter table tmp_sensor_log add foreign key (object_id) references object_logger(id) on delete cascade;
 
-alter table actuator_log add foreign key (object_id, object_type) references object_logger(id, object_type) on delete cascade;
+alter table actuator_log add foreign key (object_id) references object_logger(id) on delete cascade;

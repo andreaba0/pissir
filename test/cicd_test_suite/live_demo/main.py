@@ -6,6 +6,8 @@ import time
 
 from utility.state import StateManager, Block, State
 
+from live_demo.prepopulate import EntryPoint
+
 from config.auth_server import auth_server_config
 from config.auth_database_server import auth_database_config
 from config.oauth_server import oauth_server_config
@@ -169,3 +171,16 @@ def IntegrationMain():
         Block(frontend_server, frontendServerConfig, State.RUNNING)
     ])
     checkServerConnectivity(containers[6], proxyServerConfig)
+
+    EntryPoint(
+        "localhost",
+        authDatabaseConfig["exposed_port"],
+        authDatabaseConfig["environment"]["POSTGRES_USER"],
+        authDatabaseConfig["environment"]["POSTGRES_PASSWORD"],
+        authDatabaseConfig["environment"]["POSTGRES_DB"],
+        "localhost",
+        apiDatabaseConfig["exposed_port"],
+        apiDatabaseConfig["environment"]["POSTGRES_USER"],
+        apiDatabaseConfig["environment"]["POSTGRES_PASSWORD"],
+        apiDatabaseConfig["environment"]["POSTGRES_DB"]
+    )

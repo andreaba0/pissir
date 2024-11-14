@@ -53,25 +53,26 @@ public class Authorization {
     public static bool tryParseAuthorizationHeader(string authorizationHeader, out Authorization.Scheme _scheme, out string _token, out string error_message) {
         _scheme = Authorization.Scheme.Bearer;
         _token = string.Empty;
+        string farmHeader = "pissir-farm-hmac-sha256";
         error_message = string.Empty;
         if(authorizationHeader == null || authorizationHeader == string.Empty) {
             error_message = "Missing Authorization header";
             return false;
         }
-        Regex tokenRegex = new Regex(@"^(?<scheme>[A-Za-z-]+)\s(?<token>[A-Za-z0-9-_\.]+)$");
+        Regex tokenRegex = new Regex(@"^(?<scheme>[A-Za-z0-9-]+)\s(?<token>[A-Za-z0-9-_\.]+)$");
         if(!tokenRegex.IsMatch(authorizationHeader)) {
             error_message = "Invalid Authorization header";
             return false;
         }
         string scheme = tokenRegex.Match(authorizationHeader).Groups["scheme"].Value;
-        if(scheme.ToLower() != "bearer" && scheme.ToLower() != "farm" && scheme.ToLower() != "internal") {
+        if(scheme.ToLower() != "bearer" && scheme.ToLower() != farmHeader && scheme.ToLower() != "internal") {
             error_message = $"Only <bearer>, <farm>, and <internal> are supported, but got <{scheme}>";
             return false;
         }
         if(scheme.ToLower() == "bearer" && !Authorization.validateBearerSyntax(tokenRegex, authorizationHeader)) {
             return false;
         }
-        if(scheme.ToLower() == "pissir-farm-hmac-sha256" && !Authorization.validateFarmSyntax(tokenRegex, authorizationHeader)) {
+        if(scheme.ToLower() == farmHeader && !Authorization.validateFarmSyntax(tokenRegex, authorizationHeader)) {
             return false;
         }
         string token = tokenRegex.Match(authorizationHeader).Groups["token"].Value;
@@ -159,6 +160,8 @@ public class Authorization {
     /// <exception cref="AuthenticationException"></exception>
     /// <exception cref="AuthorizationException"></exception>
     public static FarmToken AuthorizedPayload(
+        string path,
+        string method,
         IHeaderDictionary headers,
         IDateTimeProvider dateTimeProvider,
         DbDataSource dataSource
@@ -178,7 +181,7 @@ public class Authorization {
         FarmToken farmToken = JsonSerializer.Deserialize<FarmToken>(payload, new JsonSerializerOptions {
             PropertyNameCaseInsensitive = true,
         });
-        if(farmToken.method != headers["Method"]&& farmToken.path != headers["Path"]){
+        if(farmToken.method != method&& farmToken.path != path) {
             throw new AuthorizationException(AuthorizationException.ErrorCode.INVALID_AUTHORIZATION_HEADER, "Invalid path or method");
         }
         long epochNow = DateTimeProvider.epoch(dateTimeProvider.UtcNow);
@@ -194,18 +197,21 @@ public class Authorization {
         commandGetSecret.CommandText = $@"
             select secret_key
             from secret_key
-            where vat_number = $1
+            where company_vat_number = $1
         ";
         commandGetSecret.Parameters.Add(DbUtility.CreateParameter(connection, DbType.String, vat_number));
         using DbDataReader readerSecret = commandGetSecret.ExecuteReader();
         if (!readerSecret.HasRows) {
             throw new AuthorizationException(AuthorizationException.ErrorCode.UNAUTHORIZED, "User unauthorized");
         }
+        readerSecret.Read();
         string secret_key = readerSecret.GetString(0);
         readerSecret.Close();
 
         string signature = Utility.Utility.HmacSha256(secret_key, encoded_payload);
         if (signature != request_signature) {
+            Console.WriteLine($"Signature: {signature}");
+            Console.WriteLine($"Request Signature: {request_signature}");
             throw new AuthenticationException(AuthenticationException.ErrorCode.INVALID_TOKEN, "Invalid token");
         }
         connection.Close();

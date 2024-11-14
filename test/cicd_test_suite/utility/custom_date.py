@@ -10,6 +10,7 @@ from pytz import timezone
 import pytz
 
 class CustomDate:
+        
     def __init__ (self, hour, minutes, seconds, day, month, year, tz = "Europe/Rome"):
         self.hour = hour
         self.minutes = minutes
@@ -22,6 +23,10 @@ class CustomDate:
 
         # must contemplate also the time zone
         self.date = datetime.datetime(year, month, day, hour, minutes, seconds)
+    
+    def today():
+        date = datetime.datetime.now()
+        return CustomDate(date.hour, date.minute, date.second, date.day, date.month, date.year)
     
     def secondsTimeZone(self):
         return -int(time.timezone)

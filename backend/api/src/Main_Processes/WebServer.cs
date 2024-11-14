@@ -71,6 +71,8 @@ public class WebServer
         app.MapGet("/resourcemanager/field", async context => {
             try {
                 string data = ResourceManagerField.Get(
+                    context.Request.Path,
+                    context.Request.Method,
                     context.Request.Headers,
                     _dbDataSource,
                     _dateTimeProvider,
@@ -93,6 +95,8 @@ public class WebServer
         app.MapGet("/resourcemanager/water/stock/{field_id}", async context => {
             try {
                 ValueTask<string> func = ResourceManagerWaterStock.Get(
+                    context.Request.Path,
+                    context.Request.Method,
                     context.Request.Headers,
                     context.Request.RouteValues,
                     _dbDataSource,

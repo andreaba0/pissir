@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.time.Instant;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.SwingUtilities;
@@ -45,7 +47,7 @@ public class Main{
     private static GUI gui;
     
     // URL richieste HTTP
-    private static String globalApiUrl = "http://192.168.178.180:10155/resourcemanager";
+    private static String globalApiUrl = "http://192.168.178.180:10356/api/hydroservice/resourcemanager";
         
     /**
      * Costruttore della classe principale. Inizializza la lista dei gestori.
@@ -266,14 +268,15 @@ public class Main{
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             
-            long iat = System.currentTimeMillis() / 1000L;
-            long exp = iat + 10;
+            //long iat = System.currentTimeMillis() / 1000L;
+            long iat = Instant.now().getEpochSecond() - 60;
+            long exp = iat + 120;
            
             String jsonReq = "{" +
-            		"\"sub\":"+companyName+
+            		"\"sub\":"+"\""+companyName+"\""+
                     ", \"iat\":" + iat +
                     ", \"exp\":" + exp +
-                    ", \"path\":"+"\"resourcemanager/water/stock/"+idColtivazione+"\""+
+                    ", \"path\":"+"\"/resourcemanager/water/stock/"+idColtivazione+"\""+
                     ", \"method\":\"GET\""+
                     "}";
             
@@ -284,6 +287,7 @@ public class Main{
             
             String hmacSignature = calculateHmacSHA256(base64URLPayload, companySecret);
             String base64URLSignature = base64UrlEncode(hmacSignature);
+            System.out.println(base64URLPayload+"."+base64URLSignature);
                         
             // Imposta l'header di autenticazione con il token
             connection.setRequestProperty("Authorization", "Pissir-farm-hmac-sha256 " + base64URLPayload+"."+base64URLSignature);
@@ -298,6 +302,17 @@ public class Main{
             }
             catch (Exception e) {
             	System.out.println("Errore nell'aggiornamento dei dati. Endpoint: "+ e.getMessage());
+            	if (connection != null) {
+                    try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
+                        String line;
+                        while ((line = errorReader.readLine()) != null) {
+                            response.append(line);
+                        }
+                    } catch (Exception errorStreamException) {
+                        System.out.println("Error reading error stream: " + errorStreamException.getMessage());
+                    }
+                }
+            	System.out.println(response);
 			}
 
             // Chiudi la connessione
@@ -326,12 +341,16 @@ public class Main{
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
-            long iat = System.currentTimeMillis() / 1000L;
-            long exp = iat + 10;
+            //long iat = System.currentTimeMillis() / 1000L;
+            long iat = Instant.now().getEpochSecond() - 60;
+            System.out.println(Instant.now().getEpochSecond());
+            System.out.println(System.currentTimeMillis()/1000L);
+            System.out.println(iat);
+            long exp = iat + 120;
 
             // Costruzione della stringa in formato JSON
             String jsonReq = "{" +
-            		"\"sub\":"+companyName+
+            		"\"sub\":"+"\""+companyName+"\""+
                     ", \"iat\":" + iat +
                     ", \"exp\":" + exp +
                     ", \"path\":"+"\"/resourcemanager/field\""+
@@ -344,7 +363,10 @@ public class Main{
             String base64URLPayload = base64UrlEncode(jsonReq);
             
             String hmacSignature = calculateHmacSHA256(base64URLPayload, companySecret);
+            System.out.println(hmacSignature);
             String base64URLSignature = base64UrlEncode(hmacSignature);
+            
+            System.out.println(base64URLPayload+"."+base64URLSignature);
                         
             // Imposta l'header di autenticazione con il token
             connection.setRequestProperty("Authorization", "Pissir-farm-hmac-sha256 " + base64URLPayload+"."+base64URLSignature);
@@ -352,7 +374,8 @@ public class Main{
             // Leggi la risposta
             StringBuilder response = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                String line;
+                System.out.println("Loading");
+            	String line;
                 while ((line = reader.readLine()) != null) {
                     response.append(line);
                 }
@@ -381,7 +404,12 @@ public class Main{
             sha256Hmac.init(secretKey);
 
             byte[] hmacBytes = sha256Hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hmacBytes);
+            //return Base64.getEncoder().encodeToString(hmacBytes);
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hmacBytes) {
+                hexString.append(String.format("%02x", b));
+            }
+            return hexString.toString();
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             e.printStackTrace();
             return null;

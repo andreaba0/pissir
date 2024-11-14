@@ -3,6 +3,7 @@ package gestoreIOT;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -32,7 +33,7 @@ public class GestoreIOT implements MqttCallback, Serializable {
 	private Float intervalloAttuatore;
 	private Float consumoAcquaAttuatore;
 
-	private static String BROKER_URI = "tcp://192.168.178.180:1883";
+	private static String BROKER_URI = "tcp://192.168.178.180:10354";
 	private transient MqttClient client;
 	private transient Timer timer;
 
@@ -277,8 +278,8 @@ public class GestoreIOT implements MqttCallback, Serializable {
 			String password = "pissir2023";
 			char pwd[] = password.toCharArray();
 			MqttConnectOptions options = new MqttConnectOptions();
-			options.setUserName("pissir");
-			options.setPassword(pwd);
+			//options.setUserName("pissir");
+			//options.setPassword(pwd);
 			options.setCleanSession(false);
 			options.setWill(client.getTopic("home/LWT"), "GestoreIOT: I'm gone. Bye.".getBytes(), 0, false);
 
@@ -527,16 +528,17 @@ public class GestoreIOT implements MqttCallback, Serializable {
 		else {
 			message+="\"sensor\",";
 		}
+		long epoch = Instant.now().getEpochSecond();
 		message+="\"vat_number\":"+"\""+Main.getCompanyName()+"\",";
 		message+="\"obj_id\":"+"\""+objid+"\",";
-		message+="\"data\":"+"\""+messageData+"\",";
-		message+="\"log_timestamp\":"+System.currentTimeMillis();
+		message+="\"data\":"+"\""+Main.base64UrlEncode(messageData)+"\",";
+		message+="\"log_timestamp\":"+epoch+",";
 		message+="\"field_id\":"+"\""+this.idColtivazione+"\"";
 		message+="}";
 		String encoded = Main.base64UrlEncode(message);
 		String messageEncoded = encoded;
 		messageEncoded += ".";
-		messageEncoded+=Main.base64UrlEncode(Main.calculateHmacSHA256(message, Main.getCompanySecret()));
+		messageEncoded+=Main.base64UrlEncode(Main.calculateHmacSHA256(encoded, Main.getCompanySecret()));
 
 		// codifica messaggio
 		//String messageEncoded = Main.base64UrlEncode(Main.calculateHmacSHA256(message, Main.getCompanySecret()));
@@ -545,7 +547,7 @@ public class GestoreIOT implements MqttCallback, Serializable {
 		// by default, the QoS is 1 and the message is not retained
 		try {
 			//json+HMAC
-			managerTopic.publish(new MqttMessage((message+messageEncoded).getBytes()));
+			managerTopic.publish(new MqttMessage((messageEncoded).getBytes()));
 		} catch (MqttException e) {
 			e.printStackTrace();
 		}

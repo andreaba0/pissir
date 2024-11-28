@@ -197,7 +197,7 @@ public class MqttHeadRoutine
         string objectUlid
     )
     {
-        DbConnection connection = this.dbDataSource.OpenConnection();
+        using DbConnection connection = this.dbDataSource.OpenConnection();
         DateTime logTime = FromUnixTime(log_timestamp);
         try
         {
@@ -213,7 +213,7 @@ public class MqttHeadRoutine
                 return Task.FromResult(1);
             }
             long active_time = Convert.ToInt64(actuator.period);
-            DbCommand command = this.dbDataSource.CreateCommand();
+            using DbCommand command = this.dbDataSource.CreateCommand();
             command.CommandText = "BEGIN TRANSACTION";
             command.ExecuteNonQuery();
             command.CommandText = $@"
@@ -245,6 +245,7 @@ public class MqttHeadRoutine
 
             command.CommandText = "COMMIT TRANSACTION";
             command.ExecuteNonQuery();
+            connection.Close();
             return Task.FromResult(0);
         }
         catch (Exception e)
@@ -253,6 +254,7 @@ public class MqttHeadRoutine
             DbCommand command = this.dbDataSource.CreateCommand();
             command.CommandText = "ROLLBACK TRANSACTION";
             command.ExecuteNonQuery();
+            connection.Close();
             return Task.FromResult(1);
         }
     }
@@ -266,7 +268,7 @@ public class MqttHeadRoutine
         string objectUlid
     )
     {
-        DbConnection connection = this.dbDataSource.OpenConnection();
+        using DbConnection connection = this.dbDataSource.OpenConnection();
         DateTime logTime = FromUnixTime(log_timestamp);
         try
         {
@@ -280,7 +282,7 @@ public class MqttHeadRoutine
             {
                 return Task.FromResult(1);
             }
-            DbCommand command = this.dbDataSource.CreateCommand();
+            using DbCommand command = this.dbDataSource.CreateCommand();
             command.CommandText = "BEGIN TRANSACTION";
             command.ExecuteNonQuery();
             command.CommandText = $@"
@@ -344,6 +346,7 @@ public class MqttHeadRoutine
 
             command.CommandText = "COMMIT TRANSACTION";
             command.ExecuteNonQuery();
+            connection.Close();
             return Task.FromResult(0);
         }
         catch (Exception e)
@@ -354,6 +357,7 @@ public class MqttHeadRoutine
             DbCommand command = this.dbDataSource.CreateCommand();
             command.CommandText = "ROLLBACK TRANSACTION";
             command.ExecuteNonQuery();
+            connection.Close();
             return Task.FromResult(1);
         }
     }
